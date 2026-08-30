@@ -79,9 +79,15 @@ function ProductionFaction({
 
       <div className="production-faction__nodes">
         {buildProductionTrees(faction).map((tree) => {
-          const root = BUILDINGS[nodeById.get(tree.rootId)!.buildingId];
+          const rootNode = nodeById.get(tree.rootId)!;
+          const root = BUILDINGS[rootNode.buildingId];
+          const inactive = rootNode.calculation.kind === 'primary'
+            && rootNode.calculation.satisfaction
+              .slice(0, state.factions[faction].maxTier)
+              .every((satisfaction) => satisfaction === 0);
           return (
-          <section className="production-tree" key={tree.rootId}>
+          <section className={`production-tree${inactive ? ' production-tree--inactive' : ''}`} key={tree.rootId}>
+            {inactive && <p className="visually-hidden">Unavailable at the selected highest population tier.</p>}
             <ol className="production-tree__rows" aria-label={`${root.label} production tree`}>
             {tree.rows.map((row) => {
               const node = nodeById.get(row.nodeId)!;
@@ -118,6 +124,7 @@ function ProductionFaction({
                     raw={productivity.raw}
                     valid={productivity.value !== null}
                     inputMode="decimal"
+                    disabled={inactive}
                     onChange={(raw) => onProductivityChange(node.id, {
                       raw,
                       value: raw.trim() === '' ? null : Number(raw),

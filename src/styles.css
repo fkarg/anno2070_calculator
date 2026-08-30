@@ -232,6 +232,7 @@ input[aria-invalid="true"] { border-color: #ef665f; background: #321d1f; }
 .production-node label::after { content: "%"; position: absolute; right: 0; top: .38rem; color: var(--muted); font-size: .65rem; }
 
 .production-tree { border-bottom: 1px solid #56636a; }
+.production-tree--inactive { opacity: .28; filter: grayscale(1); }
 .production-tree__variants {
   display: grid;
   gap: .2rem;

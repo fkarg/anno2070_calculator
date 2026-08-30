@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { BUILDINGS } from './calculations/building-data';
 import { PRODUCTION_NODES } from './calculations/production-data';
 import {
+  buttonWithLabel,
   byTestId,
   input,
   productionCheckbox,
@@ -16,6 +17,20 @@ import {
 beforeEach(() => localStorage.clear());
 
 describe('production structure and impacts', () => {
+  test('dims production trees unavailable at the selected highest tier', () => {
+    renderApp();
+    fireEvent.click(buttonWithLabel('Eco Workers'));
+
+    const healthFoodTree = productionRow('ecoHealthFood').closest('.production-tree')!;
+    expect(healthFoodTree).toHaveClass('production-tree--inactive');
+    expect(input('ecoHealthFood-productivity')).toBeDisabled();
+
+    fireEvent.click(buttonWithLabel('Eco Employees'));
+
+    expect(healthFoodTree).not.toHaveClass('production-tree--inactive');
+    expect(input('ecoHealthFood-productivity')).not.toBeDisabled();
+  });
+
   test('renders all archived production fields as output-only live requirements', () => {
     renderApp();
 
