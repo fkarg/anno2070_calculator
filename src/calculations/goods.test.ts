@@ -5,21 +5,35 @@ import { PRODUCTION_NODES } from './production-data';
 import { BUILDINGS, type BuildingId } from './building-data';
 
 describe('GOODS derivation', () => {
-  test('every production building produces exactly one good; other categories none', () => {
+  test('production and material buildings produce a good; power and eco none', () => {
     const producerIds = new Set(
       [...GOODS.values()].flatMap((good) => good.producers.map((producer) => producer.buildingId)),
     );
     for (const buildingId of Object.keys(BUILDINGS) as BuildingId[]) {
-      if (BUILDINGS[buildingId].category === 'production') {
-        expect(producedGood(buildingId), buildingId).not.toBeNull();
-        expect(producerIds.has(buildingId), buildingId).toBe(true);
-      } else {
-        // Power/eco/material buildings are impact-only: invisible to the
-        // goods graph, counted only in operating impacts (and fuel).
+      if (BUILDINGS[buildingId].category === 'power' || BUILDINGS[buildingId].category === 'eco') {
+        // Power/eco buildings are impact-only: invisible to the goods graph,
+        // counted only in operating impacts (and fuel consumption).
         expect(producedGood(buildingId), buildingId).toBeNull();
         expect(producerIds.has(buildingId), buildingId).toBe(false);
+      } else {
+        expect(producedGood(buildingId), buildingId).not.toBeNull();
+        expect(producerIds.has(buildingId), buildingId).toBe(true);
       }
     }
+  });
+
+  test('material chains join the graph as building-ratio edges', () => {
+    // Granules: Eco extraction and Tycoon crusher are interchangeable.
+    expect(GOODS.get('basaltExtraction')!.producers).toContainEqual({ buildingId: 'basaltCrusher', rate: 1 });
+    // An underwater recycling station replaces two smelters.
+    expect(GOODS.get('smelter')!.producers).toContainEqual({ buildingId: 'underwaterRecyclingStation', rate: 2 });
+    // Carbon: 1 factory : 1 oil refinery : ½ coal mine (wiki chain PCCarbonGen).
+    expect(CONSUMPTION.get('carbonFactory')).toEqual(expect.arrayContaining([
+      { goodId: 'oilRefinery', rate: 1 },
+      { goodId: 'coalMine', rate: 0.5 },
+    ]));
+    expect(CONSUMPTION.get('steelworks')).toContainEqual({ goodId: 'ironSmeltery', rate: 2 });
+    expect(CONSUMPTION.get('sawmill')).toContainEqual({ goodId: 'treeNursery', rate: 0.25 });
   });
 
   test('alternative producers share the good at derived rates', () => {

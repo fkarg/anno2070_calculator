@@ -1,9 +1,13 @@
 import { useState } from 'react';
 
 import { BUILDINGS } from '../calculations/building-data';
+import { tierHeadroom } from '../calculations/coverage';
 import { GOODS, producedGood, type GoodId } from '../calculations/goods';
+import { tierCapacities, type Faction } from '../calculations/population';
 import { formatRequirement } from '../calculations/production';
 import { PRODUCTION_NODES } from '../calculations/production-data';
+import { sumIslandPopulations } from '../island';
+import { FACTIONS, FACTION_CONFIGS } from '../model';
 import {
   calculateSupportedPopulation,
   effectiveCapacities,
@@ -28,6 +32,39 @@ type Card = {
 
 function canonicalProducerLabel(goodId: GoodId): string {
   return BUILDINGS[goodId].label;
+}
+
+type HeadroomRow = Readonly<{
+  faction: Faction;
+  tierLabel: string;
+  additional: number;
+  houses: number;
+  limitingGood: GoodId;
+}>;
+
+// How many more inhabitants of each faction's top occupied tier the current
+// surpluses can feed, and the house equivalent (a fully ascended house of
+// that tier). Lower tiers keep eating too: the per-inhabitant demands of a
+// tier include every good its satisfaction table lists.
+function headroomRows(islands: readonly IslandState[]): HeadroomRow[] {
+  const populations = sumIslandPopulations(islands);
+  return FACTIONS.flatMap((faction) => {
+    const population = populations[faction];
+    if (population === null) return [];
+    const top = population.reduce((maxIndex, value, index) => (value > 0 ? index : maxIndex), -1);
+    if (top === -1) return [];
+    const headroom = tierHeadroom(islands, faction, top);
+    if (headroom === null) return [];
+    const livingSpace = islands[0]?.factions[faction].livingSpace ?? false;
+    const perHouse = tierCapacities(faction, livingSpace)[top];
+    return [{
+      faction,
+      tierLabel: FACTION_CONFIGS[faction].tierLabels[top],
+      additional: Math.floor(headroom.additional + 1e-9),
+      houses: Math.floor(headroom.additional / perHouse + 1e-9),
+      limitingGood: headroom.limitingGood,
+    }];
+  });
 }
 
 // Bottlenecks toward the current population's demand. Chains never built sit
@@ -98,6 +135,7 @@ export function CoverageSection({ islands, planRequirements, planIsManual }: Cov
   const { cards, unbuilt } = effectiveFrame === 'demand'
     ? demandView(islands)
     : { cards: planCards(islands, planRequirements), unbuilt: [] as readonly GoodConstraint[] };
+  const headroom = effectiveFrame === 'demand' ? headroomRows(islands) : [];
 
   return (
     <section className="calculator-section coverage-section">
@@ -126,6 +164,30 @@ export function CoverageSection({ islands, planRequirements, planIsManual }: Cov
         )}
       </div>
 
+      {headroom.length > 0 && (
+        <ul className="coverage-section__headroom" data-testid="coverage-headroom">
+          {headroom.map((row) => (
+            <li key={row.faction} className={`coverage-headroom coverage-headroom--${row.faction}`}>
+              <strong>{FACTION_CONFIGS[row.faction].label}</strong>
+              {row.additional > 0
+                ? (
+                  <span>
+                    room for +{row.additional} {row.tierLabel} (≈ {row.houses} houses), then{' '}
+                    <img src={`/assets/${BUILDINGS[row.limitingGood].image}`} alt="" width="16" height="16" />{' '}
+                    {canonicalProducerLabel(row.limitingGood)} runs out
+                  </span>
+                )
+                : (
+                  <span>
+                    no headroom —{' '}
+                    <img src={`/assets/${BUILDINGS[row.limitingGood].image}`} alt="" width="16" height="16" />{' '}
+                    {canonicalProducerLabel(row.limitingGood)} is exhausted
+                  </span>
+                )}
+            </li>
+          ))}
+        </ul>
+      )}
       {cards.length === 0 && unbuilt.length === 0
         && <p className="coverage-section__empty">Nothing is limiting {effectiveFrame === 'demand' ? 'the current population' : 'the plan'} right now.</p>}
       {cards.length > 0 && (

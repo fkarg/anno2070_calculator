@@ -194,8 +194,9 @@ describe('islands section', () => {
     await setIslandHouses(0, 'eco', '10');
     addBuilding(0, 'fishery');
     fireEvent.click(buttonWithLabel('One more Fishery on Island 1'));
+    // Warehouse base (-10 credits, +6 power) plus two fisheries.
     expect(byTestId('island-0-operating-load'))
-      .toHaveTextContent('maintenance credits per minute:-10power:-2ecobalance:0');
+      .toHaveTextContent('maintenance credits per minute:-20power:4ecobalance:0');
   });
 
   test('power plants join the ledger and flip the island power balance', () => {
@@ -204,7 +205,7 @@ describe('islands section', () => {
     addBuilding(0, 'fishery');
     addBuilding(0, 'windPark');
     expect(byTestId('island-0-operating-load'))
-      .toHaveTextContent('maintenance credits per minute:-30power:14ecobalance:0');
+      .toHaveTextContent('maintenance credits per minute:-40power:20ecobalance:0');
     // Impact-only rows show no plan requirement or productivity input.
     expect(document.getElementById('island-0-productivity-windPark')).toBeNull();
     expect(document.getElementById('island-0-productivity-fishery')).not.toBeNull();
@@ -228,6 +229,6 @@ describe('islands section', () => {
     fireEvent.click(flagCheckbox(0, 'underwater'));
     addBuilding(0, 'electronicsRecycler');
     expect(byTestId('island-0-operating-load'))
-      .toHaveTextContent('maintenance credits per minute:-160power:-35ecobalance:—');
+      .toHaveTextContent('maintenance credits per minute:-170power:-29ecobalance:—');
   });
 });

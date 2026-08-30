@@ -12,10 +12,13 @@ import {
 const editable = (value: number) => ({ raw: String(value), value });
 
 describe('islandOperatingImpact', () => {
-  test('power plants raise the island power balance', () => {
+  test('settled islands include the warehouse base; power plants add on top', () => {
     const island = createIsland('A');
     island.owned = { fishery: editable(2), windPark: editable(1) };
+    // Warehouse -10/+6 + 2 fisheries -10/-2 + wind park -25/+15.
     expect(islandOperatingImpact(island))
+      .toEqual({ maintenanceCredits: -45, power: 19, ecoBalance: 0 });
+    expect(islandOperatingImpact({ ...island, settled: false }))
       .toEqual({ maintenanceCredits: -35, power: 13, ecoBalance: 0 });
   });
 
@@ -25,7 +28,7 @@ describe('islandOperatingImpact', () => {
     // neutralize, never push positive. Its power/maintenance count in full.
     island.owned = { chipFactory: editable(3), wasteCompactor: editable(1) };
     expect(islandOperatingImpact(island))
-      .toEqual({ maintenanceCredits: -70, power: -11, ecoBalance: 0 });
+      .toEqual({ maintenanceCredits: -80, power: -5, ecoBalance: 0 });
   });
 
   test('eco-faction eco buildings can push the balance positive', () => {
@@ -34,12 +37,30 @@ describe('islandOperatingImpact', () => {
     expect(islandOperatingImpact(island)!.ecoBalance).toBe(26);
   });
 
+  test('population-scaled buildings follow their productivity percent', () => {
+    const island = createIsland('A');
+    island.owned = { thermalPowerStation: editable(1), wasteCompactor: editable(1), chipFactory: editable(3) };
+    island.productivity = { thermalPowerStation: editable(50), wasteCompactor: editable(60) };
+    const impact = islandOperatingImpact(island)!;
+    // Thermal at 50%: +35 power; maintenance stays -65. Warehouse +6,
+    // compactor -5, chips -6 -> power total 30.
+    expect(impact.power).toBeCloseTo(30, 9);
+    // Warehouse -10, thermal -65, compactor -40, 3 chips -30: unscaled.
+    expect(impact.maintenanceCredits).toBe(-145);
+    // Compactor at 60% outputs 30 eco, still capped at the chips' -12 -> 0...
+    expect(impact.ecoBalance).toBe(0);
+
+    // At 20% the compactor's 10 eco no longer covers the chips' -12.
+    island.productivity = { thermalPowerStation: editable(50), wasteCompactor: editable(20) };
+    expect(islandOperatingImpact(island)!.ecoBalance).toBeCloseTo(-2, 9);
+  });
+
   test('underwater islands have no ecobalance', () => {
     const island = createIsland('A');
     island.underwater = true;
     island.owned = { electronicsRecycler: editable(1), marineCurrentPowerPlant: editable(1) };
     expect(islandOperatingImpact(island))
-      .toEqual({ maintenanceCredits: -200, power: -10, ecoBalance: 0 });
+      .toEqual({ maintenanceCredits: -210, power: -4, ecoBalance: 0 });
   });
 });
 
@@ -127,14 +148,15 @@ describe('calculateOperatingImpacts', () => {
 });
 
 describe('calculateOwnedImpact', () => {
-  test('sums flat per-building impacts across settled islands', () => {
+  test('sums per-building impacts and warehouse bases across settled islands', () => {
     const a = createIsland('A');
     a.owned = { fishery: { raw: '2', value: 2 } }; // -5 credits, -1 power each
     const b = createIsland('B');
     b.owned = { chipFactory: { raw: '1', value: 1 } }; // -10, -2, -4
     const unsettled = { ...createIsland('C'), settled: false, owned: { fishery: { raw: '9', value: 9 } } };
+    // Two settled warehouses contribute -20 credits and +12 power.
     expect(calculateOwnedImpact([a, b, unsettled])).toEqual({
-      maintenanceCredits: -20, power: -4, ecoBalance: -4,
+      maintenanceCredits: -40, power: 8, ecoBalance: -4,
     });
   });
 
@@ -142,7 +164,7 @@ describe('calculateOwnedImpact', () => {
     const island = createIsland('A');
     island.owned = { fishery: { raw: '2', value: 2 } };
     island.productivity = { fishery: { raw: '250', value: 250 } };
-    expect(calculateOwnedImpact([island])!.maintenanceCredits).toBe(-10);
+    expect(calculateOwnedImpact([island])!.maintenanceCredits).toBe(-20);
   });
 
   test('an invalid owned count makes the total unavailable', () => {

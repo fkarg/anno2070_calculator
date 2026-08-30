@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { fireEvent } from '@testing-library/react';
 
 import {
+  buttonWithLabel,
   byTestId,
   input,
   renderApp,
@@ -37,6 +38,27 @@ describe('coverage and bottlenecks', () => {
     expect(document.querySelector('[data-testid="bottleneck-demand-teaPlantation"]')).toBeNull();
     expect(byTestId('coverage-unbuilt')).toHaveTextContent('Chains not built yet:');
     expect(byTestId('coverage-unbuilt')).toHaveTextContent('Tea plantation');
+  });
+
+  test('headroom shows the supportable population increase and its limit', async () => {
+    renderApp();
+    addIsland();
+    fireEvent.click(buttonWithLabel('Configure island Island 1'));
+    fireEvent.click(buttonWithLabel('Eco Workers', byTestId('island-0')));
+    fireEvent.click(buttonWithLabel('Island 1 Tea: not present'));
+    fireEvent.click(buttonWithLabel('Finish configuring island Island 1'));
+    await setIslandHouses(0, 'eco', '100');
+    addBuilding(0, 'fishery');
+    await replaceInput(input('island-0-owned-fishery'), '5');
+    addBuilding(0, 'teaPlantation');
+    await replaceInput(input('island-0-owned-teaPlantation'), '5');
+
+    // 800 workers eat 3.2 fish and 2.14 tea buildings; the 1.8 spare fish
+    // buildings feed 450 more workers = 56 fully ascended houses.
+    const headroom = byTestId('coverage-headroom');
+    expect(headroom).toHaveTextContent('Eco');
+    expect(headroom).toHaveTextContent('room for +450 Workers (≈ 56 houses)');
+    expect(headroom).toHaveTextContent('Fishery runs out');
   });
 
   test('with no owned production at all, only the unbuilt list appears', async () => {

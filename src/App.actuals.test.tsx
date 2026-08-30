@@ -80,8 +80,9 @@ describe('actuals in the production view', () => {
     addBuilding(0, 'fishery');
     await replaceInput(input('island-0-owned-fishery'), '2');
 
+    // Includes the settled island's warehouse base (-10 credits, +6 power).
     expect(byTestId('owned-operating-impact'))
-      .toHaveTextContent('maintenance credits per minute:-10power:-2ecobalance:0');
+      .toHaveTextContent('maintenance credits per minute:-20power:4ecobalance:0');
   });
 
   test('transfer needs list surplus and deficit islands per good', async () => {

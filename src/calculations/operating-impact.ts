@@ -1,4 +1,4 @@
-import type { IslandState } from '../island';
+import { islandProductivity, type IslandState } from '../island';
 import { BUILDINGS, TYCOON_ECO_BUILDINGS, type BuildingId, type OperatingImpact } from './building-data';
 import { PRODUCTION_NODES } from './production-data';
 import { buildProductionTrees } from './production-tree';
@@ -41,15 +41,30 @@ export type ProductionOperatingImpacts = Readonly<{
   byRoot: Readonly<Record<string, readonly VariantOperatingImpact[]>>;
 }>;
 
+// Every settled island starts with its warehouse: -10 credits, +6 power.
+export const WAREHOUSE_IMPACT: OperatingImpact = { maintenanceCredits: -10, power: 6, ecoBalance: 0 };
+
 // One island's summed impact, with the wiki eco rules applied: Tycoon eco
 // buildings only fill the balance up to 0, and underwater islands have no
 // ecobalance at all (their eco reads 0; the display shows a dash).
 export function islandOperatingImpact(island: IslandState): OperatingImpact | null {
-  let total = ZERO_OPERATING_IMPACT;
+  let total = island.settled ? WAREHOUSE_IMPACT : ZERO_OPERATING_IMPACT;
   let tycoonEcoOutput = 0;
   for (const [buildingId, entry] of Object.entries(island.owned)) {
     if (entry.value === null) return null;
-    let scaled = scaleOperatingImpact(BUILDINGS[buildingId as BuildingId].operatingImpact, entry.value);
+    const definition = BUILDINGS[buildingId as BuildingId];
+    let scaled = scaleOperatingImpact(definition.operatingImpact, entry.value);
+    if (definition.scalableOutput) {
+      // Population-scaled buildings: the % scales their positive output only;
+      // maintenance and their own consumption stay full.
+      const productivity = islandProductivity(island, buildingId as BuildingId);
+      if (productivity === null) return null;
+      scaled = {
+        maintenanceCredits: scaled.maintenanceCredits,
+        power: scaled.power > 0 ? scaled.power * (productivity / 100) : scaled.power,
+        ecoBalance: scaled.ecoBalance > 0 ? scaled.ecoBalance * (productivity / 100) : scaled.ecoBalance,
+      };
+    }
     if (TYCOON_ECO_BUILDINGS.has(buildingId as BuildingId)) {
       tycoonEcoOutput += scaled.ecoBalance;
       scaled = { ...scaled, ecoBalance: 0 };

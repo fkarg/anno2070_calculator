@@ -918,6 +918,21 @@ main > footer a { color: #8fc9f6; }
 .coverage-section__frames button[aria-pressed="true"] { border-color: #f4a75e; background: #3c4a51; }
 .coverage-section__empty { margin: 0; padding: .8rem; color: var(--muted); }
 
+.coverage-section__headroom {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem 1.5rem;
+  margin: 0 0 .6rem;
+  padding: 0;
+  font-size: .9rem;
+}
+.coverage-headroom { display: inline-flex; align-items: center; gap: .45rem; }
+.coverage-headroom img { vertical-align: -3px; }
+.coverage-headroom--eco strong { color: #9fd9a6; }
+.coverage-headroom--tycoon strong { color: #cdd3da; }
+.coverage-headroom--tech strong { color: #8fb8d9; }
+
 .coverage-section__unbuilt {
   display: flex;
   flex-wrap: wrap;

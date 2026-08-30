@@ -430,7 +430,7 @@ function BuildingLedger({
                     {canonical ? cell(balance?.balance) : '·'}
                   </td>
                   <td className="island-card__prod-cell">
-                    {goodId === null ? '·' : (
+                    {goodId === null && building.scalableOutput === undefined ? '·' : (
                       <NumericInput
                         id={`${idPrefix}productivity-${buildingId}`}
                         label={`${island.name} ${building.label} productivity`}

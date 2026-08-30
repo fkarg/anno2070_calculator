@@ -13,6 +13,9 @@ export type BuildingDefinition = Readonly<{
   category: BuildingCategory;
   // Modeling caveat shown as a tooltip wherever the building appears.
   note?: string;
+  // Output scales with inhabitants in range: the per-island productivity %
+  // scales this building's positive power/eco output (maintenance stays full).
+  scalableOutput?: true;
   operatingImpact: OperatingImpact;
 }>;
 
@@ -107,11 +110,11 @@ export const BUILDINGS = {
   // Power plants (docs/research/2026-08-31-power-eco-materials.md). Underwater
   // placements carry ecoBalance 0: no ecobalance exists underwater.
   windPark: powerPlant('Wind park', 'Wind-park-icon.png', -25, 15, 0, 'Wind_Park'),
-  thermalPowerStation: powerPlant('Thermal power station', 'Thermal-power-icon.png', -65, 70, 0, 'Thermal_Power_Station', 'Modeled at full output; in game it scales with inhabitants in range (100% at 650).'),
+  thermalPowerStation: { ...powerPlant('Thermal power station', 'Thermal-power-icon.png', -65, 70, 0, 'Thermal_Power_Station', 'Output scales with inhabitants in range (100% at 650) — set its % to match.'), scalableOutput: true },
   offshoreWindPark: powerPlant('Offshore wind park', 'Offshore-wind-icon.png', -50, 30, 0, 'Offshore_Wind_Park'),
   solarTowerGenerator: powerPlant('Solar tower generator', 'Solar-power-icon.png', -120, 120, 0, 'Solar_Tower_Generator'),
   coalPowerStation: powerPlant('Coal power station', 'Coal-power-stn-icon.png', -10, 60, -15, 'Coal_Power_Station', 'Burns the coal of 1 rotary excavator (= ½ coal mine) per station.'),
-  nuclearPowerPlant: powerPlant('Nuclear power plant', 'Nuclear-power-icon.png', -100, 500, -10, 'Nuclear_Power_Plant', 'Fuel: 1 uranium mine + 1 fuel element factory per plant (not in the goods graph).'),
+  nuclearPowerPlant: powerPlant('Nuclear power plant', 'Nuclear-power-icon.png', -100, 500, -10, 'Nuclear_Power_Plant', 'Burns the fuel rods of 1 fuel element factory (fed by 1 uranium mine) per plant.'),
   marineCurrentPowerPlant: powerPlant('Marine current power plant', 'Marine-power-icon.png', -40, 25, 0, 'Marine_Current_Power_Plant'),
   hydroelectricPowerPlant: powerPlant('Hydroelectric power plant', 'Hydro-dam-icon.png', -140, 500, -10, 'Hydroelectric_Power_Plant'),
   geothermicPowerPlant: powerPlant('Geothermic power plant', 'Geothermal_Power_Plant_Icon.png', -200, 750, 0, 'Geothermic_Power_Plant'),
@@ -123,7 +126,7 @@ export const BUILDINGS = {
   ozoneMakerStation: ecoBuilding('Ozone maker station', 'Ozone-maker-icon.png', -120, -60, 100, 'Ozone_Maker_Station'),
   riverSewageTreatmentPlant: ecoBuilding('River sewage treatment plant', 'River-treatment-icon.png', -200, -250, 300, 'River_Sewage_Treatment_Plant'),
   guardian: ecoBuilding('Guardian 1.0', 'Guardian-icon.png', -500, -250, 500, 'Guardian_1.0'),
-  wasteCompactor: ecoBuilding('Waste compactor', 'Waste-comp-icon.png', -40, -5, 50, 'Waste_Compactor', 'Modeled at full output; in game it scales with inhabitants in range.'),
+  wasteCompactor: { ...ecoBuilding('Waste compactor', 'Waste-comp-icon.png', -40, -5, 50, 'Waste_Compactor', 'Output scales with inhabitants in range — set its % to match.'), scalableOutput: true },
   deacidificationStation: ecoBuilding('Deacidification station', 'Deacid-stn-icon.png', -80, -60, 90, 'Deacidification_Station'),
   co2Reservoir: ecoBuilding('CO2 reservoir', 'Co2-res-icon.png', -160, -110, 200, 'CO2_Reservoir'),
 

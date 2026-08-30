@@ -38,6 +38,17 @@ describe('calculateIslandBalance', () => {
     expect(balances.coalMine?.balance).toBeCloseTo(-0.5, 9);
   });
 
+  test('nuclear plants demand fuel rods; material chains demand their inputs', () => {
+    const balances = calculateIslandBalance(withOwned({
+      nuclearPowerPlant: 1, fuelElementFactory: 1, uraniumMine: 1, carbonFactory: 2,
+    }));
+    expect(balances.fuelElementFactory).toEqual({ capacity: 1, demand: 1, balance: 0 });
+    expect(balances.uraniumMine).toEqual({ capacity: 1, demand: 1, balance: 0 });
+    // 2 carbon factories: 2 oil refinery units and 1 coal mine unit demanded.
+    expect(balances.oilRefinery?.demand).toBeCloseTo(2, 9);
+    expect(balances.coalMine?.demand).toBeCloseTo(1, 9);
+  });
+
   test('final demand follows island population and satisfaction', () => {
     const island = createIsland('A');
     island.factions.eco.houses = { raw: '100', value: 100 };
