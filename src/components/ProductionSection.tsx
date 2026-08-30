@@ -126,10 +126,9 @@ function ProductionFaction({
         {buildProductionTrees(faction).map((tree) => {
           const rootNode = nodeById.get(tree.rootId)!;
           const root = BUILDINGS[rootNode.buildingId];
-          const inactive = rootNode.calculation.kind === 'primary'
-            && rootNode.calculation.satisfaction
-              .slice(0, state.factions[faction].maxTier)
-              .every((satisfaction) => satisfaction === 0);
+          // A chain dims when nothing demands it — works for island-driven
+          // populations and manual tier caps alike (requirement is exactly 0).
+          const inactive = results[tree.rootId] === 0;
           return (
           <section className={`production-tree${inactive ? ' production-tree--inactive' : ''}`} key={tree.rootId}>
             {inactive && <p className="visually-hidden">Unavailable at the selected highest population tier.</p>}

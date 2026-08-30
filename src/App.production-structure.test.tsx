@@ -17,10 +17,12 @@ import {
 beforeEach(() => localStorage.clear());
 
 describe('production structure and impacts', () => {
-  test('dims production trees unavailable at the selected highest tier', async () => {
+  test('dims production trees nothing currently demands', async () => {
     renderApp();
-    // Manual planning mode: tier selection only exists off Auto.
+    // Chains dim on zero requirement: population capped at Workers demands
+    // no health food, whether the cap comes from the plan or from islands.
     fireEvent.click(buttonWithLabel('Plan Eco manually'));
+    await replaceInput(input('eco-houses'), '100');
     fireEvent.click(buttonWithLabel('Eco Workers'));
 
     const healthFoodTree = productionRow('ecoHealthFood').closest('.production-tree')!;
@@ -115,5 +117,19 @@ describe('production structure and impacts', () => {
       .not.toHaveTextContent('—');
     expect(byTestId('variant-ecoCommunicators-ecoElectronicsRecyclerCommunicators'))
       .toHaveTextContent('—');
+  });
+
+  test('island tier limits dim undemanded chains in Auto mode', async () => {
+    renderApp();
+    fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.islands-section button')]
+      .find((button) => button.textContent === 'Add island')!);
+    await replaceInput(input('island-0-eco-houses'), '100');
+    fireEvent.click(buttonWithLabel('Configure island Island 1'));
+    fireEvent.click(buttonWithLabel('Eco Workers', byTestId('island-0')));
+
+    expect(productionRow('ecoHealthFood').closest('.production-tree')!)
+      .toHaveClass('production-tree--inactive');
+    expect(productionRow('ecoFish').closest('.production-tree')!)
+      .not.toHaveClass('production-tree--inactive');
   });
 });
