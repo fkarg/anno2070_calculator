@@ -18,9 +18,19 @@ const add = (current: number | null | undefined, amount: number | null): number 
   return (current ?? 0) + amount;
 };
 
-export function calculateIslandBalance(island: IslandState): IslandBalances {
+// The three separated components of a good's situation: what owned producers
+// can make, what owned consumer buildings eat, and what the population eats.
+export type GoodLoad = {
+  capacity: number | null;
+  intermediateDemand: number | null;
+  finalDemand: number | null;
+};
+export type GoodLoads = Partial<Record<GoodId, GoodLoad>>;
+
+export function islandGoodLoads(island: IslandState): GoodLoads {
   const capacity: Partial<Record<GoodId, number | null>> = {};
-  const demand: Partial<Record<GoodId, number | null>> = {};
+  const intermediate: Partial<Record<GoodId, number | null>> = {};
+  const final: Partial<Record<GoodId, number | null>> = {};
 
   for (const [ownedId, entry] of Object.entries(island.owned)) {
     const buildingId = ownedId as BuildingId;
@@ -37,7 +47,7 @@ export function calculateIslandBalance(island: IslandState): IslandBalances {
       const consumed = entry.value === null || productivity === null
         ? null
         : entry.value * (productivity / 100) * input.rate;
-      demand[input.goodId] = add(demand[input.goodId], consumed);
+      intermediate[input.goodId] = add(intermediate[input.goodId], consumed);
     }
   }
 
@@ -51,19 +61,46 @@ export function calculateIslandBalance(island: IslandState): IslandBalances {
         const recyclingMultiplier = coverage && finalDemand.recyclable && tier > 0 ? 0.85 : 1;
         return total + population[tier] * recyclingMultiplier / satisfied;
       }, 0);
-      if (amount === null || amount > 0) demand[good.id] = add(demand[good.id], amount);
+      if (amount === null || amount > 0) final[good.id] = add(final[good.id], amount);
     }
   }
 
-  const balances: IslandBalances = {};
-  for (const goodId of new Set([...Object.keys(capacity), ...Object.keys(demand)] as GoodId[])) {
+  const loads: GoodLoads = {};
+  for (const goodId of new Set([...Object.keys(capacity), ...Object.keys(intermediate), ...Object.keys(final)] as GoodId[])) {
     // undefined means untouched (0); null means invalid input and must survive.
-    const goodCapacity = capacity[goodId] === undefined ? 0 : capacity[goodId]!;
-    const goodDemand = demand[goodId] === undefined ? 0 : demand[goodId]!;
+    loads[goodId] = {
+      capacity: capacity[goodId] === undefined ? 0 : capacity[goodId]!,
+      intermediateDemand: intermediate[goodId] === undefined ? 0 : intermediate[goodId]!,
+      finalDemand: final[goodId] === undefined ? 0 : final[goodId]!,
+    };
+  }
+  return loads;
+}
+
+export function aggregateGoodLoads(islands: readonly IslandState[]): GoodLoads {
+  const empire: GoodLoads = {};
+  for (const island of islands) {
+    if (!island.settled) continue;
+    for (const [goodId, load] of Object.entries(islandGoodLoads(island)) as [GoodId, GoodLoad][]) {
+      const current = empire[goodId] ?? { capacity: 0, intermediateDemand: 0, finalDemand: 0 };
+      empire[goodId] = {
+        capacity: add(current.capacity, load.capacity),
+        intermediateDemand: add(current.intermediateDemand, load.intermediateDemand),
+        finalDemand: add(current.finalDemand, load.finalDemand),
+      };
+    }
+  }
+  return empire;
+}
+
+export function calculateIslandBalance(island: IslandState): IslandBalances {
+  const balances: IslandBalances = {};
+  for (const [goodId, load] of Object.entries(islandGoodLoads(island)) as [GoodId, GoodLoad][]) {
+    const demand = add(load.intermediateDemand, load.finalDemand);
     balances[goodId] = {
-      capacity: goodCapacity,
-      demand: goodDemand,
-      balance: goodCapacity === null || goodDemand === null ? null : goodCapacity - goodDemand,
+      capacity: load.capacity,
+      demand,
+      balance: load.capacity === null || demand === null ? null : load.capacity - demand,
     };
   }
   return balances;
