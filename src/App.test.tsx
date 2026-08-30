@@ -142,6 +142,7 @@ describe('production calculator', () => {
       .toBeInTheDocument();
     expect(screen.getByTestId('variant-ecoCommunicators-ecoElectronicsRecyclerCommunicators'))
       .toBeInTheDocument();
+    expect(screen.getAllByText('Full chain (rounded buildings)').length).toBeGreaterThan(0);
 
     await user.click(screen.getByLabelText('Round up to whole buildings'));
     expect(within(fish).getByTestId('direct-operating-impact'))

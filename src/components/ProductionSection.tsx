@@ -141,7 +141,7 @@ function ProductionFaction({
             <footer className="production-tree__variants">
               {operatingImpacts.byRoot[tree.rootId].map((variant) => (
                 <div key={variant.id} data-testid={`variant-${tree.rootId}-${variant.id}`}>
-                  <span>{variant.label}</span>
+                  <span>{variant.label} (rounded buildings)</span>
                   {variant.impact === null
                     ? <span><span className="visually-hidden">{variant.label} operating impact unavailable:</span>—</span>
                     : <OperatingImpactValues impact={variant.impact} />}

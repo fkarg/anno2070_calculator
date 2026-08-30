@@ -271,6 +271,7 @@ main > footer a { color: #8fc9f6; }
 
 .production-section__factions {
   grid-template-columns: repeat(3, minmax(720px, 1fr));
+  column-gap: .75rem;
   overflow-x: auto;
 }
 

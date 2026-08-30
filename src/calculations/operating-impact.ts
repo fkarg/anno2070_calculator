@@ -2,6 +2,8 @@ import { BUILDINGS, type OperatingImpact } from './building-data';
 import { PRODUCTION_NODES } from './production-data';
 import { buildProductionTrees } from './production-tree';
 
+const nodeById = new Map(PRODUCTION_NODES.map((node) => [node.id, node]));
+
 export const ZERO_OPERATING_IMPACT: OperatingImpact = {
   maintenanceCredits: 0,
   power: 0,
@@ -54,12 +56,16 @@ export function calculateOperatingImpacts(
     byRoot[tree.rootId] = tree.variants.map((variant) => {
       let impact: OperatingImpact | null = ZERO_OPERATING_IMPACT;
       for (const nodeId of variant.nodeIds) {
-        const nodeImpact = direct[nodeId];
-        if (nodeImpact === null) {
+        const count = requirements[nodeId];
+        if (count === null) {
           impact = null;
           break;
         }
-        impact = addOperatingImpacts(impact, nodeImpact);
+        const node = nodeById.get(nodeId)!;
+        impact = addOperatingImpacts(
+          impact,
+          scaleOperatingImpact(BUILDINGS[node.buildingId].operatingImpact, Math.ceil(count)),
+        );
       }
       return { id: variant.id, label: variant.label, impact };
     });

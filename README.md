@@ -13,7 +13,7 @@ User-entered residences, manual population overrides, productivity percentages, 
 - Automatic requirements for the complete Deep Ocean production data set.
 - Per-building productivity controls, faction-wide productivity adjustments, recycling, and optional whole-building rounding.
 - Connector-tree production chains with every source alternative shown at full demand.
-- Per-building, directly required, and complete-variant maintenance-credit, power, and ecobalance impacts from reviewed wiki building data.
+- Per-building and directly required operating impacts, plus buildable complete-chain totals that round every production stage up to a whole building.
 - Versioned local browser storage for user-owned inputs and a complete reset control.
 - Pure calculation modules covered by example-based and property-based tests.
 

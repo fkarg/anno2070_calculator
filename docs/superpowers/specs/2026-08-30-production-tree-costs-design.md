@@ -85,7 +85,7 @@ For a valid required building count, direct impact is component-wise multiplicat
 direct impact = required building count × per-building impact
 ```
 
-The existing `Round up to whole buildings` setting applies before impacts are calculated. In fractional mode, totals describe proportional capacity. In whole-building mode, every stage uses its rounded required count. This is a provisional but consistent interpretation and can be reconsidered when owned buildings are introduced.
+Direct row impacts follow the displayed requirement and therefore follow the existing `Round up to whole buildings` setting. Complete-chain totals always round every included stage up separately, because those totals estimate the operating impact of buildings that can actually be constructed.
 
 A complete variant total sums every mandatory node and exactly one option from each alternative group, including all descendants of the chosen option. Invalid requirements propagate as unavailable totals rather than producing `NaN`, `Infinity`, or a misleading partial sum.
 

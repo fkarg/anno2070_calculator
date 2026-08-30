@@ -13,6 +13,29 @@ describe('scaleOperatingImpact', () => {
 });
 
 describe('calculateOperatingImpacts', () => {
+  test('rounds every required stage up for buildable full-chain totals', () => {
+    const requirements: Record<string, number | null> = Object.fromEntries(
+      PRODUCTION_NODES.map(({ id }) => [id, 0]),
+    );
+    requirements.ecoCommunicators = 0.1;
+    requirements.ecoMicrochipsCommunicators = 0.1;
+    requirements.ecoCopperCommunicators = 0.1;
+    requirements.ecoSandCommunicators = 0.1;
+    requirements.ecoElectronicsRecyclerCommunicators = 0.1;
+
+    const result = calculateOperatingImpacts(requirements);
+
+    expect(result.direct.ecoCommunicators).toEqual({
+      maintenanceCredits: -2,
+      power: -0.4,
+      ecoBalance: -0.4,
+    });
+    expect(result.byRoot.ecoCommunicators.map(({ impact }) => impact)).toEqual([
+      { maintenanceCredits: -65, power: -10, ecoBalance: -12 },
+      { maintenanceCredits: -180, power: -39, ecoBalance: -4 },
+    ]);
+  });
+
   test('pins one-choice, mandatory-plus-choice, and two-choice totals', () => {
     const requirements = Object.fromEntries(PRODUCTION_NODES.map(({ id }) => [id, 1]));
     const result = calculateOperatingImpacts(requirements);
