@@ -1,0 +1,899 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html data-lt-installed="true"><head>
+<!-- TradeDoubler site verification 3066286 -->
+<title>Anno 2070 Deep Ocean Supply &amp; demand calculator</title>
+<script language="JavaScript" type="text/javascript" src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/functions_Qoor.js"></script>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<script language="JavaScript" type="text/JavaScript">
+<!--
+function MM_reloadPage(init) {  //reloads the window if Nav4 resized
+  if (init==true) with (navigator) {if ((appName=="Netscape")&&(parseInt(appVersion)==4)) {
+    document.MM_pgW=innerWidth; document.MM_pgH=innerHeight; onresize=MM_reloadPage; }}
+  else if (innerWidth!=document.MM_pgW || innerHeight!=document.MM_pgH) location.reload();
+}
+MM_reloadPage(true);
+//-->
+</script>
+
+<style type="text/css">
+#container {
+	position:absolute;
+	width:98%;
+	z-index:1;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: small;
+}
+.main_title {
+	font-size: x-large;
+	font-weight: bold;
+	text-decoration:underline;
+}
+.title {
+	font-style: italic;
+	font-weight: bold;
+	text-decoration:underline;
+}
+.Estilo6 {
+	font-size: large;
+	color: #FFFFFF;
+}
+
+.Estilo8 {
+	font-size: medium;
+	font-weight: bold;
+}
+
+.Estilo10 {
+	font-size: large;
+	font-weight: bold;
+}
+
+label {
+    display: block; /* Full width */
+    min-height: 100%; /* for the latest browsers which support min-height */
+    height: auto !important; /* for newer IE versions */
+    height: 100%; /* the only height-related attribute that IE6 does not ignore  */
+}
+
+</style>
+<style>
+            .flipX video::-webkit-media-text-track-display {
+                transform: matrix(-1, 0, 0, 1, 0, 0) !important;
+            }
+            .flipXY video::-webkit-media-text-track-display {
+                transform: matrix(-1, 0, 0, -1, 0, 0) !important;
+            }
+            .flipXYX video::-webkit-media-text-track-display {
+                transform: matrix(1, 0, 0, -1, 0, 0) !important;
+            }</style><style>
+            @keyframes blinkWarning {
+                0% { color: red; }
+                100% { color: white; }
+            }
+            @-webkit-keyframes blinkWarning {
+                0% { color: red; }
+                100% { color: white; }
+            }
+            .blinkWarning {
+                -webkit-animation: blinkWarning 1s linear infinite;
+                -moz-animation: blinkWarning 1s linear infinite;
+                animation: blinkWarning 1s linear infinite;
+            }</style><style wxt-shadow-root-document-styles="beiefz8xshg">@property --tw-translate-x{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-y{syntax:"*";inherits:false;initial-value:0}@property --tw-translate-z{syntax:"*";inherits:false;initial-value:0}@property --tw-rotate-x{syntax:"*";inherits:false}@property --tw-rotate-y{syntax:"*";inherits:false}@property --tw-rotate-z{syntax:"*";inherits:false}@property --tw-skew-x{syntax:"*";inherits:false}@property --tw-skew-y{syntax:"*";inherits:false}@property --tw-border-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-leading{syntax:"*";inherits:false}@property --tw-font-weight{syntax:"*";inherits:false}@property --tw-ordinal{syntax:"*";inherits:false}@property --tw-slashed-zero{syntax:"*";inherits:false}@property --tw-numeric-figure{syntax:"*";inherits:false}@property --tw-numeric-spacing{syntax:"*";inherits:false}@property --tw-numeric-fraction{syntax:"*";inherits:false}@property --tw-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-shadow-color{syntax:"*";inherits:false}@property --tw-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-inset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-shadow-color{syntax:"*";inherits:false}@property --tw-inset-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-ring-color{syntax:"*";inherits:false}@property --tw-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-ring-color{syntax:"*";inherits:false}@property --tw-inset-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-ring-inset{syntax:"*";inherits:false}@property --tw-ring-offset-width{syntax:"<length>";inherits:false;initial-value:0}@property --tw-ring-offset-color{syntax:"*";inherits:false;initial-value:#fff}@property --tw-ring-offset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-blur{syntax:"*";inherits:false}@property --tw-brightness{syntax:"*";inherits:false}@property --tw-contrast{syntax:"*";inherits:false}@property --tw-grayscale{syntax:"*";inherits:false}@property --tw-hue-rotate{syntax:"*";inherits:false}@property --tw-invert{syntax:"*";inherits:false}@property --tw-opacity{syntax:"*";inherits:false}@property --tw-saturate{syntax:"*";inherits:false}@property --tw-sepia{syntax:"*";inherits:false}@property --tw-drop-shadow{syntax:"*";inherits:false}@property --tw-drop-shadow-color{syntax:"*";inherits:false}@property --tw-drop-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-drop-shadow-size{syntax:"*";inherits:false}@property --tw-backdrop-blur{syntax:"*";inherits:false}@property --tw-backdrop-brightness{syntax:"*";inherits:false}@property --tw-backdrop-contrast{syntax:"*";inherits:false}@property --tw-backdrop-grayscale{syntax:"*";inherits:false}@property --tw-backdrop-hue-rotate{syntax:"*";inherits:false}@property --tw-backdrop-invert{syntax:"*";inherits:false}@property --tw-backdrop-opacity{syntax:"*";inherits:false}@property --tw-backdrop-saturate{syntax:"*";inherits:false}@property --tw-backdrop-sepia{syntax:"*";inherits:false}@property --tw-duration{syntax:"*";inherits:false}@property --tw-ease{syntax:"*";inherits:false}@property --tw-content{syntax:"*";inherits:false;initial-value:""}</style></head>
+<body class="vsc-initialized">
+<div id="container">  
+  <span class="main_title">Anno 2070 Deep Ocean - Supply &amp; demand calculator v1.01</span><br>
+ <br>
+  <table border="0"><tbody><tr><th>This site has been online and maintained for many years. If you would like to appreciate this work feel free to</th><td><form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+<input type="hidden" name="cmd" value="_s-xclick">
+<input type="hidden" name="hosted_button_id" value="PPMUMPTHUAAE2">
+<input type="image" src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/btn_donate_SM_Qoor.gif" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button">
+<img alt="" border="0" src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/pixel_Qoor.gif" width="1" height="1" x19hluo2o="">
+</form>
+</td></tr>
+<tr><td>Now you can download the calculator to use it offline!<strong> <a href="https://drive.google.com/file/d/1Yg_1UZKO2nFBkMcBEUCsigKfCaMXf8XI/view?usp=sharing" download=""> DOWNLOAD HERE</a></strong></td></tr></tbody></table>
+<br>
+ <span class="title">HOW TO</span>
+  <p><em>- Introduce the number of houses in your city, select the max 
+inhabitants level (worker, employee, etc.) and choose if you have 
+activated the option to increase the inhabitants per house and press 
+"Calculate workers!". </em></p>
+  <p><em>- Also, you can directly introuce the number of inhabitants you
+ have in your city, ignoring the classes and the +12% living space 
+option.</em></p>
+  <p><em>- There is an option in one senate votation to increase the 
+improvement from Engineers to Executives in +5%, so if you build your 
+city in that interval maybe you'd like to use the "Senate bonus" option,
+ instead of putting manually the number of inhabitants you have. Anyway,
+ if the calculations are different from your real city, introduce 
+manually the data because with all this options the discrepancies can't 
+calculate. </em></p>
+  <p><em>- Introduce in the next list the productivity % you have in 
+each case and press "Calculate!" to see how many of each factories 
+you'll need. You can also use the "Change all by" option, this will 
+increase or decrease all % in each class, useful if you have 
+productivity boosters in your ark.</em></p>
+  <p><em>- In the productivity section, you will find some materials 
+"duplicated" and with a grey backgroud. This represents the differents 
+sources the same material, for example: in Eco's you hace two type of 
+chips, one represents the classic Chip Factory and the other the Tech 
+Electronics Recycler; or if you look at Tycoon Gold Refinery you will 
+see the Gold Metal Converter too, in case you have a metal converter 
+instead a normal mine. </em></p>
+  <fieldset>
+  <legend align="left"><span class="Estilo8">Residences &amp; Inhabitans</span></legend>
+  <form name="workers" action="">
+  <table border="0">
+    <tbody><tr>
+      <td width="50" valign="middle"><div align="center"> </div></td>
+      <td width="75">&nbsp; </td>
+      <td width="70"><div align="center">Houses</div></td>
+      <td>&nbsp;</td>
+      <td colspan="10">Workers max level</td>
+      <td width="60">&nbsp;</td>
+      <td colspan="2">&nbsp;</td>
+      </tr>
+    <tr>
+      <td rowspan="2" valign="middle"><label for="eco_h"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/house_eco_Qoor.png" alt="Eco houses" width="46" height="46" title="Eco"></label></td>
+      <td rowspan="2"><label for="eco_h">ECO</label></td>
+      <td width="70" rowspan="2">
+        <div align="center">
+          <input name="eco_h" type="text" id="eco_h" value="80" size="10" maxlength="10" tabindex="1">
+      </div>        <div align="center"></div></td>
+      <td width="17">&nbsp;</td>
+      <td width="60"><div align="center"><label for="ecoradio1"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/eco_01_Qoor.png" alt="Eco workers" width="60" height="60" title="Workers"></label></div></td>
+      <td width="20"><div align="center">
+        <input name="eco" id="ecoradio1" type="radio" value="1">
+      </div></td>
+      <td width="60"><div align="center"><label for="ecoradio2"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/eco_02_Qoor.png" alt="Eco employees" width="60" height="60" title="Employees"></label></div></td>
+      <td width="20"><div align="center">
+        <input name="eco" id="ecoradio2" type="radio" value="2">
+      </div></td>
+      <td width="60"><div align="center"><label for="ecoradio3"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/eco_03_Qoor.png" alt="Eco engineers" width="60" height="60" title="Engineers"></label></div></td>
+      <td width="20"><div align="center">
+        <input name="eco" id="ecoradio3" type="radio" value="3" checked="checked">
+      </div></td>
+      <td width="60"><div align="center"><label for="ecoradio4"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/eco_04_Qoor.png" alt="Eco executives" width="60" height="60" title="Executives"></label></div></td>
+      <td width="20"><input name="eco" id="ecoradio4" type="radio" value="4"></td>
+      <td width="60"><div align="center"><label for="space_eco"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/channel_eco_5_Qoor.png" alt="Education network" width="50" height="50"></label></div></td>
+      <td width="60"><input name="space_eco" type="checkbox" id="space_eco" value="eco12" checked="checked"></td>
+      <td width="60" valign="middle"><label for="senate_eco"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/senate_eco_Qoor.png" alt="Increase Executives +5%" width="60" height="60"></label></td>
+      <td width="177" valign="middle"><p>
+        <input name="senate_eco" type="checkbox" id="senate_eco" value="eco5">
+      </p>
+        </td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td><div align="center">
+        <input name="eco1" type="text" id="eco1" value="128" size="5" maxlength="5" tabindex="2">
+      </div></td>
+      <td><div align="center"></div></td>
+      <td><div align="center">
+        <input name="eco2" type="text" id="eco2" value="416" size="5" maxlength="5" tabindex="3">
+      </div></td>
+      <td><div align="center"></div></td>
+      <td><div align="center">
+        <input name="eco3" type="text" id="eco3" value="1064" size="5" maxlength="5" tabindex="4">
+      </div></td>
+      <td><div align="center"></div></td>
+      <td><div align="center">
+        <input name="eco4" type="text" id="eco4" value="0" size="5" maxlength="5" tabindex="5">
+      </div></td>
+      <td>&nbsp;</td>
+      <td colspan="2"> +12% living space </td>
+      <td colspan="2" valign="middle">Increase Executives +5% (Senate bonus) </td>
+      </tr>
+    <tr>
+      <td rowspan="2" valign="middle"><label for="tycoon_h"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/house_tycoon_Qoor.png" alt="Tycoon houses" width="46" height="46"></label></td>
+      <td rowspan="2"><label for="tycoon_h">TYCOON</label></td>
+      <td width="70" rowspan="2">
+        <div align="center">
+          <input name="tycoon_h" type="text" id="tycoon_h" value="80" size="10" maxlength="10" tabindex="6">
+        </div>        
+        <div align="center"></div></td>
+      <td>&nbsp;</td>
+      <td><div align="center"><label for="tycoonradio1"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/tycoon_01_Qoor.png" alt="Tycoon workers" width="60" height="60" title="Workers"></label></div></td>
+      <td><div align="center">
+        <input name="tycoon" id="tycoonradio1" type="radio" value="1">
+      </div></td>
+      <td><div align="center"><label for="tycoonradio2"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/tycoon_02_Qoor.png" alt="Tycoon employees" width="60" height="60" title="Employees"></label></div></td>
+      <td><div align="center">
+        <input name="tycoon" id="tycoonradio2" type="radio" value="2">
+      </div></td>
+      <td><div align="center"><label for="tycoonradio3"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/tycoon_03_Qoor.png" alt="Tycoon engineers" width="60" height="60" title="Engineers"></label></div></td>
+      <td><div align="center">
+        <input name="tycoon" id="tycoonradio3" type="radio" value="3" checked="checked">
+      </div></td>
+      <td><div align="center"><label for="tycoonradio4"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/tycoon_04_Qoor.png" alt="Tycoon executives" width="60" height="60" title="Executives"></label></div></td>
+      <td><input name="tycoon" id="tycoonradio4" type="radio" value="4"></td>
+      <td><div align="center"><label for="space_tycoon"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/channel_tycoon_5_Qoor.png" alt="Ministry of truth" width="50" height="50"></label></div></td>
+      <td><input name="space_tycoon" type="checkbox" id="space_tycoon" value="tyccon12" checked="checked"></td>
+      <td width="60" valign="middle"><label for="senate_tycoon"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/senate_tycoon_Qoor.png" alt="Increase Executives +5%" width="60" height="60"></label></td>
+      <td width="177" valign="middle"><input name="senate_tycoon" type="checkbox" id="senate_tycoon" value="tycoon5"></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td><div align="center">
+        <input name="tycoon1" type="text" id="tycoon1" value="128" size="5" maxlength="5" tabindex="7">
+      </div></td>
+      <td><div align="center"></div></td>
+      <td><div align="center">
+        <input name="tycoon2" type="text" id="tycoon2" value="416" size="5" maxlength="5" tabindex="8">
+      </div></td>
+      <td><div align="center"></div></td>
+      <td><div align="center">
+        <input name="tycoon3" type="text" id="tycoon3" value="1064" size="5" maxlength="5" tabindex="9">
+      </div></td>
+      <td><div align="center"></div></td>
+      <td><div align="center">
+        <input name="tycoon4" type="text" id="tycoon4" value="0" size="5" maxlength="5" tabindex="10">
+      </div></td>
+      <td>&nbsp;</td>
+      <td colspan="2"> +12% living space </td>
+      <td colspan="2" valign="middle">Increase Executives +5% (Senate bonus) </td>
+      </tr>
+    <tr>
+      <td rowspan="2" valign="middle"><label for="tech_h"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/house_tech_Qoor.png" alt="tech houses" width="46" height="46"></label></td>
+      <td rowspan="2"><label for="tech_h">TECH</label></td>
+      <td width="70" rowspan="2">
+        <div align="center">
+          <input name="tech_h" type="text" id="tech_h" value="80" size="10" maxlength="10" tabindex="11">
+        </div>        
+        <div align="center"></div></td>
+      <td>&nbsp;</td>
+      <td><div align="center"><label for="techradio1"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/tech_01_Qoor.png" alt="Tech Lab Assistants" width="60" height="60" title="Lab Assistants"></label></div></td>
+      <td><div align="center">
+        <input name="tech" id="techradio1" type="radio" value="1" tabindex="17" checked="checked">
+      </div></td>
+      <td><div align="center"><label for="techradio2"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/tech_02_Qoor.png" alt="Tech researchers" width="60" height="60" title="Researchers"></label></div></td>
+      <td><div align="center">
+        <input name="tech" id="techradio2" type="radio" value="2">
+      </div></td>
+      <td><div align="center"><label for="techradio3"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/tech_03_Qoor.png" alt="Tech geniuses" width="60" height="60" title="Geniuses"></label></div></td>
+      <td><div align="center">
+        <input name="tech" id="techradio3" type="radio" value="3">
+      </div></td>
+      <td><div align="center"></div></td>
+      <td>&nbsp;</td>
+      <td><div align="center"><label for="space_tech"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/channel_tech_5_Qoor.png" alt="Information Center" width="50" height="50"></label></div></td>
+      <td><input name="space_tech" type="checkbox" id="space_tech" value="tech12"></td>
+      <td width="60" valign="middle"><label for="senate_tech"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/senate_tech_Qoor.png" alt="Increase Geniuses +5%" width="60" height="60"></label></td>
+      <td width="177" valign="middle"><input name="senate_tech" type="checkbox" id="senate_tech" value="tech5"></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td><div align="center">
+        <input name="tech1" type="text" id="tech1" value="400" size="5" maxlength="5" tabindex="12">
+      </div></td>
+      <td><div align="center"></div></td>
+      <td><div align="center">
+        <input name="tech2" type="text" id="tech2" value="0" size="5" maxlength="5" tabindex="13">
+      </div></td>
+      <td><div align="center"></div></td>
+      <td><div align="center">
+        <input name="tech3" type="text" id="tech3" value="0" size="5" maxlength="5" tabindex="14">
+      </div></td>
+      <td><div align="center"></div></td>
+      <td><div align="center"></div></td>
+      <td>&nbsp;</td>
+      <td colspan="2"> +12% living space </td>
+      <td colspan="2" valign="middle">Increase Geniuses +5% (Senate bonus) </td>
+      </tr>
+  </tbody></table>
+  <p>
+    <input type="button" value="Calculate workers!" onclick="calculate_workers()" tabindex="15">
+    <input type="reset" value="Reset data" tabindex="16">
+	</p>
+  </form>
+  </fieldset>
+  <fieldset>
+  <legend align="left"><span class="Estilo8">Productivity</span></legend>
+  <form name="production" action="">
+  <table width="666" border="0">
+    <tbody><tr>
+      <td width="46"><label for="exact_calc"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/calculations_Qoor.png" alt="Exact calculations" width="46" height="46"></label></td>
+      <td width="46"><div align="center">
+        <input type="checkbox" name="exact_calc" id="exact_calc" value="true">
+      </div></td>
+      <td width="560">IMPORTANT: the next option will allow you a less 
+accurate production calculations, there won't be decimals and you will 
+have an integer. If you want more exact result, let it unchecked, if you
+ preffer a more simple result, just check and remember that you will 
+have some overproduction.</td>
+    </tr>
+  </tbody></table>
+  <br>
+
+  <table border="0">
+    <tbody><tr>
+      <td colspan="4" bgcolor="#006600"><div align="center" class="Estilo6">ECO</div></td>
+      <td colspan="4" bgcolor="#333333"><div align="center" class="Estilo6">TYCOON</div></td>
+      <td colspan="5" bgcolor="#0066CC"><div align="center" class="Estilo6">TECH</div></td>
+    </tr>
+    <tr>
+      <td><label for="recycling"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/channel_eco_3_Qoor.png" alt="Out of the old comes the new" width="50" height="50"></label></td>
+      <td><div align="center">
+        <input name="recycling" type="checkbox" id="recycling" value="false"> 
+      </div></td>
+      <td colspan="2"> <p><em>Out of the old comes the new</em>: Reduce in<br>
+        15% 
+        the consumption of Communicators,<br>
+        Service Bots
+        and 3D Projectors</p>        </td>
+      <td>&nbsp;</td>
+      <td></td>
+      <td colspan="2">
+        <p>&nbsp;</p></td>
+      <td>&nbsp;</td>
+      <td></td>
+      <td colspan="3">
+        <p>&nbsp;</p></td>
+    </tr>
+    <tr>
+      <td colspan="2">Change all by: </td>
+      <td colspan="2">        <input name="minus1_eco" type="button" tabindex="18" onclick="edit_percentage('eco',-1)" value="-1%">
+        <input name="plus1_eco" type="button" tabindex="18" onclick="edit_percentage('eco',1)" value="+1%"></td>
+      <td colspan="2">Change all by:</td>
+      <td colspan="2">
+        <input name="minus1_eco" type="button" tabindex="19" onclick="edit_percentage('tycoon',-1)" value="-1%">
+        <input name="plus1_eco" type="button" tabindex="19" onclick="edit_percentage('tycoon',1)" value="+1%"></td>
+      <td colspan="2">Change all by:</td>
+      <td colspan="3">
+        <input name="minus1_eco" type="button" tabindex="20" onclick="edit_percentage('tech',-1)" value="-1%">
+        <input name="plus1_eco" type="button" tabindex="20" onclick="edit_percentage('tech',1)" value="+1%"></td>
+    </tr>
+    <tr>
+      <td width="46"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Fish_Qoor.png" alt="Fishery" width="46" height="46"></td>
+      <td colspan="3"><div id="eco_fishR" class="prod" style="float:left ">x 3.52 @&nbsp;</div>
+         <input name="eco_fish" type="text" id="eco_fish" value="100" size="3" maxlength="3" tabindex="18">    
+         %</td>
+      <td width="46"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Fish_Qoor.png" alt="Fishery" width="46" height="46"></td>
+      <td colspan="3"><div id="tycoon_fishR" class="prod" style="float:left ">x 3.52 @&nbsp;</div>
+        <input name="tycoon_fish" type="text" id="tycoon_fish" value="100" size="3" maxlength="3" tabindex="19">
+%</td>
+      <td width="46"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Fish_Qoor.png" alt="Fishery" width="46" height="46"></td>
+      <td colspan="4"><div id="tech_fishR" class="prod" style="float:left ">x 0.5 @&nbsp;</div>
+        <input name="tech_fish" type="text" id="tech_fish" value="100" size="3" maxlength="3" tabindex="20">
+%</td>
+    </tr>
+    <tr>
+      <td width="46"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Tea_Qoor.png" alt="Tea plantation" width="46" height="46"></td>
+      <td colspan="3"><div id="eco_teaR" class="prod" style="float:left ">x 3.58 @&nbsp;</div>      <input name="eco_tea" type="text" id="eco_tea" value="100" size="3" maxlength="3" tabindex="18">
+%</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Liquor_Qoor.png" alt="Distillery" width="46" height="46"></td>
+      <td colspan="3"><div id="tycoon_liquorR" class="prod" style="float:left ">x 5.23 @&nbsp;</div>
+        <input name="tycoon_liquor" type="text" id="tycoon_liquor" value="100" size="3" maxlength="3" tabindex="19">
+%</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Functional%20food_Qoor.png" alt="Functional food factory" width="46" height="46"></td>
+      <td colspan="4"><div id="tech_functional_foodR" class="prod" style="float:left ">x 1.34 @&nbsp;</div>
+        <input name="tech_functional_food" type="text" id="tech_functional_food" value="100" size="3" maxlength="3" tabindex="20">
+%</td>
+    </tr>
+    <tr>
+      <td width="46"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Health%20food_Qoor.png" alt="Health food factory" width="46" height="46"></td>
+      <td colspan="3"><div id="eco_health_foodR" class="prod" style="float:left ">x 1.87 @&nbsp;</div>      <input name="eco_health_food" type="text" id="eco_health_food" value="100" size="3" maxlength="3" tabindex="18">
+%</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Convenience%20Food_Qoor.png" alt="Food supply factory" width="46" height="46"></td>
+      <td colspan="3"><div id="tycoon_convenience_foodR" class="prod" style="float:left ">x 2.22 @&nbsp;</div>
+        <input name="tycoon_convenience_food" type="text" id="tycoon_convenience_food" value="100" size="3" maxlength="3" tabindex="19">
+%</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td width="46"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Algae_Qoor.png" alt="Aquafarm" width="46" height="46"></td>
+      <td colspan="3"><div id="tech_algaeR" class="prod" style="float:left ">x 1.34 @&nbsp;</div>
+        <input name="tech_algae" type="text" id="tech_algae" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td width="46"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td width="46"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Vegetables_Qoor.png" alt="Farmhouse" width="46" height="46"></td>
+      <td colspan="2"><div id="eco_vegetablesR" class="prod" style="float:left ">x 3.74 @&nbsp;</div>      <input name="eco_vegetables" type="text" id="eco_vegetables" value="100" size="3" maxlength="3" tabindex="18">
+%</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td width="46"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Meat_Qoor.png" alt="Meat factory" width="46" height="46"></td>
+      <td colspan="2"><div id="tycoon_meatR" class="prod" style="float:left ">x 4.43 @&nbsp;</div>
+        <input name="tycoon_meat" type="text" id="tycoon_meat" value="100" size="3" maxlength="3" tabindex="19">
+%</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Functional%20drinks_Qoor.png" alt="Energy drink factory" width="46" height="46"></td>
+      <td colspan="4"><div id="tech_functional_drinksR" class="prod" style="float:left ">x 1.33 @&nbsp;</div>
+        <input name="tech_functional_drinks" type="text" id="tech_functional_drinks" value="100" size="3" maxlength="3" tabindex="20"></td>
+      </tr>
+    <tr>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td width="46"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Rice_Qoor.png" alt="Rice farm" width="46" height="46"></td>
+      <td colspan="2"><div id="eco_riceR" class="prod" style="float:left ">x 1.87 @&nbsp;</div>      <input name="eco_rice" type="text" id="eco_rice" value="100" size="3" maxlength="3" tabindex="18">
+%</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Super%20flavor_Qoor.png" alt="Flavor lab" width="46" height="46"></td>
+      <td colspan="2"><div id="tycoon_flavorR" class="prod" style="float:left ">x 2.22 @&nbsp;</div>
+        <input name="tycoon_flavor" type="text" id="tycoon_flavor" value="100" size="3" maxlength="3" tabindex="19">
+%</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Sugar_Qoor.png" alt="Sugar beet plantation" width="46" height="46"></td>
+      <td colspan="3"><div id="tech_sugarR" class="prod" style="float:left ">x 1.33 @&nbsp;</div>
+        <input name="tech_sugar" type="text" id="tech_sugar" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Communicator_Qoor.png" alt="Electronics factory" width="46" height="46"></td>
+      <td colspan="3"><div id="eco_comunicatorR" class="prod" style="float:left ">x 2.06 @&nbsp;</div>      <input name="eco_comunicator" type="text" id="eco_comunicator" value="100" size="3" maxlength="3" tabindex="18">
+%</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Plastics_Qoor.png" alt="Plastic factory" width="46" height="46"></td>
+      <td colspan="3"><div id="tycoon_plasticR" class="prod" style="float:left ">x 1.69 @&nbsp;</div>
+        <input name="tycoon_plastic" type="text" id="tycoon_plastic" value="100" size="3" maxlength="3" tabindex="19">
+%</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Caffeine_Qoor.png" alt="Coffe plantation" width="46" height="46"></td>
+      <td colspan="3"><div id="tech_caffeineR" class="prod" style="float:left ">x 1.33 @&nbsp;</div>
+        <input name="tech_caffeine" type="text" id="tech_caffeine" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Microchips_Qoor.png" alt="Chip factory" width="46" height="46"></td>
+      <td colspan="2" bgcolor="#CCCCCC"><div id="eco_chipR" class="prod" style="float:left ">x 2.06 @&nbsp;</div>      <input name="eco_chip" type="text" id="eco_chip" value="100" size="3" maxlength="3" tabindex="18">
+%</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Oil_Qoor.png" alt="Oil refinery" width="46" height="46"></td>
+      <td colspan="2"><div id="tycoon_oilR" class="prod" style="float:left ">x 1.69 @&nbsp;</div>
+        <input name="tycoon_oil" type="text" id="tycoon_oil" value="100" size="3" maxlength="3" tabindex="19">
+%</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Immunity%20Drugs_Qoor.png" alt="Inmunity drug manufactures" width="46" height="46"></td>
+      <td colspan="4"><div id="tech_inmunity_drugsR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+        <input name="tech_inmunity_drugs" type="text" id="tech_inmunity_drugs" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td width="46"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Copper_Qoor.png" alt="Copper mine" width="46" height="46"></td>
+      <td width="200"><div id="eco_copperR" class="prod" style="float:left ">x 1.03 @&nbsp;</div>      <input name="eco_copper" type="text" id="eco_copper" value="100" size="3" maxlength="3" tabindex="18">
+%</td>
+      <td>&nbsp;</td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td width="46" bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Crude%20oil_Qoor.png" alt="Oil rig" width="46" height="46"></td>
+      <td width="200" bgcolor="#CCCCCC"><div id="tycoon_crudeR" class="prod" style="float:left ">x 1.69 @&nbsp;</div>
+        <input name="tycoon_crude" type="text" id="tycoon_crude" value="100" size="3" maxlength="3" tabindex="19">
+%</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Enzymes_Qoor.png" alt="Gen farming laboratory" width="46" height="46"></td>
+      <td colspan="3"><div id="tech_enzymesR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+        <input name="tech_enzymes" type="text" id="tech_enzymes" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Sand_Qoor.png" alt="Sand extractor" width="46" height="46"></td>
+      <td width="200"><div id="eco_sandR" class="prod" style="float:left ">x 0.69 @&nbsp;</div>      <input name="eco_sand" type="text" id="eco_sand" value="100" size="3" maxlength="3" tabindex="18">
+%</td>
+      <td>&nbsp;</td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/oil_driller_Qoor.png" alt="Oil driller" width="46" height="46"></td>
+      <td bgcolor="#CCCCCC"><div id="tycoon_oil_drillerR" class="prod" style="float:left ">x 5.07 @&nbsp;</div>
+          <input name="tycoon_oil_driller" type="text" id="tycoon_oil_driller" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Coral_Qoor.png" alt="Coral breeder" width="46" height="46"></td>
+      <td colspan="3"><div id="tech_coralR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+        <input name="tech_coral" type="text" id="tech_coral" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/electronics_recycler_Qoor.png" alt="Electronics recycler" width="46" height="46"></td>
+      <td colspan="2" bgcolor="#CCCCCC"><div id="eco_elec_recR" class="prod" style="float:left ">x 1.38 @&nbsp;</div>
+          <input name="eco_elec_rec" type="text" id="eco_elec_rec" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Luxury%20meal_Qoor.png" alt="Gourmet factory" width="46" height="46"></td>
+      <td colspan="3"><div id="tycoon_luxury_mealR" class="prod" style="float:left ">x 1.28 @&nbsp;</div>
+          <input name="tycoon_luxury_meal" type="text" id="tycoon_luxury_meal" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Neuroimplants_Qoor.png" alt="Cybernetic factory" width="46" height="46"></td>
+      <td colspan="4"><div id="tech_neuroimplantsR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+        <input name="tech_neuroimplants" type="text" id="tech_neuroimplants" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Bio%20drinks_Qoor.png" alt="Health drink factory" width="46" height="46"></td>
+      <td colspan="3"><div id="eco_biodrinksR" class="prod" style="float:left ">x 1.28 @&nbsp;</div>
+          <input name="eco_biodrinks" type="text" id="eco_biodrinks" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Lobster_Qoor.png" alt="Lobster farm" width="46" height="46"></td>
+      <td colspan="2"><div id="tycoon_lobsterR" class="prod" style="float:left ">x 0.64 @&nbsp;</div>
+          <input name="tycoon_lobster" type="text" id="tycoon_lobster" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Sponges_Qoor.png" alt="Sponge farm" width="46" height="45"></td>
+      <td colspan="3"><div id="tech_spongesR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+        <input name="tech_sponges" type="text" id="tech_sponges" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Fruits_Qoor.png" alt="Fruit plantation" width="46" height="46"></td>
+      <td colspan="2"><div id="eco_fruitsR" class="prod" style="float:left ">x 2.56 @&nbsp;</div>
+          <input name="eco_fruits" type="text" id="eco_fruits" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Truffle_Qoor.png" alt="Truffle farm" width="46" height="46"></td>
+      <td colspan="2"><div id="tycoon_truffleR" class="prod" style="float:left ">x 2.56 @&nbsp;</div>
+          <input name="tycoon_truffle" type="text" id="tycoon_truffle" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Microchips_Qoor.png" alt="Chip factory" width="46" height="46"></td>
+      <td colspan="3" bgcolor="#CCCCCC"><div id="tech_chipR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+        <input name="tech_chip" type="text" id="tech_chip" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Milk_Qoor.png" alt="Dairy farm" width="46" height="46"></td>
+      <td colspan="2"><div id="eco_milkR" class="prod" style="float:left ">x 1.28 @&nbsp;</div>
+          <input name="eco_milk" type="text" id="eco_milk" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Champagne_Qoor.png" alt="Champagne cellar" width="46" height="46"></td>
+      <td colspan="3"><div id="tycoon_campagneR" class="prod" style="float:left ">x 1.03 @&nbsp;</div>
+          <input name="tycoon_campagne" type="text" id="tycoon_campagne" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td width="46"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Copper_Qoor.png" alt="Copper mine" width="46" height="46"></td>
+      <td colspan="2"><div id="tech_copperR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+        <input name="tech_copper" type="text" id="tech_copper" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Pasta%20dishes_Qoor.png" alt="Pasta production" width="46" height="46"></td>
+      <td colspan="3"><div id="eco_pastaR" class="prod" style="float:left ">x 1.6 @&nbsp;</div>
+          <input name="eco_pasta" type="text" id="eco_pasta" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Grapes_Qoor.png" alt="Vineyard" width="46" height="46"></td>
+      <td colspan="2"><div id="tycoon_grapesR" class="prod" style="float:left ">x 2.05 @&nbsp;</div>
+          <input name="tycoon_grapes" type="text" id="tycoon_grapes" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Sand_Qoor.png" alt="Sand extractor" width="46" height="46"></td>
+      <td colspan="2"><div id="tech_sandR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+        <input name="tech_sand" type="text" id="tech_sand" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Vegetables_Qoor.png" alt="Farmhouse" width="46" height="46"></td>
+      <td colspan="2"><div id="eco_vegetables2R" class="prod" style="float:left ">x 1.6 @&nbsp;</div>
+          <input name="eco_vegetables2" type="text" id="eco_vegetables2" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Sugar_Qoor.png" alt="Sugar beet plantation" width="46" height="46"></td>
+      <td colspan="2"><div id="tycoon_sugarR" class="prod" style="float:left ">x 1.03 @&nbsp;</div>
+          <input name="tycoon_sugar" type="text" id="tycoon_sugar" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/electronics_recycler_Qoor.png" alt="Electronics recycler" width="46" height="46"></td>
+      <td colspan="3" bgcolor="#CCCCCC"><div id="tech_elec_recR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+        <input name="tech_elec_rec" type="text" id="tech_elec_rec" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Pasta_Qoor.png" alt="Flour mill" width="46" height="46"></td>
+      <td colspan="2"><div id="eco_flourR" class="prod" style="float:left ">x 0.8 @&nbsp;</div>
+          <input name="eco_flour" type="text" id="eco_flour" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Jewelery_Qoor.png" alt="Jewelry manufactory" width="46" height="46"></td>
+      <td colspan="3"><div id="tycoon_jeweleryR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tycoon_jewelery" type="text" id="tycoon_jewelery" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Laboratory%20instruments_Qoor.png" alt="Laboratory outfitter" width="46" height="46"></td>
+      <td colspan="4"><div id="tech_lab_instrumentsR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tech_lab_instruments" type="text" id="tech_lab_instruments" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Durum%20wheat_Qoor.png" alt="Grain farm" width="46" height="46"></td>
+      <td width="200"><div id="eco_grainR" class="prod" style="float:left ">x 2.4 @&nbsp;</div>
+          <input name="eco_grain" type="text" id="eco_grain" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Diamonds_Qoor.png" alt="Diamond harvesting station" width="46" height="46"></td>
+      <td colspan="2"><div id="tycoon_diamondsR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tycoon_diamonds" type="text" id="tycoon_diamonds" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Platinum_Qoor.png" alt="Metal converter (Platinum)" width="46" height="46"></td>
+      <td colspan="3"><div id="tech_platinum1R" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tech_platinum1" type="text" id="tech_platinum1" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/3D%20Projector_Qoor.png" alt="Beamer plant" width="46" height="46"></td>
+      <td colspan="3"><div id="eco_3dproyectorR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="eco_3dproyector" type="text" id="eco_3dproyector" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Gold_Qoor.png" alt="Gold smeltery" width="46" height="46"></td>
+      <td colspan="2"><div id="tycoon_goldR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tycoon_gold" type="text" id="tycoon_gold" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Iron_Qoor.png" alt="Iron smelter" width="46" height="46"></td>
+      <td colspan="3"><div id="tech_ironR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tech_iron" type="text" id="tech_iron" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Diamonds_Qoor.png" alt="Diamond harvesting station" width="46" height="46"></td>
+      <td colspan="2"><div id="eco_diamondsR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="eco_diamonds" type="text" id="eco_diamonds" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td>&nbsp;</td>
+      <td bgcolor="#999999"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td bgcolor="#999999"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Gold%20nuggets_Qoor.png" alt="Gold refinery" width="46" height="46"></td>
+      <td width="200" bgcolor="#999999"><div id="tycoon_gold_nuggetsR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tycoon_gold_nuggets" type="text" id="tycoon_gold_nuggets" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td>&nbsp;</td>
+      <td bgcolor="#999999"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td bgcolor="#999999"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Iron%20Ore_Qoor.png" alt="Iron ore mine" width="46" height="46"></td>
+      <td colspan="2" bgcolor="#999999"><div id="tech_iron_oreR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tech_iron_ore" type="text" id="tech_iron_ore" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Rare-earth%20elements_Qoor.png" alt="Rare-earth borer" width="46" height="46"></td>
+      <td colspan="2"><div id="eco_rare_earthR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="eco_rare_earth" type="text" id="eco_rare_earth" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td>&nbsp;</td>
+      <td bgcolor="#999999"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td bgcolor="#999999"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/gold_converter_Qoor.png" alt="Gold converter" width="46" height="46"></td>
+      <td bgcolor="#999999"><div id="tycoon_gold_converterR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tycoon_gold_converter" type="text" id="tycoon_gold_converter" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td>&nbsp;</td>
+      <td bgcolor="#999999"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td bgcolor="#999999"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/iron_converter_Qoor.png" alt="Iron converter" width="46" height="46"></td>
+      <td colspan="2" bgcolor="#999999"><div id="tech_iron_converterR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+        <input name="tech_iron_converter" type="text" id="tech_iron_converter" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Manganese%20nodules_Qoor.png" alt="Manganese excavation robot" width="46" height="46"></td>
+      <td width="200"><div id="eco_manganeseR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="eco_manganese" type="text" id="eco_manganese" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td>&nbsp;</td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Coal_Qoor.png" alt="Coal mine" width="46" height="46"></td>
+      <td width="200" bgcolor="#CCCCCC"><div id="tycoon_coalR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tycoon_coal" type="text" id="tycoon_coal" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td>&nbsp;</td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Coal_Qoor.png" alt="Coal mine" width="46" height="46"></td>
+      <td colspan="2" bgcolor="#CCCCCC"><div id="tech_coalR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tech_coal" type="text" id="tech_coal" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Service%20bots_Qoor.png" alt="Robot factory" width="46" height="46"></td>
+      <td colspan="3"><div id="eco_robotR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="eco_robot" type="text" id="eco_robot" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td>&nbsp;</td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/rotary_excavator_Qoor.png" alt="Rotary excavator" width="46" height="46"></td>
+      <td bgcolor="#CCCCCC"><div id="tycoon_rotary_excavatorR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tycoon_rotary_excavator" type="text" id="tycoon_rotary_excavator" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td>&nbsp;</td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/rotary_excavator_Qoor.png" alt="Rotary excavator" width="46" height="46"></td>
+      <td colspan="2" bgcolor="#CCCCCC"><div id="tech_rotary_excavatorR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tech_rotary_excavator" type="text" id="tech_rotary_excavator" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Microchips_Qoor.png" alt="Chip factory" width="46" height="46"></td>
+      <td colspan="2" bgcolor="#CCCCCC"><div id="eco_chip2R" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="eco_chip2" type="text" id="eco_chip2" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Pharmaceuticals_Qoor.png" alt="Healthcare office" width="46" height="46"></td>
+      <td colspan="3"><div id="tycoon_pharmaceuticalsR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tycoon_pharmaceuticals" type="text" id="tycoon_pharmaceuticals" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Bionic%20Suits_Qoor.png" alt="Bionics factory" width="46" height="46"></td>
+      <td colspan="4"><div id="tech_bionic_suitsR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tech_bionic_suits" type="text" id="tech_bionic_suits" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td width="46"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Copper_Qoor.png" alt="Copper mine" width="46" height="46"></td>
+      <td width="200"><div id="eco_copper2R" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="eco_copper2" type="text" id="eco_copper2" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Rare-earth%20elements_Qoor.png" alt="Rare-earth borer" width="46" height="46"></td>
+      <td colspan="2"><div id="tycoon_rare_earthR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tycoon_rare_earth" type="text" id="tycoon_rare_earth" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Biopolymers_Qoor.png" alt="Biopolymer factory" width="46" height="46"></td>
+      <td colspan="3"><div id="tech_biopolymersR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tech_biopolymers" type="text" id="tech_biopolymers" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Sand_Qoor.png" alt="Sand extractor" width="46" height="46"></td>
+      <td width="200"><div id="eco_sand2R" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="eco_sand2" type="text" id="eco_sand2" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Manganese%20nodules_Qoor.png" alt="Manganese excavation robot" width="46" height="46"></td>
+      <td width="200"><div id="tycoon_manganeseR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tycoon_manganese" type="text" id="tycoon_manganese" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Algae_Qoor.png" alt="Aquafarm" width="46" height="46"></td>
+      <td colspan="2"><div id="tech_algae2R" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tech_algae2" type="text" id="tech_algae2" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td bgcolor="#CCCCCC"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/electronics_recycler_Qoor.png" alt="Electronics recycler" width="46" height="46"></td>
+      <td colspan="2" bgcolor="#CCCCCC"><div id="eco_elec_rec2R" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="eco_elec_rec2" type="text" id="eco_elec_rec2" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Secret%20ingredients_Qoor.png" alt="Chemical plant" width="46" height="46"></td>
+      <td colspan="2"><div id="tycoon_secret_ingredientsR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tycoon_secret_ingredients" type="text" id="tycoon_secret_ingredients" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Corn_Qoor.png" alt="Corn farm" width="46" height="46"></td>
+      <td colspan="2"><div id="tech_cornR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tech_corn" type="text" id="tech_corn" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Biopolymers_Qoor.png" alt="Biopolymer factory" width="46" height="46"></td>
+      <td colspan="2"><div id="eco_biopolymerR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="eco_biopolymer" type="text" id="eco_biopolymer" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Omega%20acids_Qoor.png" alt="Fat factory" width="46" height="46"></td>
+      <td width="200"><div id="tycoon_omega_acidsR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tycoon_omega_acids" type="text" id="tycoon_omega_acids" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Exoskeletons_Qoor.png" alt="Hydraulic plant" width="46" height="46"></td>
+      <td colspan="3"><div id="tech_exoeskeletonsR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tech_exoeskeletons" type="text" id="tech_exoeskeletons" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Algae_Qoor.png" alt="Aquafarm" width="46" height="46"></td>
+      <td width="200"><div id="eco_algaeR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="eco_algae" type="text" id="eco_algae" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Algae_Qoor.png" alt="Aquafarm" width="46" height="46"></td>
+      <td width="200"><div id="tycoon_algaeR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tycoon_algae" type="text" id="tycoon_algae" value="100" size="3" maxlength="3" tabindex="19">
+  %</td>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Platinum_Qoor.png" alt="Metal converter (Platinum)" width="46" height="46"></td>
+      <td colspan="2"><div id="tech_platinum2R" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tech_platinum2" type="text" id="tech_platinum2" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Corn_Qoor.png" alt="Corn farm" width="46" height="46"></td>
+      <td width="200"><div id="eco_cornR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="eco_corn" type="text" id="eco_corn" value="100" size="3" maxlength="3" tabindex="18">
+  %</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td colspan="2">&nbsp;</td>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Electrolite%20Cells_Qoor.png" alt="Oxidation facility" width="46" height="46"></td>
+      <td colspan="2"><div id="tech_electrolite_cellsR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tech_electrolite_cells" type="text" id="tech_electrolite_cells" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td colspan="2">&nbsp;</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td colspan="2">&nbsp;</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td width="46"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Lithium_Qoor.png" alt="Lithlium production facility" width="46" height="46"></td>
+      <td width="154"><div id="tech_lithiumR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tech_lithium" type="text" id="tech_lithium" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td colspan="2">&nbsp;</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td colspan="2">&nbsp;</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Speed_Qoor.png" alt="==&gt;" width="46" height="46"></td>
+      <td><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Omega%20acids_Qoor.png" alt="Fat factory" width="46" height="46"></td>
+      <td width="154"><div id="tech_omega_acidsR" class="prod" style="float:left ">x 0 @&nbsp;</div>
+          <input name="tech_omega_acids" type="text" id="tech_omega_acids" value="100" size="3" maxlength="3" tabindex="20"></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td colspan="2">&nbsp;</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td colspan="2">&nbsp;</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td width="154">&nbsp;</td>
+    </tr>
+  </tbody></table>
+  <input name="button" type="button" onclick="calculate_productivity()" value="Calculate!" tabindex="21">
+  <input name="reset" type="reset" onclick="reset_productivity()" value="Reset data" tabindex="22">
+  </form>
+  </fieldset>
+    <br>
+  <fieldset>
+  <legend align="left"><span class="Estilo8">Tips</span></legend>
+  <table width="200" border="0">
+    <tbody><tr bgcolor="#FF6600">
+      <td colspan="3"><div align="center"><strong>COPPER</strong></div></td>
+    </tr>
+    <tr>
+      <td width="60"><div align="center"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/Copper_Qoor.png" alt="Copper mine" width="46" height="46"><br>
+      1 Copper mine </div></td>
+      <td><div align="center" class="Estilo10">
+        <div align="center">=</div>
+      </div></td>
+      <td width="60"><div align="center"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/copper_converter_Qoor.png" alt="Copper converter" width="46" height="46"><br>
+      1 Copper converter </div></td>
+    </tr>
+  </tbody></table>
+  <div align="right">Contact: anno2070DOcalculator@gmail.com<br>
+  </div>
+  </fieldset>
+    <p align="right">
+    <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="This work is licensed under a Creative Commons Attribution 4.0 International License" style="border-width:0" src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/88x31_Qoor.png"></a>
+    <a href="http://validator.w3.org/check?uri=referer"><img src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/valid-html401_Qoor.png" alt="Valid HTML 4.01 Transitional" width="88" height="31" border="0"></a>
+	  <a href="http://jigsaw.w3.org/css-validator/check/referer">
+        <img style="border:0;width:88px;height:31px" src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/vcss_Qoor.png" alt="¡Valid CSS!">
+    </a>
+
+  </p>
+</div>
+
+<!-- Start of StatCounter Code for Default Guide -->
+<script type="text/javascript">
+var sc_project=8403340; 
+var sc_invisible=1; 
+var sc_security="9747dce0"; 
+var scJsHost = (("https:" == document.location.protocol) ?
+"https://secure." : "http://www.");
+</script>
+<script type="text/javascript" src="Anno%202070%20Deep%20Ocean%20Supply%20&amp;%20demand%20calculator_files/counter_xhtml_Qoor.js"></script>
+<noscript><div class="statcounter"><a title="web statistics"
+href="http://statcounter.com/free-web-stats/"
+class="statcounter"><img class="statcounter"
+src="https://c.statcounter.com/8403340/0/9747dce0/1/"
+alt="web statistics" border="0" ></a></div></noscript>
+<!-- End of StatCounter Code for Default Guide -->
+
+
+
+<uw-ui></uw-ui><protonpass-root-140c data-protonpass-role="root" data-protonpass-theme="os"></protonpass-root-140c></body></html>
