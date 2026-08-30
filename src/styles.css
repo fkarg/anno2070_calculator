@@ -303,3 +303,162 @@ main > footer a { color: #8fc9f6; }
   .calculator-section__heading { align-items: flex-start; flex-direction: column; gap: .15rem; }
   .page-notes { grid-template-columns: 1fr; }
 }
+
+/* Islands (actuals) */
+
+.islands-section .calculator-section__heading button {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-raised);
+  color: inherit;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+}
+
+.islands-section__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.island-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 0.9rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.island-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.island-card__header input[type="text"] {
+  background: var(--panel-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: inherit;
+  padding: 0.35rem 0.55rem;
+  font-size: 1.05rem;
+}
+
+.island-card__header label { display: inline-flex; align-items: center; gap: 0.4rem; }
+
+.island-card__header button {
+  margin-left: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+
+.fertility-picker {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+}
+
+.fertility-picker__options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.fertility-picker__option {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  padding: 0.2rem;
+  cursor: pointer;
+  opacity: 0.45;
+}
+
+.fertility-picker__option--present {
+  opacity: 1;
+  border-color: var(--accent);
+  background: rgb(237 141 51 / 14%);
+}
+
+.fertility-picker__option--absent {
+  opacity: 0.25;
+}
+
+.fertility-picker__option--absent img { filter: grayscale(1); }
+
+.fertility-picker__badge {
+  position: absolute;
+  right: -0.1rem;
+  top: -0.25rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.island-card__factions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.island-card__coverage {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.island-card__owned ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.island-card__owned li {
+  display: grid;
+  grid-template-columns: auto minmax(10rem, 1fr) minmax(6rem, auto) minmax(6rem, auto) auto;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.island-card__owned select {
+  margin-top: 0.5rem;
+  background: var(--panel-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: inherit;
+  padding: 0.35rem 0.55rem;
+}
+
+.island-card__balances table {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 40rem;
+}
+
+.island-card__balances th,
+.island-card__balances td {
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  padding: 0.25rem 0.6rem 0.25rem 0;
+}
+
+.island-card__balances th[scope="row"] {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 500;
+}
+
+.balance--shortfall { color: #ff9d7a; }
+.balance--surplus { color: #9fd9a6; }

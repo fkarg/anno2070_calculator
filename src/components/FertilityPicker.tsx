@@ -19,7 +19,9 @@ export function FertilityPicker({ islandName, fertilities, onChange }: Fertility
       <legend>Fertilities &amp; deposits</legend>
       <div className="fertility-picker__options">
         {ISLAND_REQUIREMENTS.map((requirement) => {
-          const state: FertilityState | 'unknown' = fertilities[requirement.id] ?? 'unknown';
+          const state: FertilityState | 'unknown' = Object.hasOwn(fertilities, requirement.id)
+            ? fertilities[requirement.id]
+            : 'unknown';
           return (
             <button
               key={requirement.id}

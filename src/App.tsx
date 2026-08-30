@@ -4,6 +4,7 @@ import type { Faction } from './calculations/population';
 import { calculateAvailableProduction } from './calculations/calculate-production';
 import { calculateOperatingImpacts } from './calculations/operating-impact';
 import { PRODUCTION_NODES } from './calculations/production-data';
+import { IslandsSection } from './components/IslandsSection';
 import { PopulationSection } from './components/PopulationSection';
 import { ProductionSection } from './components/ProductionSection';
 import { createInitialAppState, sumIslandHouses, type AppState } from './island';
@@ -73,6 +74,11 @@ export function App() {
       </header>
 
       <PopulationSection state={state.plan} islandHouses={islandHouses} onFactionChange={updateFaction} />
+      <IslandsSection
+        islands={state.islands}
+        planRequirements={production}
+        onIslandsChange={(updater) => update((current) => ({ ...current, islands: updater(current.islands) }))}
+      />
       <ProductionSection
         state={state.plan}
         results={production}

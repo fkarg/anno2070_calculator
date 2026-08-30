@@ -13,8 +13,10 @@ type PopulationFactionProps = {
   config: FactionConfig;
   state: FactionState;
   islandHouses: number | null;
+  idPrefix?: string;
   onHousesChange: (value: EditableNumber) => void;
-  onHousesClear: () => void;
+  // Absent on islands: island houses are always concrete, Auto exists only on the plan.
+  onHousesClear?: () => void;
   onMaxTierChange: (tier: number) => void;
   onLivingSpaceChange: (checked: boolean) => void;
   onSenateChange: (checked: boolean) => void;
@@ -26,6 +28,7 @@ export function PopulationFaction({
   config,
   state,
   islandHouses,
+  idPrefix = '',
   onHousesChange,
   onHousesClear,
   onMaxTierChange,
@@ -46,23 +49,25 @@ export function PopulationFaction({
       </header>
 
       <div
-        className={`population-value${housesManual ? ' population-value--manual' : ''}`}
-        data-testid={`${config.id}-houses-value`}
+        className={`population-value${onHousesClear && housesManual ? ' population-value--manual' : ''}`}
+        data-testid={`${idPrefix}${config.id}-houses-value`}
       >
-        <div className="population-value__status">
-          <span>{housesManual ? 'Manual' : 'Auto'}</span>
-          {housesManual && (
-            <button
-              type="button"
-              onClick={onHousesClear}
-              aria-label={`Use island ${config.label} houses`}
-            >
-              Auto
-            </button>
-          )}
-        </div>
+        {onHousesClear && (
+          <div className="population-value__status">
+            <span>{housesManual ? 'Manual' : 'Auto'}</span>
+            {housesManual && (
+              <button
+                type="button"
+                onClick={onHousesClear}
+                aria-label={`Use island ${config.label} houses`}
+              >
+                Auto
+              </button>
+            )}
+          </div>
+        )}
         <NumericInput
-          id={`${config.id}-houses`}
+          id={`${idPrefix}${config.id}-houses`}
           label={`${config.label} houses`}
           raw={houses.raw}
           valid={houses.value !== null}
@@ -116,13 +121,13 @@ export function PopulationFaction({
           const manual = override !== null;
           const raw = manual ? override.raw : derived?.[index]?.toString() ?? '';
           const valid = manual ? override.value !== null : derived !== null;
-          const inputId = `${config.id}-population-${index}`;
+          const inputId = `${idPrefix}${config.id}-population-${index}`;
 
           return (
             <div
               key={tierLabel}
               className={`population-value${manual ? ' population-value--manual' : ''}`}
-              data-testid={`${config.id}-population-${index}`}
+              data-testid={`${idPrefix}${config.id}-population-${index}`}
             >
               <div className="population-value__status">
                 <span>{manual ? 'Manual' : 'Auto'}</span>
