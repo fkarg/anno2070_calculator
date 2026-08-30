@@ -530,3 +530,17 @@ main > footer a { color: #8fc9f6; }
 .transfer-need__label { font-weight: 600; }
 
 .transfer-need--empire-shortfall .transfer-need__net { color: #ff9d7a; }
+
+.island-card__owned li label > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.island-card__owned li {
+  grid-template-columns: auto minmax(0, 1fr) 7rem 7rem auto;
+  max-width: 44rem;
+}
