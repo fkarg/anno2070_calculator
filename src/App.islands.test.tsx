@@ -222,6 +222,34 @@ describe('islands section', () => {
     expect(addableBuildings(0)).toContain('uraniumMine');
   });
 
+  test('local shortfalls sourced elsewhere read import, with the empire ratio when short', async () => {
+    renderApp();
+    addIsland();
+    addIsland();
+    addBuilding(0, 'fishery');
+    await replaceInput(input('island-0-owned-fishery'), '2');
+    openConfiguration('Island 2');
+    fireEvent.click(buttonWithLabel('Eco Workers', byTestId('island-1')));
+    fireEvent.click(buttonWithLabel('Finish configuring island Island 2'));
+    await setIslandHouses(1, 'eco', '100');
+
+    // 800 workers demand 3.2 fish; the empire produces 2 -> import at 63%.
+    const cell = () => byTestId('island-1-balance-fishery')
+      .querySelector('.island-card__coverage-cell')!;
+    expect(cell()).toHaveTextContent('import 63%');
+
+    // Genuinely short empire-wide: still worth suggesting locally.
+    expect(byTestId('island-1-suggestions')
+      .querySelector('[aria-label="Build one Fishery on Island 2"]')).not.toBeNull();
+
+    // Fully covered empire-wide: the plain import label.
+    await replaceInput(input('island-0-owned-fishery'), '4');
+    expect(cell().textContent).toContain('import');
+    expect(cell().textContent).not.toContain('%');
+    // Imported goods leave Build next — they need a route, not a building.
+    expect(document.querySelector('[aria-label="Build one Fishery on Island 2"]')).toBeNull();
+  });
+
   test('underwater islands show no ecobalance in the operating load', () => {
     renderApp();
     addIsland();

@@ -9,6 +9,7 @@ import {
 import {
   aggregateBalances,
   BALANCE_EPSILON,
+  DISPLAY_EPSILON,
   calculateIslandBalance,
   type GoodBalance,
   type IslandBalances,
@@ -134,9 +135,15 @@ function buildSuggestions(
   balances: IslandBalances,
   planByBuilding: Map<BuildingId, number | null>,
   ownedTotals: Map<BuildingId, number | null>,
+  empire: IslandBalances,
 ): Suggestion[] {
   const local = (Object.entries(balances) as [GoodId, GoodBalance][])
     .filter(([, balance]) => balance.balance !== null && balance.balance < -BALANCE_EPSILON)
+    // Imported goods (empire-covered) need a route, not another building.
+    .filter(([goodId]) => {
+      const empireBalance = empire[goodId]?.balance;
+      return empireBalance === null || empireBalance === undefined || empireBalance < -DISPLAY_EPSILON;
+    })
     .sort(([, left], [, right]) => (left.balance ?? 0) - (right.balance ?? 0))
     .flatMap(([goodId, balance]): Suggestion[] => {
       const buildingId = buildableProducer(island, goodId);
@@ -330,7 +337,7 @@ function BuildingLedger({
     setOwned(buildingId, { raw: String(value), value });
   };
 
-  const suggestions = buildSuggestions(island, balances, planByBuilding, ownedTotals);
+  const suggestions = buildSuggestions(island, balances, planByBuilding, ownedTotals, empire);
 
   return (
     <div className="island-card__ledger">
@@ -482,12 +489,16 @@ function coverageCell(
   if (balance.capacity === null || balance.demand === null) return { text: '—', ratio: null, imported: false };
   if (balance.demand === 0) return { text: balance.capacity > 0 ? 'export' : '—', ratio: null, imported: false };
   const ratio = balance.capacity / balance.demand;
-  // A local shortfall that the empire covers overall is an import, not an alarm.
-  const imported = ratio < 1
-    && empire !== undefined
-    && empire.balance !== null
-    && empire.balance >= -BALANCE_EPSILON;
-  return { text: imported ? 'import' : `${Math.round(Math.min(1, ratio) * 100)}%${ratio > 1 ? ' +' : ''}`, ratio, imported };
+  // A local shortfall sourced from other islands is an import, not an alarm.
+  // When the empire itself is short, still say import but carry the empire's
+  // coverage — "0%" would wrongly claim nothing is available anywhere.
+  if (ratio < 1 && empire !== undefined
+    && empire.capacity !== null && empire.demand !== null && empire.balance !== null
+    && empire.capacity > BALANCE_EPSILON) {
+    if (empire.balance >= -DISPLAY_EPSILON) return { text: 'import', ratio, imported: true };
+    return { text: `import ${Math.round((empire.capacity / empire.demand) * 100)}%`, ratio, imported: false };
+  }
+  return { text: `${Math.round(Math.min(1, ratio) * 100)}%${ratio > 1 ? ' +' : ''}`, ratio, imported: false };
 }
 
 function LocalBalanceTable({ island, idPrefix, empire }: {
