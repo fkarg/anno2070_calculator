@@ -5,3 +5,6 @@ coverage/
 .worktrees/
 *.log
 
+
+# served copies of docs/design pages
+public/design/
