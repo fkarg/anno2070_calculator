@@ -13,6 +13,9 @@ import { aggregateGoodLoads, BALANCE_EPSILON } from './island-balance';
 export type GoodConstraint = Readonly<{
   goodId: GoodId;
   effectiveCapacity: number;
+  // Unthrottled owned capacity: 0 means no producer built anywhere, which
+  // separates "chain not started" from "built but outgrown or starved".
+  nominalCapacity: number;
   intermediateDemand: number;
   finalDemand: number;
   scale: number;
@@ -106,6 +109,15 @@ export function calculateSupportedPopulation(islands: readonly IslandState[]): S
   const loads = aggregateGoodLoads(islands);
   const capacities = effectiveCapacities(islands);
 
+  // A null building count on a constraint good makes its effective capacity
+  // null and bails to unavailable below, so skipping nulls here is safe.
+  const nominal = new Map<GoodId, number>();
+  for (const [buildingId, capacity] of capacityByBuilding(islands)) {
+    if (capacity === null) continue;
+    const goodId = producedGood(buildingId)!;
+    nominal.set(goodId, (nominal.get(goodId) ?? 0) + capacity);
+  }
+
   const constraints: GoodConstraint[] = [];
   for (const [goodId, load] of Object.entries(loads) as [GoodId, typeof loads[GoodId] & object][]) {
     if (load.finalDemand === 0) continue;
@@ -118,6 +130,7 @@ export function calculateSupportedPopulation(islands: readonly IslandState[]): S
     constraints.push({
       goodId,
       effectiveCapacity: capacity,
+      nominalCapacity: nominal.get(goodId) ?? 0,
       intermediateDemand: load.intermediateDemand,
       finalDemand: load.finalDemand,
       scale: available / load.finalDemand,

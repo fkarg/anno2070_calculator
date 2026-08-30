@@ -78,4 +78,20 @@ describe('aggregateBalances and transferNeeds', () => {
     // A good only one island touches, with no counterpart, is not a transfer need.
     expect(needs.some((need) => need.goodId === 'chipFactory')).toBe(false);
   });
+
+  test('imbalances below display precision are not transfer needs', () => {
+    // 80 workers demand 0.32 fish buildings; one fishery at 31.9% delivers
+    // 0.319 — a -0.001 deficit that renders as 0 and must stay silent.
+    const island = withOwned({ fishery: 1 }, { fishery: 31.9 });
+    island.factions.eco.houses = editable(10);
+    island.factions.eco.maxTier = 1;
+    // (Tea stays a genuine deficit; only the fish noise must vanish.)
+    expect(transferNeeds([island]).some((need) => need.goodId === 'fishery')).toBe(false);
+
+    // A visible deficit (-0.02) still registers as an empire-wide shortfall.
+    const short = { ...island, productivity: { fishery: editable(30) } };
+    const fish = transferNeeds([short]).find((need) => need.goodId === 'fishery')!;
+    expect(fish.deficits).toHaveLength(1);
+    expect(fish.empireNet).toBeCloseTo(-0.02, 9);
+  });
 });

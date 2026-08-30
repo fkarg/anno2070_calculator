@@ -275,6 +275,7 @@ function BuildingLedger({
   balances,
   planByBuilding,
   ownedTotals,
+  empire,
   onChange,
 }: {
   island: IslandState;
@@ -282,6 +283,7 @@ function BuildingLedger({
   balances: IslandBalances;
   planByBuilding: Map<BuildingId, number | null>;
   ownedTotals: Map<BuildingId, number | null>;
+  empire: IslandBalances;
   onChange: IslandChange;
 }) {
   // Only buildings physically on this island; the chips and the add-list are
@@ -322,9 +324,18 @@ function BuildingLedger({
           }}
         >
           <option value="">Add building…</option>
-          {addable.map((buildingId) => (
-            <option key={buildingId} value={buildingId}>{BUILDINGS[buildingId].label}</option>
-          ))}
+          {addable.map((buildingId) => {
+            // The produced good's empire balance orients the pick; goods with
+            // no activity anywhere stay a plain label.
+            const goodId = producedGood(buildingId);
+            const empireBalance = goodId === null ? undefined : empire[goodId]?.balance;
+            const suffix = empireBalance === undefined ? ''
+              : empireBalance === null ? ' · empire —'
+              : ` · empire ${empireBalance > 0 ? '+' : ''}${formatRequirement(empireBalance)}`;
+            return (
+              <option key={buildingId} value={buildingId}>{BUILDINGS[buildingId].label}{suffix}</option>
+            );
+          })}
         </select>
       </div>
 
@@ -455,6 +466,10 @@ function LocalBalanceTable({ island, idPrefix, empire }: {
   empire: IslandBalances;
 }) {
   const balances = (Object.entries(calculateIslandBalance(island)) as [GoodId, GoodBalance][])
+    // Owned-at-zero entries create all-zero rows; only goods this island
+    // actually produces or demands are worth a line.
+    .filter(([, balance]) => balance.capacity === null || balance.demand === null
+      || Math.abs(balance.capacity) > BALANCE_EPSILON || Math.abs(balance.demand) > BALANCE_EPSILON)
     .sort(([left], [right]) => BUILDINGS[left].label.localeCompare(BUILDINGS[right].label));
   if (balances.length === 0) return <p>No production or demand yet.</p>;
 
@@ -693,6 +708,7 @@ export function IslandsSection({ islands, planRequirements, onIslandsChange }: I
                 balances={balances}
                 planByBuilding={planByBuilding}
                 ownedTotals={ownedTotals}
+                empire={empire}
                 onChange={onChange}
               />
 

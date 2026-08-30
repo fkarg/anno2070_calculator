@@ -3,6 +3,9 @@ import type { BuildingId } from './building-data';
 import { CONSUMPTION, GOODS, producedGood, type GoodId } from './goods';
 
 export const BALANCE_EPSILON = 1e-9;
+// Below the two-decimal display precision: differences this small render as 0
+// and must not raise transfer rows or shortfall flags.
+export const DISPLAY_EPSILON = 0.005;
 
 export type GoodBalance = { capacity: number | null; demand: number | null; balance: number | null };
 export type IslandBalances = Partial<Record<GoodId, GoodBalance>>;
@@ -138,10 +141,10 @@ export function transferNeeds(islands: readonly IslandState[]): readonly Transfe
       if (balance === undefined) continue;
       empireNet = add(empireNet, balance);
       if (balance === null) continue;
-      if (balance > BALANCE_EPSILON) surpluses.push({ islandId: island.id, amount: balance });
-      if (balance < -BALANCE_EPSILON) deficits.push({ islandId: island.id, amount: -balance });
+      if (balance > DISPLAY_EPSILON) surpluses.push({ islandId: island.id, amount: balance });
+      if (balance < -DISPLAY_EPSILON) deficits.push({ islandId: island.id, amount: -balance });
     }
-    if (deficits.length > 0 && (surpluses.length > 0 || empireNet === null || empireNet < -BALANCE_EPSILON)) {
+    if (deficits.length > 0 && (surpluses.length > 0 || empireNet === null || empireNet < -DISPLAY_EPSILON)) {
       needs.push({ goodId, surpluses, deficits, empireNet });
     }
   }

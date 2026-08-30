@@ -60,6 +60,18 @@ describe('calculateSupportedPopulation', () => {
     expect(result.constraints[1]?.scale).toBeCloseTo(4 / (800 / 375), 9);
   });
 
+  test('nominal capacity separates unbuilt chains from outgrown ones', () => {
+    const island = withOwned({ fishery: 2 });
+    island.factions.eco.houses = editable(100);
+    island.factions.eco.maxTier = 1;
+
+    const result = calculateSupportedPopulation([island]);
+    const fish = result.constraints.find((constraint) => constraint.goodId === 'fishery')!;
+    const tea = result.constraints.find((constraint) => constraint.goodId === 'teaPlantation')!;
+    expect(fish.nominalCapacity).toBeCloseTo(2, 9);
+    expect(tea.nominalCapacity).toBe(0);
+  });
+
   test('intermediate consumption is reserved before feeding the population', () => {
     // Owned chip factories eat copper; the population also never eats copper,
     // so copper appears as a constraint only through the chips chain.

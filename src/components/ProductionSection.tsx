@@ -2,6 +2,7 @@ import { BUILDINGS, type BuildingId } from '../calculations/building-data';
 import { GOODS, producedGood, type GoodId } from '../calculations/goods';
 import {
   BALANCE_EPSILON,
+  DISPLAY_EPSILON,
   type IslandBalances,
   type TransferNeed,
 } from '../calculations/island-balance';
@@ -352,7 +353,7 @@ export function ProductionSection(props: ProductionSectionProps) {
           : (
             <ul>
               {props.needs.map((need) => {
-                const empireShortfall = need.empireNet === null || need.empireNet < -BALANCE_EPSILON;
+                const empireShortfall = need.empireNet === null || need.empireNet < -DISPLAY_EPSILON;
                 const describe = (entries: readonly { islandId: string; amount: number }[], sign: string) =>
                   entries.map((entry) =>
                     `${islandNames.get(entry.islandId) ?? 'Unknown island'} (${sign}${formatRequirement(entry.amount)})`).join(', ');

@@ -7,6 +7,7 @@ import { PRODUCTION_NODES } from '../calculations/production-data';
 import {
   calculateSupportedPopulation,
   effectiveCapacities,
+  type GoodConstraint,
 } from '../calculations/supported-population';
 import type { IslandState } from '../island';
 
@@ -29,23 +30,28 @@ function canonicalProducerLabel(goodId: GoodId): string {
   return BUILDINGS[goodId].label;
 }
 
-// Bottlenecks toward the current population's demand: the ranked constraint
-// list of the supported-population calculation.
-function demandCards(islands: readonly IslandState[]): Card[] {
+// Bottlenecks toward the current population's demand. Chains never built sit
+// at scale 0 and would drown the ranking, but they are known future work; the
+// acute story is production that exists and was outgrown, so unbuilt chains
+// collapse into a compact list below the cards.
+function demandView(islands: readonly IslandState[]): { cards: Card[]; unbuilt: readonly GoodConstraint[] } {
   const support = calculateSupportedPopulation(islands);
-  return support.constraints.slice(0, 4).map((constraint, index) => {
+  const acute = support.constraints.filter((constraint) => constraint.nominalCapacity > 0);
+  const unbuilt = support.constraints.filter((constraint) => constraint.nominalCapacity === 0);
+  const cards = acute.slice(0, 4).map((constraint, index) => {
     const available = Math.max(0, constraint.effectiveCapacity - constraint.intermediateDemand);
-    const successor = support.constraints[index + 1];
+    const successor = acute[index + 1];
     return {
       goodId: constraint.goodId,
       title: `${canonicalProducerLabel(constraint.goodId)} · ×${formatRequirement(constraint.scale)}`,
       why: `${formatRequirement(available)} available vs ${formatRequirement(constraint.finalDemand)} needed by the current population`,
-      solve: index === 0 && support.scaleAfterNextBuilding !== null
+      solve: constraint.goodId === support.limitingGood && support.scaleAfterNextBuilding !== null
         ? `+1 ${canonicalProducerLabel(constraint.goodId)} → supports ×${formatRequirement(support.scaleAfterNextBuilding)}`
-        : `+1 ${canonicalProducerLabel(constraint.goodId)} → ×${formatRequirement(Math.max(0, available + 1) / constraint.finalDemand)} on this good`,
+        : `+1 ${canonicalProducerLabel(constraint.goodId)} → ×${formatRequirement((available + 1) / constraint.finalDemand)} on this good`,
       next: successor ? canonicalProducerLabel(successor.goodId) : null,
     };
   });
+  return { cards, unbuilt };
 }
 
 // Bottlenecks toward the plan: the largest gaps between plan requirements and
@@ -89,7 +95,9 @@ export function CoverageSection({ islands, planRequirements, planIsManual }: Cov
   if (!islands.some((island) => island.settled)) return null;
 
   const effectiveFrame = planIsManual ? frame : 'demand';
-  const cards = effectiveFrame === 'demand' ? demandCards(islands) : planCards(islands, planRequirements);
+  const { cards, unbuilt } = effectiveFrame === 'demand'
+    ? demandView(islands)
+    : { cards: planCards(islands, planRequirements), unbuilt: [] as readonly GoodConstraint[] };
 
   return (
     <section className="calculator-section coverage-section">
@@ -118,23 +126,34 @@ export function CoverageSection({ islands, planRequirements, planIsManual }: Cov
         )}
       </div>
 
-      {cards.length === 0
-        ? <p className="coverage-section__empty">Nothing is limiting {effectiveFrame === 'demand' ? 'the current population' : 'the plan'} right now.</p>
-        : (
-          <ol className="coverage-section__cards">
-            {cards.map((card, index) => (
-              <li key={card.goodId} className="bottleneck-card" data-testid={`bottleneck-${frame}-${card.goodId}`}>
-                <h3>
-                  <img src={`/assets/${BUILDINGS[card.goodId].image}`} alt="" width="26" height="26" />
-                  <span>{index + 1}. {card.title}</span>
-                </h3>
-                <p>{card.why}</p>
-                <p className="bottleneck-card__solve">{card.solve}</p>
-                {card.next && <p className="bottleneck-card__next">next bottleneck: {card.next}</p>}
-              </li>
-            ))}
-          </ol>
-        )}
+      {cards.length === 0 && unbuilt.length === 0
+        && <p className="coverage-section__empty">Nothing is limiting {effectiveFrame === 'demand' ? 'the current population' : 'the plan'} right now.</p>}
+      {cards.length > 0 && (
+        <ol className="coverage-section__cards">
+          {cards.map((card, index) => (
+            <li key={card.goodId} className="bottleneck-card" data-testid={`bottleneck-${frame}-${card.goodId}`}>
+              <h3>
+                <img src={`/assets/${BUILDINGS[card.goodId].image}`} alt="" width="26" height="26" />
+                <span>{index + 1}. {card.title}</span>
+              </h3>
+              <p>{card.why}</p>
+              <p className="bottleneck-card__solve">{card.solve}</p>
+              {card.next && <p className="bottleneck-card__next">next bottleneck: {card.next}</p>}
+            </li>
+          ))}
+        </ol>
+      )}
+      {unbuilt.length > 0 && (
+        <p className="coverage-section__unbuilt" data-testid="coverage-unbuilt">
+          <span>Chains not built yet:</span>
+          {unbuilt.map((constraint) => (
+            <span key={constraint.goodId} className="coverage-section__unbuilt-chip">
+              <img src={`/assets/${BUILDINGS[constraint.goodId].image}`} alt="" width="18" height="18" />
+              <span>{canonicalProducerLabel(constraint.goodId)} ({formatRequirement(constraint.finalDemand + constraint.intermediateDemand)} needed)</span>
+            </span>
+          ))}
+        </p>
+      )}
     </section>
   );
 }

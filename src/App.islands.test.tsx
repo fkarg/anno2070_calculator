@@ -166,6 +166,28 @@ describe('islands section', () => {
     expect(input('eco-houses')).toHaveValue('10');
   });
 
+  test('the add list shows the empire balance of goods with activity', async () => {
+    renderApp();
+    addIsland();
+    await setIslandHouses(0, 'eco', '10');
+    const select = byTestId('island-0')
+      .querySelector<HTMLSelectElement>('.island-card__ledger-heading select')!;
+    const fishery = [...select.options].find((option) => option.value === 'fishery')!;
+    expect(fishery.textContent).toMatch(/^Fishery · empire -\d/);
+    // No tycoon population: meat has no demand or production anywhere.
+    const meat = [...select.options].find((option) => option.value === 'meatFactory')!;
+    expect(meat.textContent).toBe('Meat factory');
+  });
+
+  test('zero-count buildings leave no local balance rows', async () => {
+    renderApp();
+    addIsland();
+    addBuilding(0, 'fishery');
+    await replaceInput(input('island-0-owned-fishery'), '0');
+    expect(document.querySelector('[data-testid="island-0-balance-fishery"]')).toBeNull();
+    expect(byTestId('island-0')).toHaveTextContent('No production or demand yet.');
+  });
+
   test('per-island operating load totals owned building costs', async () => {
     renderApp();
     addIsland();
