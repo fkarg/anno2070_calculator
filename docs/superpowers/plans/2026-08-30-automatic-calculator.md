@@ -21,12 +21,13 @@
 - Create: `tsconfig.node.json`
 - Create: `vite.config.ts`
 - Create: `src/main.tsx`
+- Create: `src/App.tsx`
 - Create: `src/test/setup.ts`
 - Modify: `README.md`
 
 - [ ] **Step 1: Add the React/Vite package manifest**
 
-Use scripts `dev`, `build` (`tsc -b && vite build`), `test` (`vitest run`), `test:watch`, and `lint` (`eslint .`). Add React runtime packages and TypeScript, Vite, the React Vite plugin, Vitest, jsdom, Testing Library, ESLint, fast-check, and `@fast-check/vitest` as development packages.
+Use scripts `dev`, `build` (`tsc -b && vite build`), `test` (`vitest run --passWithNoTests`), `test:watch`, and `lint` (`eslint .`). Add React runtime packages and TypeScript, Vite, the React Vite plugin, Vitest, jsdom, Testing Library, ESLint, fast-check, and `@fast-check/vitest` as development packages.
 
 - [ ] **Step 2: Install with pnpm**
 
@@ -50,6 +51,8 @@ createRoot(document.getElementById('root')!).render(
 
 Configure Vitest for `jsdom`, globals, and `src/test/setup.ts`, which imports `@testing-library/jest-dom/vitest`.
 
+Create a scaffold-only `App` that renders the calculator title so the initial build is valid. Task 5 replaces that shell after its interaction test has failed.
+
 - [ ] **Step 4: Verify the empty harness**
 
 Run: `pnpm test && pnpm build`
@@ -59,7 +62,7 @@ Expected: Vitest exits successfully with no tests and Vite creates `dist/`.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add package.json pnpm-lock.yaml index.html tsconfig*.json vite.config.ts src/main.tsx src/test/setup.ts README.md
+git add package.json pnpm-lock.yaml index.html tsconfig*.json vite.config.ts src/main.tsx src/App.tsx src/test/setup.ts README.md
 git commit -m "build: scaffold React calculator"
 ```
 
@@ -76,9 +79,9 @@ Test all maximum-tier branches for both population models, zero houses, and the 
 
 ```ts
 expect(calculatePopulation({ faction: 'eco', houses: 100, maxTier: 4, livingSpace: false, senate: false }))
-  .toEqual([160, 480, 900, 960]);
+  .toEqual([160, 480, 725, 760]);
 expect(calculatePopulation({ faction: 'eco', houses: 100, maxTier: 4, livingSpace: true, senate: true }))
-  .toEqual([160, 512, 924, 1188]);
+  .toEqual([160, 512, 756, 924]);
 expect(calculatePopulation({ faction: 'tech', houses: 100, maxTier: 3, livingSpace: false, senate: false }))
   .toEqual([200, 1260, 900]);
 expect(calculatePopulation({ faction: 'tech', houses: 0, maxTier: 3, livingSpace: true, senate: true }))
@@ -153,7 +156,7 @@ git commit -m "feat: add tested population calculations"
 
 ```ts
 expect(calculatePrimary([250, 364, 571, 800], [250, 364, 571, 800], 100, false, false)).toBe(4);
-expect(calculatePrimary([0, 571, 800, 1250], [0, 571, 800, 1250], 100, true, false)).toBeCloseTo(3.55);
+expect(calculatePrimary([0, 571, 800, 1250], [0, 571, 800, 1250], 100, true, false)).toBeCloseTo(2.55);
 expect(calculateMaterial(1.01, 2, 100, true)).toBe(3);
 expect(formatRequirement(1.23001)).toBe('1.24');
 ```
@@ -278,7 +281,7 @@ git commit -m "feat: encode tested production chains"
 ### Task 5: Add controlled calculator state and population UI
 
 **Files:**
-- Create: `src/App.tsx`
+- Modify: `src/App.tsx`
 - Create: `src/model.ts`
 - Create: `src/components/NumericInput.tsx`
 - Create: `src/components/PopulationSection.tsx`
