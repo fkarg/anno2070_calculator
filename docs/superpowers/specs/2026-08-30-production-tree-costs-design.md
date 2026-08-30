@@ -22,9 +22,7 @@ This phase will not add owned-building inputs, persistent route selections, rati
 
 ## Production Tree Model
 
-The existing production formulas and their calculation order remain authoritative. Display hierarchy is represented explicitly instead of inferred from a row's numeric depth.
-
-Each production node belongs to one primary product tree and has an optional structural parent. Sibling order is stable and follows the established source data. Rendering derives the connector prefix from the node's ancestors and whether each ancestor has a later sibling:
+The existing production formulas and their calculation order remain authoritative. Each production node belongs to one primary product tree, and the formula parent is also the current display parent. Sibling order is stable and follows the established source data. Rendering derives the connector prefix from the node's ancestors and whether each ancestor has a later sibling:
 
 ```text
 Electronics factory
@@ -36,7 +34,7 @@ Electronics factory
 
 The connector and the building image participate in the indentation. A fixed-width prefix column that leaves every image at the same horizontal position is specifically avoided.
 
-Structural metadata is separate from formula metadata. Existing multiplier parents continue to express how many upstream buildings are required. Tree parents express only presentation and variant membership. Tests will ensure that the two representations remain internally valid.
+There is no duplicate structural-parent graph. Explicit alternative groups provide the only additional tree semantics. A separate presentation parent should be added only if a real chain cannot follow its formula graph.
 
 ## Alternatives Are Comparisons, Not Splits
 
@@ -116,7 +114,7 @@ The smallest meaningful automated coverage includes:
 
 - every production node resolves to exactly one canonical building;
 - canonical IDs are unique and every building has finite signed impact values and a source;
-- structural parents exist, remain within their product/faction tree, and cannot form cycles;
+- calculation parents exist, remain within their product/faction tree, and cannot form cycles;
 - alternative groups contain valid options and generate the expected number of variants;
 - direct impact scales exactly with fractional and rounded requirements;
 - zero requirements produce zero impact and invalid requirements remain unavailable;

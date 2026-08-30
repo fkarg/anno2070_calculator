@@ -50,7 +50,7 @@ import { ALTERNATIVE_GROUPS, PRODUCTION_NODES } from './production-data';
 describe('BUILDINGS', () => {
   test('covers every occurrence with one canonical operating configuration', () => {
     const ids = new Set(Object.keys(BUILDINGS));
-    expect(ids.size).toBe(60);
+    expect(ids.size).toBe(64);
     expect(PRODUCTION_NODES).toHaveLength(88);
     for (const node of PRODUCTION_NODES) expect(ids.has(node.buildingId), node.id).toBe(true);
   });
@@ -318,7 +318,7 @@ Run:
 pnpm test -- src/calculations
 ```
 
-Expected: PASS with the same 88 production calculations and the new 60-entry catalog.
+Expected: PASS with the same 88 production calculations and the new 64-entry catalog.
 
 Commit:
 

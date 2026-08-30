@@ -49,4 +49,16 @@ describe('calculateOperatingImpacts', () => {
     expect(variants[0].impact).not.toBeNull();
     expect(variants[1].impact).toBeNull();
   });
+
+  test('an invalid mandatory node affects every local variant but no unrelated root', () => {
+    const requirements: Record<string, number | null> = Object.fromEntries(
+      PRODUCTION_NODES.map(({ id }) => [id, 1]),
+    );
+    requirements.ecoCommunicators = null;
+
+    const result = calculateOperatingImpacts(requirements);
+    expect(result.byRoot.ecoCommunicators.every(({ impact }) => impact === null)).toBe(true);
+    expect(result.byRoot.ecoServiceBots.every(({ impact }) => impact !== null)).toBe(true);
+    expect(result.byRoot.tycoonFish[0].impact).not.toBeNull();
+  });
 });

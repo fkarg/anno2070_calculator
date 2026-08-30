@@ -54,6 +54,47 @@ describe('buildProductionTrees', () => {
     expect(new Set(tree.variants.map(({ id }) => id).values()).size).toBe(4);
   });
 
+  test('pins the selected option roots in every alternative combination', () => {
+    const trees = (['eco', 'tycoon', 'tech'] as const)
+      .flatMap(buildProductionTrees);
+    const optionRoots = [
+      'ecoMicrochipsCommunicators', 'ecoElectronicsRecyclerCommunicators',
+      'ecoMicrochipsServiceBots', 'ecoElectronicsRecyclerServiceBots',
+      'tycoonCrudeOil', 'tycoonOilDriller', 'tycoonGoldNuggets',
+      'tycoonGoldConverter', 'tycoonCoal', 'tycoonRotaryExcavator',
+      'techMicrochips', 'techElectronicsRecycler', 'techIronOre',
+      'techIronConverter', 'techCoal', 'techRotaryExcavator',
+    ];
+    const selected = (rootId: string) => trees.find((tree) => tree.rootId === rootId)!.variants
+      .map((variant) => optionRoots.filter((optionRoot) => variant.nodeIds.includes(optionRoot)));
+
+    expect(selected('ecoCommunicators')).toEqual([
+      ['ecoMicrochipsCommunicators'],
+      ['ecoElectronicsRecyclerCommunicators'],
+    ]);
+    expect(selected('ecoServiceBots')).toEqual([
+      ['ecoMicrochipsServiceBots'],
+      ['ecoElectronicsRecyclerServiceBots'],
+    ]);
+    expect(selected('tycoonPlastics')).toEqual([['tycoonCrudeOil'], ['tycoonOilDriller']]);
+    expect(selected('tycoonJewelry')).toEqual([
+      ['tycoonGoldNuggets', 'tycoonCoal'],
+      ['tycoonGoldNuggets', 'tycoonRotaryExcavator'],
+      ['tycoonGoldConverter', 'tycoonCoal'],
+      ['tycoonGoldConverter', 'tycoonRotaryExcavator'],
+    ]);
+    expect(selected('techNeuroimplants')).toEqual([
+      ['techMicrochips'],
+      ['techElectronicsRecycler'],
+    ]);
+    expect(selected('techLaboratoryInstruments')).toEqual([
+      ['techIronOre', 'techCoal'],
+      ['techIronOre', 'techRotaryExcavator'],
+      ['techIronConverter', 'techCoal'],
+      ['techIronConverter', 'techRotaryExcavator'],
+    ]);
+  });
+
   test('covers every production occurrence exactly once in source order', () => {
     for (const faction of ['eco', 'tycoon', 'tech'] as const) {
       const expected = PRODUCTION_NODES.filter((node) => node.faction === faction).map(({ id }) => id);

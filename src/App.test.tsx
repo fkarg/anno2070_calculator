@@ -118,9 +118,13 @@ describe('production calculator', () => {
     expect(connector('ecoElectronicsRecyclerCommunicators')).toBe('└── ');
 
     expect(screen.getByLabelText('Chip factory required buildings (Eco, Electronics factory)'))
-      .not.toHaveTextContent('0');
+      .toHaveTextContent('2.36');
     expect(screen.getByLabelText('Electronics recycler required buildings (Eco, Electronics factory)'))
-      .not.toHaveTextContent('0');
+      .toHaveTextContent('1.57');
+    expect(screen.getByRole('list', { name: 'Electronics factory production tree' }))
+      .toContainElement(screen.getByTestId('production-node-ecoCopperCommunicators'));
+    expect(within(screen.getByTestId('production-node-ecoCopperCommunicators'))
+      .getByText('Level 3 dependency of Chip factory.')).toHaveClass('visually-hidden');
     expect(screen.queryByRole('radio')).not.toBeInTheDocument();
   });
 
@@ -130,16 +134,24 @@ describe('production calculator', () => {
     await replaceInput(screen.getByLabelText('Eco Workers population'), '251');
 
     const fish = screen.getByTestId('production-node-ecoFish');
-    expect(within(within(fish).getByTestId('direct-operating-impact'))
-      .getByLabelText('-5.02 maintenance credits per minute')).toBeInTheDocument();
+    expect(within(fish).getByTestId('direct-operating-impact'))
+      .toHaveTextContent('maintenance credits per minute:-5.02power:-1ecobalance:0');
+    expect(within(fish).getByTestId('per-building-operating-impact'))
+      .toHaveTextContent('maintenance credits per minute:-5power:-1ecobalance:0');
     expect(screen.getByTestId('variant-ecoCommunicators-ecoMicrochipsCommunicators'))
       .toBeInTheDocument();
     expect(screen.getByTestId('variant-ecoCommunicators-ecoElectronicsRecyclerCommunicators'))
       .toBeInTheDocument();
 
     await user.click(screen.getByLabelText('Round up to whole buildings'));
-    expect(within(within(fish).getByTestId('direct-operating-impact'))
-      .getByLabelText('-10 maintenance credits per minute')).toBeInTheDocument();
+    expect(within(fish).getByTestId('direct-operating-impact'))
+      .toHaveTextContent('maintenance credits per minute:-10');
+
+    await replaceInput(screen.getByLabelText('Eco Employees population'), '571');
+    expect(screen.getByTestId('variant-ecoCommunicators-ecoMicrochipsCommunicators'))
+      .toHaveTextContent('maintenance credits per minute:-65power:-10ecobalance:-12');
+    expect(screen.getByTestId('variant-ecoCommunicators-ecoElectronicsRecyclerCommunicators'))
+      .toHaveTextContent('maintenance credits per minute:-180power:-39ecobalance:-4');
   });
 
   test('invalid alternate productivity suppresses only variants using that route', async () => {

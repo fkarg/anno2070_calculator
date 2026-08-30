@@ -78,8 +78,11 @@ function ProductionFaction({
       </header>
 
       <div className="production-faction__nodes">
-        {buildProductionTrees(faction).map((tree) => (
+        {buildProductionTrees(faction).map((tree) => {
+          const root = BUILDINGS[nodeById.get(tree.rootId)!.buildingId];
+          return (
           <section className="production-tree" key={tree.rootId}>
+            <ol className="production-tree__rows" aria-label={`${root.label} production tree`}>
             {tree.rows.map((row) => {
               const node = nodeById.get(row.nodeId)!;
               const building = BUILDINGS[node.buildingId];
@@ -87,13 +90,17 @@ function ProductionFaction({
               const result = results[node.id];
               const direct = operatingImpacts.direct[node.id];
               const labelContext = context(node);
+              const relationship = node.calculation.kind === 'primary'
+                ? 'Primary product.'
+                : `Level ${row.depth + 1} dependency of ${BUILDINGS[nodeById.get(node.calculation.parentId)!.buildingId].label}.${row.alternativeRoot ? ' Alternative source.' : ''}`;
               return (
-                <div
+                <li
                   key={node.id}
                   className={`production-node${row.alternativeRoot ? ' production-node--alternate' : ''}`}
                   data-testid={`production-node-${node.id}`}
                 >
                   <div className="production-node__identity">
+                    <span className="visually-hidden">{relationship}</span>
                     <span
                       className="production-node__connector"
                       data-testid="tree-connector"
@@ -119,29 +126,31 @@ function ProductionFaction({
                   <div className="production-node__impact">
                     <div data-testid="direct-operating-impact">
                       {direct === null
-                        ? <span aria-label={`${building.label} direct operating impact unavailable`}>—</span>
+                        ? <span><span className="visually-hidden">{building.label} direct operating impact unavailable:</span>—</span>
                         : <OperatingImpactValues impact={direct} />}
                     </div>
-                    <small>
+                    <small data-testid="per-building-operating-impact">
                       <span>per building </span>
                       <OperatingImpactValues impact={building.operatingImpact} />
                     </small>
                   </div>
-                </div>
+                </li>
               );
             })}
+            </ol>
             <footer className="production-tree__variants">
               {operatingImpacts.byRoot[tree.rootId].map((variant) => (
                 <div key={variant.id} data-testid={`variant-${tree.rootId}-${variant.id}`}>
                   <span>{variant.label}</span>
                   {variant.impact === null
-                    ? <span aria-label={`${variant.label} operating impact unavailable`}>—</span>
+                    ? <span><span className="visually-hidden">{variant.label} operating impact unavailable:</span>—</span>
                     : <OperatingImpactValues impact={variant.impact} />}
                 </div>
               ))}
             </footer>
           </section>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

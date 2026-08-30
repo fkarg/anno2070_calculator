@@ -20,8 +20,10 @@ export function OperatingImpactValues({ impact }: { impact: OperatingImpact }) {
           <span
             key={key}
             className={`operating-impact-values__metric operating-impact-values__metric--${className}`}
-            aria-label={`${value} ${label}`}
-          >{value}</span>
+          >
+            <span className="visually-hidden">{label}:</span>
+            {value}
+          </span>
         );
       })}
     </span>

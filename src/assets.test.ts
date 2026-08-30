@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 
 import { describe, expect, test } from 'vitest';
@@ -49,4 +50,19 @@ describe('original image assets', () => {
       expect(image.byteLength).toBeGreaterThan(100);
     },
   );
+
+  test('pins the researched icon files and their CSS mappings', () => {
+    const expectedHashes = {
+      'Balance-icon.png': '6702689cd92be488b4726aff64cfb4339b9453e1d70a046b7bc23d38d983621d',
+      'Energy-icon.png': 'b48ee1b535c96a0315609a5d02ccbb224717b9b3477d5e30a47db8060a335d8a',
+      'Ecobal-icon.png': 'ec0b13bff97cbeb187694f7b9de6c42cc2fc063e17ac07bcf2e01a32638cc95f',
+    };
+    const css = readFileSync(join(process.cwd(), 'src/styles.css'), 'utf8');
+
+    for (const [filename, expectedHash] of Object.entries(expectedHashes)) {
+      const image = readFileSync(join(process.cwd(), 'public/assets', filename));
+      expect(createHash('sha256').update(image).digest('hex'), filename).toBe(expectedHash);
+      expect(css).toContain(`url("/assets/${filename}")`);
+    }
+  });
 });
