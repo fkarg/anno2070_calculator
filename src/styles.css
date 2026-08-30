@@ -270,7 +270,7 @@ main > footer { padding: .9rem .15rem; color: var(--muted); font-size: .75rem; t
 main > footer a { color: #8fc9f6; }
 
 .production-section__factions {
-  grid-template-columns: repeat(3, minmax(620px, 1fr));
+  grid-template-columns: repeat(3, minmax(720px, 1fr));
   overflow-x: auto;
 }
 

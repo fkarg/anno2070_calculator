@@ -54,6 +54,7 @@ pnpm lint
 
 ### Later simulation layers
 
+- Show the population supported by the current whole-building production capacity, including the limiting production chain and the next capacity threshold.
 - Include taxation levels for fully satisfied populations.
 - Model freshly ascended populations and partially or unfulfilled demands.
 - Add island-dependent population, power, ecobalance, fertility, and surface/underwater constraints.
