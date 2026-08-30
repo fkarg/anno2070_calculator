@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import type { Faction } from './calculations/population';
 import { calculateAvailableProduction } from './calculations/calculate-production';
+import { calculateOperatingImpacts } from './calculations/operating-impact';
 import { PRODUCTION_NODES } from './calculations/production-data';
 import { PopulationSection } from './components/PopulationSection';
 import { ProductionSection } from './components/ProductionSection';
@@ -31,6 +32,7 @@ export function App() {
     recycling: state.recycling,
     wholeBuildings: state.wholeBuildings,
   });
+  const operatingImpacts = calculateOperatingImpacts(production);
 
   const updateFaction = (
     faction: Faction,
@@ -59,6 +61,7 @@ export function App() {
       <ProductionSection
         state={state}
         results={production}
+        operatingImpacts={operatingImpacts}
         onProductivityChange={(id: string, value: EditableNumber) => setState((current) => ({
           ...current,
           productivity: {

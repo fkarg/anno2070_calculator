@@ -1,8 +1,9 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, test } from 'vitest';
 
 import { App } from './App';
+import { BUILDINGS } from './calculations/building-data';
 import { PRODUCTION_NODES } from './calculations/production-data';
 
 beforeEach(() => {
@@ -10,9 +11,7 @@ beforeEach(() => {
 });
 
 async function replaceInput(input: HTMLElement, value: string): Promise<void> {
-  const user = userEvent.setup();
-  await user.clear(input);
-  if (value) await user.type(input, value);
+  fireEvent.change(input, { target: { value } });
 }
 
 describe('population calculator', () => {
@@ -97,16 +96,64 @@ describe('production calculator', () => {
     expect(screen.getAllByTestId(/^production-node-/)).toHaveLength(88);
     for (const node of PRODUCTION_NODES) {
       const row = screen.getByTestId(`production-node-${node.id}`);
-      expect(row).toHaveClass(`production-node--depth-${node.depth}`);
-      expect(row.querySelector(`img[src="/assets/${node.image}"]`)).not.toBeNull();
-      expect(within(row).getByText(node.label)).toBeInTheDocument();
-      if (node.alternate) expect(row).toHaveClass('production-node--alternate');
-      if (node.depth > 0) expect(row.querySelector('img[src="/assets/Speed_Qoor.png"]')).not.toBeNull();
+      const building = BUILDINGS[node.buildingId];
+      expect(row.querySelector(`img[src="/assets/${building.image}"]`)).not.toBeNull();
+      expect(within(row).getByText(building.label)).toBeInTheDocument();
     }
     const fishOutput = screen.getByLabelText('Fishery required buildings (Eco)');
     expect(fishOutput.tagName).toBe('OUTPUT');
     expect(fishOutput).toHaveTextContent('0');
     expect(screen.queryByRole('button', { name: /calculate/i })).not.toBeInTheDocument();
+  });
+
+  test('renders intrinsic connector prefixes and every alternative at full demand', async () => {
+    render(<App />);
+    await replaceInput(screen.getByLabelText('Eco houses'), '100');
+
+    const connector = (id: string) => within(screen.getByTestId(`production-node-${id}`))
+      .getByTestId('tree-connector').textContent;
+    expect(connector('ecoMicrochipsCommunicators')).toBe('├── ');
+    expect(connector('ecoCopperCommunicators')).toBe('│   ├── ');
+    expect(connector('ecoSandCommunicators')).toBe('│   └── ');
+    expect(connector('ecoElectronicsRecyclerCommunicators')).toBe('└── ');
+
+    expect(screen.getByLabelText('Chip factory required buildings (Eco, Electronics factory)'))
+      .not.toHaveTextContent('0');
+    expect(screen.getByLabelText('Electronics recycler required buildings (Eco, Electronics factory)'))
+      .not.toHaveTextContent('0');
+    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+  });
+
+  test('updates direct and full-chain operating impacts and honors rounding', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await replaceInput(screen.getByLabelText('Eco Workers population'), '251');
+
+    const fish = screen.getByTestId('production-node-ecoFish');
+    expect(within(within(fish).getByTestId('direct-operating-impact'))
+      .getByLabelText('-5.02 maintenance credits per minute')).toBeInTheDocument();
+    expect(screen.getByTestId('variant-ecoCommunicators-ecoMicrochipsCommunicators'))
+      .toBeInTheDocument();
+    expect(screen.getByTestId('variant-ecoCommunicators-ecoElectronicsRecyclerCommunicators'))
+      .toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Round up to whole buildings'));
+    expect(within(within(fish).getByTestId('direct-operating-impact'))
+      .getByLabelText('-10 maintenance credits per minute')).toBeInTheDocument();
+  });
+
+  test('invalid alternate productivity suppresses only variants using that route', async () => {
+    render(<App />);
+    await replaceInput(screen.getByLabelText('Eco houses'), '100');
+    await replaceInput(
+      screen.getByLabelText('Electronics recycler productivity (Eco, Electronics factory)'),
+      '',
+    );
+
+    expect(screen.getByTestId('variant-ecoCommunicators-ecoMicrochipsCommunicators'))
+      .not.toHaveTextContent('—');
+    expect(screen.getByTestId('variant-ecoCommunicators-ecoElectronicsRecyclerCommunicators'))
+      .toHaveTextContent('—');
   });
 
   test('propagates a productivity edit immediately through a supply chain', async () => {
