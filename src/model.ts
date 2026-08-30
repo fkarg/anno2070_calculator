@@ -1,4 +1,4 @@
-import { calculatePopulation, type Faction } from './calculations/population';
+import { applyPopulationOverrides, type Faction } from './calculations/population';
 import { PRODUCTION_NODES } from './calculations/production-data';
 
 export type EditableNumber = {
@@ -124,36 +124,22 @@ export function createFactionState(faction: Faction): FactionState {
   };
 }
 
-export function derivePopulation(
+export function effectivePopulation(
   faction: Faction,
   state: FactionState,
   settledIslandHouses: number | null = 0,
 ): number[] | null {
   const houses = resolveHouses(state, settledIslandHouses);
   if (houses.value === null) return null;
-  return calculatePopulation({
+  if (state.overrides.some((override) => override !== null && override.value === null)) return null;
+
+  return applyPopulationOverrides({
     faction,
     houses: houses.value,
     maxTier: state.maxTier,
     livingSpace: state.livingSpace,
     senate: state.senate,
-  });
-}
-
-export function effectivePopulation(
-  faction: Faction,
-  state: FactionState,
-  settledIslandHouses: number | null = 0,
-): number[] | null {
-  const derived = derivePopulation(faction, state, settledIslandHouses);
-  if (derived === null) return null;
-
-  return derived.map((value, index) => {
-    const override = state.overrides[index];
-    return override === null ? value : override.value;
-  }).every((value): value is number => value !== null)
-    ? derived.map((value, index) => state.overrides[index]?.value ?? value)
-    : null;
+  }, state.overrides.map((override) => override === null ? null : override.value));
 }
 
 export function effectivePopulations(

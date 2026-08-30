@@ -1,6 +1,6 @@
 import type { Faction } from '../calculations/population';
 import {
-  derivePopulation,
+  effectivePopulation,
   parseNonNegativeInteger,
   resolveHouses,
   type EditableNumber,
@@ -37,7 +37,8 @@ export function PopulationFaction({
   onOverrideChange,
   onOverrideClear,
 }: PopulationFactionProps) {
-  const derived = derivePopulation(config.id as Faction, state, islandHouses);
+  // Redistributed values: a limited higher tier refills the lower one live.
+  const effective = effectivePopulation(config.id as Faction, state, islandHouses);
   const houses = resolveHouses(state, islandHouses);
   const housesManual = state.houses !== null;
 
@@ -119,8 +120,8 @@ export function PopulationFaction({
         {config.tierLabels.map((tierLabel, index) => {
           const override = state.overrides[index];
           const manual = override !== null;
-          const raw = manual ? override.raw : derived?.[index]?.toString() ?? '';
-          const valid = manual ? override.value !== null : derived !== null;
+          const raw = manual ? override.raw : effective?.[index]?.toString() ?? '';
+          const valid = manual ? override.value !== null : effective !== null;
           const inputId = `${idPrefix}${config.id}-population-${index}`;
 
           return (
