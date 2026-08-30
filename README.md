@@ -14,8 +14,12 @@ User-entered residences, manual population overrides, productivity percentages, 
 - Per-building productivity controls, faction-wide productivity adjustments, recycling, and optional whole-building rounding.
 - Connector-tree production chains with every source alternative shown at full demand.
 - Per-building and directly required operating impacts, plus buildable complete-chain totals that round every production stage up to a whole building.
-- Versioned local browser storage for user-owned inputs and a complete reset control.
-- Pure calculation modules covered by example-based and property-based tests.
+- Per-island actuals: residences, owned production buildings with per-island productivity, tri-state fertility/deposit annotations, and settled/unsettled placeholders.
+- Plan house counts that follow the settled-island totals automatically until manually overridden.
+- Derived per-good island balances (capacity, demand, balance) and a transfer-needs view that reveals cross-island imbalances even when the empire-wide net is fine.
+- Owned, actual-capacity, and balance columns beside every canonical plan requirement, actual operating impacts from owned buildings, and per-building impact values behind an accessible info toggle.
+- Versioned local browser storage for user-owned inputs and a complete reset control. Unreadable or future-version payloads are preserved untouched instead of overwritten, and catalog changes no longer invalidate saved state.
+- Pure calculation modules covered by example-based and property-based tests, including a derived goods-and-rates layer with load-time cross-chain consistency validation.
 
 ## Reference snapshot
 
@@ -46,18 +50,18 @@ pnpm lint
 
 ## Roadmap and further ideas
 
-### Next: owned production and global statistics
+### Next: supported population and bottlenecks
 
-- Add integer inputs for actually owned production, power, and ecobalance buildings, kept separate from calculated requirements.
-- Aggregate shared building counts and operating impacts in a Statistics Center-style global view.
-- Add fleet information and trade or shipping costs when the ownership model can support them.
+- Show the population supported by the current actual capacity, the limiting production chain, and the population threshold at which the next building is needed.
 
 ### Later simulation layers
 
-- Show the population supported by the current whole-building production capacity, including the limiting production chain and the next capacity threshold.
+- Step-wise ascension and expansion plans: the ordered build list from current actuals to a target population, including settle proposals from fertility annotations of unsettled islands.
 - Include taxation levels for fully satisfied populations.
 - Model freshly ascended populations and partially or unfulfilled demands.
-- Add island-dependent population, power, ecobalance, fertility, and surface/underwater constraints.
+- Deepen island constraints: power, ecobalance, and surface/underwater simulation per island.
+- Add fleet information and trade or shipping costs when the ownership model can support them.
+- Revisit storage (Dexie/IndexedDB) once state becomes multi-document — named save slots or stored expansion plans.
 - Model available power-generation options and mixes under faction, scenario, or game-progress restrictions.
 - Add market-sale income, power/ecobalance-to-credit comparison ratios, and full production-chain gain/loss simulation.
 - Simulate stepwise progression toward population, balance, monument, or other scenario targets.
