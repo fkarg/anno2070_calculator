@@ -15,16 +15,20 @@ type TierDistribution = {
   capacities: number[];
 };
 
+// Inhabitants per fully occupied house. The +12% living-space channel boosts
+// every tier above the first (wiki-verified boosted values).
+export function tierCapacities(faction: Faction, livingSpace: boolean): readonly number[] {
+  if (faction === 'tech') {
+    return [5, livingSpace ? 33 : 30, livingSpace ? 56 : 50];
+  }
+  return [8, livingSpace ? 16 : 15, livingSpace ? 28 : 25, livingSpace ? 44 : 40];
+}
+
 function ecoTycoonDistribution(input: PopulationInput): TierDistribution {
   const employeeAndUp = Math.floor(input.houses * 0.8);
   const engineerAndUp = Math.floor(employeeAndUp * 0.6);
   const executives = Math.floor(engineerAndUp * (input.senate ? 0.45 : 0.4));
-  const capacities = [
-    8,
-    input.livingSpace ? 16 : 15,
-    input.livingSpace ? 28 : 25,
-    input.livingSpace ? 44 : 40,
-  ];
+  const capacities = [...tierCapacities(input.faction, input.livingSpace)];
 
   switch (input.maxTier) {
     case 1:
@@ -54,7 +58,7 @@ function ecoTycoonDistribution(input: PopulationInput): TierDistribution {
 function techDistribution(input: PopulationInput): TierDistribution {
   const researcherAndUp = Math.floor(input.houses * 0.6);
   const geniuses = Math.floor(researcherAndUp * (input.senate ? 0.35 : 0.3));
-  const capacities = [5, input.livingSpace ? 33 : 30, input.livingSpace ? 56 : 50];
+  const capacities = [...tierCapacities('tech', input.livingSpace)];
 
   switch (input.maxTier) {
     case 1:

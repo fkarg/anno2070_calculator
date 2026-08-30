@@ -7,6 +7,7 @@ import {
   input,
   renderApp,
   replaceInput,
+  setIslandHouses,
 } from './test/app-test-utils';
 
 beforeEach(() => localStorage.clear());
@@ -27,10 +28,16 @@ function flagCheckbox(islandIndex: number, flag: 'settled' | 'underwater'): HTML
   return checkboxes[flag === 'settled' ? 0 : 1];
 }
 
-function showAllBuildable(islandIndex: number) {
-  const checkbox = byTestId(`island-${islandIndex}`)
-    .querySelector<HTMLInputElement>('.island-card__ledger-heading input')!;
-  if (!checkbox.checked) fireEvent.click(checkbox);
+function addBuilding(islandIndex: number, buildingId: string) {
+  const select = byTestId(`island-${islandIndex}`)
+    .querySelector<HTMLSelectElement>('.island-card__ledger-heading select')!;
+  fireEvent.change(select, { target: { value: buildingId } });
+}
+
+function addableBuildings(islandIndex: number): string[] {
+  const select = byTestId(`island-${islandIndex}`)
+    .querySelector<HTMLSelectElement>('.island-card__ledger-heading select')!;
+  return [...select.options].map((option) => option.value).filter((value) => value !== '');
 }
 
 describe('islands section', () => {
@@ -38,7 +45,7 @@ describe('islands section', () => {
     renderApp();
     addIsland();
     // Houses are editable on the card without entering any mode.
-    await replaceInput(input('island-0-eco-houses'), '100');
+    await setIslandHouses(0, 'eco', '100');
     // Per-tier populations are reveal-edit minis on the card itself.
     expect(input('island-0-eco-population-0')).toHaveValue('160');
     expect(input('island-0-eco-population-2')).toHaveValue('725');
@@ -59,7 +66,7 @@ describe('islands section', () => {
   test('island residences produce local demand and population', async () => {
     renderApp();
     addIsland();
-    await replaceInput(input('island-0-eco-houses'), '100');
+    await setIslandHouses(0, 'eco', '100');
     const fishRow = byTestId('island-0-balance-fishery');
     expect(fishRow.querySelectorAll('td')[1].textContent).not.toBe('0');
     expect(fishRow.querySelectorAll('td')[2].textContent).toMatch(/^-/);
@@ -68,9 +75,11 @@ describe('islands section', () => {
   test('stepper-owned fisheries flip the local fish balance to surplus', async () => {
     renderApp();
     addIsland();
-    await replaceInput(input('island-0-eco-houses'), '10');
-    fireEvent.click(buttonWithLabel('One more Fishery on Island 1'));
+    await setIslandHouses(0, 'eco', '10');
+    addBuilding(0, 'fishery');
     expect(input('island-0-owned-fishery')).toHaveValue('1');
+    fireEvent.click(buttonWithLabel('One more Fishery on Island 1'));
+    expect(input('island-0-owned-fishery')).toHaveValue('2');
     await replaceInput(input('island-0-owned-fishery'), '3');
 
     const fishRow = byTestId('island-0-balance-fishery');
@@ -81,7 +90,7 @@ describe('islands section', () => {
   test('build-next suggestions add a buildable producer for the biggest deficit', async () => {
     renderApp();
     addIsland();
-    await replaceInput(input('island-0-eco-houses'), '100');
+    await setIslandHouses(0, 'eco', '100');
 
     const suggestions = byTestId('island-0-suggestions');
     expect(suggestions).toHaveTextContent('Build next:');
@@ -89,43 +98,41 @@ describe('islands section', () => {
     expect(input('island-0-owned-fishery')).toHaveValue('1');
   });
 
-  test('fertilities gate the ledger: absent hides, present or open slot shows', () => {
+  test('fertilities gate the add list: absent hides, present or open slot shows', () => {
     renderApp();
     addIsland();
-    showAllBuildable(0);
-    expect(document.getElementById('island-0-owned-teaPlantation')).toBeNull();
-    expect(document.getElementById('island-0-owned-fishery')).not.toBeNull();
+    expect(addableBuildings(0)).not.toContain('teaPlantation');
+    expect(addableBuildings(0)).toContain('fishery');
 
     openConfiguration('Island 1');
     fireEvent.click(buttonWithLabel('Island 1 Tea: not present'));
-    expect(document.getElementById('island-0-owned-teaPlantation')).not.toBeNull();
+    expect(addableBuildings(0)).toContain('teaPlantation');
     expect(byTestId('island-0-fertilities').querySelector('img[alt="Tea"]')).not.toBeNull();
 
     fireEvent.click(buttonWithLabel('Island 1 Tea: present'));
-    expect(document.getElementById('island-0-owned-teaPlantation')).toBeNull();
+    expect(addableBuildings(0)).not.toContain('teaPlantation');
     fireEvent.click(buttonWithLabel('Island 1 open fertility slot: none'));
-    expect(document.getElementById('island-0-owned-teaPlantation')).not.toBeNull();
+    expect(addableBuildings(0)).toContain('teaPlantation');
     // The open slot never enables deposit buildings.
-    expect(document.getElementById('island-0-owned-copperMine')).toBeNull();
+    expect(addableBuildings(0)).not.toContain('copperMine');
   });
 
   test('underwater islands only offer underwater buildings', () => {
     renderApp();
     addIsland();
-    showAllBuildable(0);
-    expect(document.getElementById('island-0-owned-electronicsRecycler')).toBeNull();
+    expect(addableBuildings(0)).not.toContain('electronicsRecycler');
 
     openConfiguration('Island 1');
     fireEvent.click(flagCheckbox(0, 'underwater'));
     expect(byTestId('island-0')).toHaveTextContent('underwater');
-    expect(document.getElementById('island-0-owned-electronicsRecycler')).not.toBeNull();
-    expect(document.getElementById('island-0-owned-fishery')).toBeNull();
+    expect(addableBuildings(0)).toContain('electronicsRecycler');
+    expect(addableBuildings(0)).not.toContain('fishery');
   });
 
   test('settled islands feed the plan houses Auto mode', async () => {
     renderApp();
     addIsland();
-    await replaceInput(input('island-0-eco-houses'), '10');
+    await setIslandHouses(0, 'eco', '10');
     expect(input('eco-houses')).toHaveValue('10');
 
     openConfiguration('Island 1');
@@ -136,7 +143,7 @@ describe('islands section', () => {
   test('island population limits propagate into the plan stats view', async () => {
     renderApp();
     addIsland();
-    await replaceInput(input('island-0-eco-houses'), '100');
+    await setIslandHouses(0, 'eco', '100');
     openConfiguration('Island 1');
     // Limit the island to tier 1: the plan's Auto stats follow the island's
     // actual distribution, not the plan's own ascension model.
@@ -149,7 +156,7 @@ describe('islands section', () => {
   test('manual plan houses ignore islands until returned to Auto', async () => {
     renderApp();
     addIsland();
-    await replaceInput(input('island-0-eco-houses'), '10');
+    await setIslandHouses(0, 'eco', '10');
     await replaceInput(input('eco-houses'), '25');
     expect(input('eco-houses')).toHaveValue('25');
     // Manual mode restores the full planning controls.
@@ -162,8 +169,8 @@ describe('islands section', () => {
   test('per-island operating load totals owned building costs', async () => {
     renderApp();
     addIsland();
-    await replaceInput(input('island-0-eco-houses'), '10');
-    fireEvent.click(buttonWithLabel('One more Fishery on Island 1'));
+    await setIslandHouses(0, 'eco', '10');
+    addBuilding(0, 'fishery');
     fireEvent.click(buttonWithLabel('One more Fishery on Island 1'));
     expect(byTestId('island-0-operating-load'))
       .toHaveTextContent('maintenance credits per minute:-10power:-2ecobalance:0');

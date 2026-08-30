@@ -1,5 +1,5 @@
 import type { IslandState } from '../island';
-import type { Faction } from './population';
+import { tierCapacities, type Faction } from './population';
 import { GOODS, type GoodId } from './goods';
 import { aggregateGoodLoads } from './island-balance';
 import { effectiveCapacities } from './supported-population';
@@ -90,21 +90,20 @@ export function tierHeadroom(
   return limitingGood === null ? null : { additional, limitingGood };
 }
 
-// Inhabitants per fully occupied house, per tier, without bonuses.
-const HOUSE_CAPACITY: Record<Faction, readonly number[]> = {
-  eco: [8, 15, 25, 40],
-  tycoon: [8, 15, 25, 40],
-  tech: [5, 30, 50],
-};
-
 export type AscensionSupport = Readonly<{ ascensions: number; limitingGood: GoodId | null }>;
+
+// The global living-space bonus is mirrored onto every island's faction state,
+// so any settled island carries the authoritative flag.
+function globalLivingSpace(islands: readonly IslandState[], faction: Faction): boolean {
+  return islands[0]?.factions[faction].livingSpace ?? false;
+}
 
 export function supportedAscensions(
   islands: readonly IslandState[],
   faction: Faction,
   fromTier: number,
 ): AscensionSupport | null {
-  const capacities = HOUSE_CAPACITY[faction];
+  const capacities = tierCapacities(faction, globalLivingSpace(islands, faction));
   if (fromTier + 1 >= capacities.length) return null;
   const from = perInhabitantDemands(faction, fromTier);
   const to = perInhabitantDemands(faction, fromTier + 1);

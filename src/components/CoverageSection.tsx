@@ -13,6 +13,8 @@ import type { IslandState } from '../island';
 type CoverageSectionProps = {
   islands: readonly IslandState[];
   planRequirements: Record<string, number | null>;
+  // Without a manual plan, plan == demand and the second framing is noise.
+  planIsManual: boolean;
 };
 
 type Card = {
@@ -82,11 +84,12 @@ function planCards(
   }));
 }
 
-export function CoverageSection({ islands, planRequirements }: CoverageSectionProps) {
+export function CoverageSection({ islands, planRequirements, planIsManual }: CoverageSectionProps) {
   const [frame, setFrame] = useState<'demand' | 'plan'>('demand');
   if (!islands.some((island) => island.settled)) return null;
 
-  const cards = frame === 'demand' ? demandCards(islands) : planCards(islands, planRequirements);
+  const effectiveFrame = planIsManual ? frame : 'demand';
+  const cards = effectiveFrame === 'demand' ? demandCards(islands) : planCards(islands, planRequirements);
 
   return (
     <section className="calculator-section coverage-section">
@@ -95,26 +98,28 @@ export function CoverageSection({ islands, planRequirements }: CoverageSectionPr
           <h2>Coverage &amp; bottlenecks</h2>
         </div>
         <p>What limits you now, and what solving it unlocks</p>
-        <div className="coverage-section__frames">
-          <button
-            type="button"
-            aria-pressed={frame === 'demand'}
-            onClick={() => setFrame('demand')}
-          >
-            Toward demand
-          </button>
-          <button
-            type="button"
-            aria-pressed={frame === 'plan'}
-            onClick={() => setFrame('plan')}
-          >
-            Toward plan
-          </button>
-        </div>
+        {planIsManual && (
+          <div className="coverage-section__frames">
+            <button
+              type="button"
+              aria-pressed={effectiveFrame === 'demand'}
+              onClick={() => setFrame('demand')}
+            >
+              Toward demand
+            </button>
+            <button
+              type="button"
+              aria-pressed={effectiveFrame === 'plan'}
+              onClick={() => setFrame('plan')}
+            >
+              Toward plan
+            </button>
+          </div>
+        )}
       </div>
 
       {cards.length === 0
-        ? <p className="coverage-section__empty">Nothing is limiting {frame === 'demand' ? 'the current population' : 'the plan'} right now.</p>
+        ? <p className="coverage-section__empty">Nothing is limiting {effectiveFrame === 'demand' ? 'the current population' : 'the plan'} right now.</p>
         : (
           <ol className="coverage-section__cards">
             {cards.map((card, index) => (

@@ -12,6 +12,7 @@ import {
   renderApp,
   replaceInput,
   requiredBuildings,
+  setIslandHouses,
 } from './test/app-test-utils';
 
 beforeEach(() => localStorage.clear());
@@ -123,7 +124,7 @@ describe('production structure and impacts', () => {
     renderApp();
     fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.islands-section button')]
       .find((button) => button.textContent === 'Add island')!);
-    await replaceInput(input('island-0-eco-houses'), '100');
+    await setIslandHouses(0, 'eco', '100');
     fireEvent.click(buttonWithLabel('Configure island Island 1'));
     fireEvent.click(buttonWithLabel('Eco Workers', byTestId('island-0')));
 

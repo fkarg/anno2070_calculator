@@ -7,6 +7,7 @@ import {
   productionRow,
   renderApp,
   replaceInput,
+  setIslandHouses,
 } from './test/app-test-utils';
 
 beforeEach(() => localStorage.clear());
@@ -17,17 +18,17 @@ function addIsland() {
   fireEvent.click(button);
 }
 
-function showAllBuildable(islandIndex: number) {
-  const checkbox = byTestId(`island-${islandIndex}`)
-    .querySelector<HTMLInputElement>('.island-card__ledger-heading input')!;
-  if (!checkbox.checked) fireEvent.click(checkbox);
+function addBuilding(islandIndex: number, buildingId: string) {
+  const select = byTestId(`island-${islandIndex}`)
+    .querySelector<HTMLSelectElement>('.island-card__ledger-heading select')!;
+  fireEvent.change(select, { target: { value: buildingId } });
 }
 
 describe('actuals in the production view', () => {
   test('canonical rows carry a labeled actual line; alternatives stay plan-only', async () => {
     renderApp();
     addIsland();
-    showAllBuildable(0);
+    addBuilding(0, 'fishery');
     await replaceInput(input('island-0-owned-fishery'), '2');
 
     const actuals = byTestId('actuals-ecoFish');
@@ -52,7 +53,7 @@ describe('actuals in the production view', () => {
     const underwater = byTestId('island-0')
       .querySelectorAll<HTMLInputElement>('.island-card__flags input[type="checkbox"]')[1];
     fireEvent.click(underwater);
-    showAllBuildable(0);
+    addBuilding(0, 'electronicsRecycler');
     await replaceInput(input('island-0-owned-electronicsRecycler'), '2');
 
     // 2 recyclers = 3 chip-factory units; costs are the recyclers' flat costs.
@@ -65,11 +66,11 @@ describe('actuals in the production view', () => {
     renderApp();
     addIsland();
     // Population creates plan demand for fish; no fisheries owned yet.
-    await replaceInput(input('island-0-eco-houses'), '100');
+    await setIslandHouses(0, 'eco', '100');
     const fish = byTestId('actuals-ecoFish');
     expect(fish).toHaveTextContent('build 4.18');
 
-    showAllBuildable(0);
+    addBuilding(0, 'fishery');
     await replaceInput(input('island-0-owned-fishery'), '5');
     expect(byTestId('actuals-ecoFish')).toHaveTextContent('over 0.83');
   });
@@ -77,7 +78,7 @@ describe('actuals in the production view', () => {
   test('owned buildings drive the actual operating impact summary', async () => {
     renderApp();
     addIsland();
-    showAllBuildable(0);
+    addBuilding(0, 'fishery');
     await replaceInput(input('island-0-owned-fishery'), '2');
 
     expect(byTestId('owned-operating-impact'))
@@ -88,9 +89,9 @@ describe('actuals in the production view', () => {
     renderApp();
     addIsland();
     addIsland();
-    showAllBuildable(0);
+    addBuilding(0, 'fishery');
     await replaceInput(input('island-0-owned-fishery'), '2');
-    await replaceInput(input('island-1-eco-houses'), '500');
+    await setIslandHouses(1, 'eco', '500');
 
     const fish = byTestId('transfer-fishery');
     expect(fish).toHaveTextContent('surplus Island 1 (+2)');

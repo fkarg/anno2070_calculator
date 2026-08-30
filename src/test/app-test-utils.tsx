@@ -55,3 +55,18 @@ export function resetButton(): HTMLButtonElement {
 export async function replaceInput(input: HTMLElement, value: string): Promise<void> {
   fireEvent.change(input, { target: { value } });
 }
+
+// Fresh islands hide zero-resident faction rows; initial population entry
+// happens in the Configure panel. Card rows appear once houses exist.
+export async function setIslandHouses(islandIndex: number, faction: string, value: string): Promise<void> {
+  const card = byTestId(`island-${islandIndex}`);
+  const configInput = () => document.getElementById(`island-${islandIndex}-config-${faction}-houses`);
+  const toggle = () => requiredElement(
+    card.querySelector<HTMLButtonElement>('.island-card__plaque button'),
+    `configure toggle for island ${islandIndex}`,
+  );
+  const wasOpen = configInput() !== null;
+  if (!wasOpen) fireEvent.click(toggle());
+  await replaceInput(requiredElement(configInput(), `config houses for ${faction}`), value);
+  if (!wasOpen) fireEvent.click(toggle());
+}

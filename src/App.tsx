@@ -120,7 +120,13 @@ export function App() {
           })),
         }))}
       />
-      <CoverageSection islands={state.islands} planRequirements={production} />
+      <CoverageSection
+        islands={state.islands}
+        planRequirements={production}
+        planIsManual={(['eco', 'tycoon', 'tech'] as const).some((faction) =>
+          state.plan.factions[faction].houses !== null
+          || state.plan.factions[faction].overrides.some((override) => override !== null))}
+      />
       <ProductionSection
         state={state.plan}
         results={production}

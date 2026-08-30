@@ -1,7 +1,7 @@
 import { fireEvent } from '@testing-library/react';
 import { beforeEach, describe, expect, test } from 'vitest';
 
-import { buttonWithLabel, input, renderApp, replaceInput } from './test/app-test-utils';
+import { buttonWithLabel, input, renderApp, replaceInput, setIslandHouses } from './test/app-test-utils';
 
 beforeEach(() => localStorage.clear());
 
@@ -47,7 +47,7 @@ describe('global per-faction bonuses', () => {
     renderApp();
     fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.islands-section button')]
       .find((button) => button.textContent === 'Add island')!);
-    await replaceInput(input('island-0-eco-houses'), '100');
+    await setIslandHouses(0, 'eco', '100');
     expect(input('eco-population-2')).toHaveValue('725');
 
     const livingSpace = document

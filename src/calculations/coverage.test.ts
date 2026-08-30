@@ -87,3 +87,25 @@ describe('supportedAscensions', () => {
     expect(supportedAscensions([subject], 'eco', 0)).toBeNull();
   });
 });
+
+describe('living space and ascension support', () => {
+  test('the global living-space bonus raises per-house ascension demand', () => {
+    // Regression: ascension math used a bonus-blind capacity table. With
+    // living space, an Employee house holds 16, so one electronics factory
+    // (571 per building) covers floor(571/16) = 35 ascensions, not 38.
+    const base = island({
+      fishery: 10, teaPlantation: 10,
+      healthFoodFactory: 1, farmhouse: 2, riceFarm: 1,
+      electronicsFactory: 1, electronicsRecycler: 1,
+    });
+    const boosted = {
+      ...base,
+      factions: {
+        ...base.factions,
+        eco: { ...base.factions.eco, livingSpace: true },
+      },
+    };
+    expect(supportedAscensions([base], 'eco', 0)?.ascensions).toBe(38);
+    expect(supportedAscensions([boosted], 'eco', 0)?.ascensions).toBe(35);
+  });
+});
