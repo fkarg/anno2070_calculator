@@ -31,13 +31,13 @@ describe('actuals in the production view', () => {
     addBuilding(0, 'fishery');
     await replaceInput(input('island-0-owned-fishery'), '2');
 
-    const actuals = byTestId('actuals-ecoFish');
-    expect(actuals).toHaveTextContent('act');
+    const extras = byTestId('extras-ecoFish');
     // own and capacity merge into one cell; the arrow only appears when they differ.
-    expect(actuals).toHaveTextContent('own 2');
-    expect(actuals).not.toHaveTextContent('→');
+    expect(extras).toHaveTextContent('own 2');
+    expect(extras).not.toHaveTextContent('→');
     // No plan demand: the plan is covered, shown as surplus, not a shortage.
-    expect(actuals.querySelector('.balance--surplus')).toHaveTextContent('over 2');
+    expect(extras.querySelector('.balance--surplus')).toHaveTextContent('over 2');
+    expect(byTestId('actuals-ecoFish')).toHaveTextContent('maintenance credits per minute:-10');
 
     const alternative = productionRow('ecoElectronicsRecyclerCommunicators');
     expect(alternative.querySelector('[data-testid^="actuals-"]')).toBeNull();
@@ -57,9 +57,8 @@ describe('actuals in the production view', () => {
     await replaceInput(input('island-0-owned-electronicsRecycler'), '2');
 
     // 2 recyclers = 3 chip-factory units; costs are the recyclers' flat costs.
-    const chips = byTestId('actuals-ecoMicrochipsCommunicators');
-    expect(chips).toHaveTextContent('own 2→3');
-    expect(chips).toHaveTextContent('maintenance credits per minute:-320');
+    expect(byTestId('extras-ecoMicrochipsCommunicators')).toHaveTextContent('own 2→3');
+    expect(byTestId('actuals-ecoMicrochipsCommunicators')).toHaveTextContent('maintenance credits per minute:-320');
   });
 
   test('the build gap is a planning number, not an actual shortage', async () => {
@@ -67,12 +66,12 @@ describe('actuals in the production view', () => {
     addIsland();
     // Population creates plan demand for fish; no fisheries owned yet.
     await setIslandHouses(0, 'eco', '100');
-    const fish = byTestId('actuals-ecoFish');
+    const fish = byTestId('extras-ecoFish');
     expect(fish).toHaveTextContent('build 4.18');
 
     addBuilding(0, 'fishery');
     await replaceInput(input('island-0-owned-fishery'), '5');
-    expect(byTestId('actuals-ecoFish')).toHaveTextContent('over 0.83');
+    expect(byTestId('extras-ecoFish')).toHaveTextContent('over 0.83');
   });
 
   test('owned buildings drive the actual operating impact summary', async () => {

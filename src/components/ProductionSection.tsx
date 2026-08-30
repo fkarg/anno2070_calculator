@@ -123,6 +123,12 @@ function ProductionFaction({
       </header>
 
       <div className="production-faction__nodes">
+        <div className="production-node production-node--header" aria-hidden="true">
+          <span>building · per-building costs</span>
+          <span>req</span>
+          <span>prod %</span>
+          <span>costs · plan / act · owned</span>
+        </div>
         {buildProductionTrees(faction).map((tree) => {
           const rootNode = nodeById.get(tree.rootId)!;
           const root = BUILDINGS[rootNode.buildingId];
@@ -143,6 +149,41 @@ function ProductionFaction({
               const relationship = node.calculation.kind === 'primary'
                 ? 'Primary product.'
                 : `Level ${row.depth + 1} dependency of ${BUILDINGS[nodeById.get(node.calculation.parentId)!.buildingId].label}.${row.alternativeRoot ? ' Alternative source.' : ''}`;
+
+              // Actuals render once per good, on its canonical producer's row;
+              // owned counts, capacity, and actual costs aggregate every
+              // producer of the good (owned recyclers count as chips here).
+              const canonical = producedGood(node.buildingId) === node.buildingId;
+              let ownedTotal: number | null = 0;
+              let actualImpact: OperatingImpact | null = { maintenanceCredits: 0, power: 0, ecoBalance: 0 };
+              let capacity: number | null = 0;
+              let buildGap: number | null = null;
+              if (canonical) {
+                const goodId = node.buildingId as GoodId;
+                for (const producer of GOODS.get(goodId)?.producers ?? []) {
+                  const count = owned.get(producer.buildingId);
+                  if (count === undefined) continue;
+                  if (count === null || ownedTotal === null || actualImpact === null) {
+                    ownedTotal = null;
+                    actualImpact = null;
+                    continue;
+                  }
+                  ownedTotal += count;
+                  const flat = BUILDINGS[producer.buildingId].operatingImpact;
+                  actualImpact = {
+                    maintenanceCredits: actualImpact.maintenanceCredits + count * flat.maintenanceCredits,
+                    power: actualImpact.power + count * flat.power,
+                    ecoBalance: actualImpact.ecoBalance + count * flat.ecoBalance,
+                  };
+                }
+                // undefined means untouched (0); null is invalid and must survive.
+                const empireEntry = empireBalances[goodId];
+                capacity = empireEntry === undefined ? 0 : empireEntry.capacity;
+                const required = planByGood.has(goodId) ? planByGood.get(goodId)! : 0;
+                // Purely a planning gap: plan demand minus owned capacity. Actual
+                // shortages live in island balances and transfer needs.
+                buildGap = capacity === null || required === null ? null : required - capacity;
+              }
               return (
                 <li
                   key={node.id}
@@ -181,89 +222,53 @@ function ProductionFaction({
                     })}
                   />
                   <div className="production-node__impact">
-                    <div className="production-node__impact-line">
-                      <span className="production-node__impact-label" title="planned operating costs">plan</span>
-                      <div data-testid="direct-operating-impact">
+                    <div className="production-node__impact-lines">
+                      <div className="production-node__impact-line" data-testid="direct-operating-impact">
                         {direct === null
                           ? <span><span className="visually-hidden">{building.label} direct operating impact unavailable:</span>—</span>
                           : <OperatingImpactValues impact={direct} />}
                       </div>
-                    </div>
-                    {(() => {
-                      // Actuals render once per good, on its canonical producer's
-                      // row; owned counts, capacity, and actual costs aggregate
-                      // every producer of the good (owned recyclers count here).
-                      if (producedGood(node.buildingId) !== node.buildingId) return null;
-                      const goodId = node.buildingId as GoodId;
-                      let ownedTotal: number | null = 0;
-                      let actualImpact: OperatingImpact | null = { maintenanceCredits: 0, power: 0, ecoBalance: 0 };
-                      for (const producer of GOODS.get(goodId)?.producers ?? []) {
-                        const count = owned.get(producer.buildingId);
-                        if (count === undefined) continue;
-                        if (count === null || ownedTotal === null || actualImpact === null) {
-                          ownedTotal = null;
-                          actualImpact = null;
-                          continue;
-                        }
-                        ownedTotal += count;
-                        const flat = BUILDINGS[producer.buildingId].operatingImpact;
-                        actualImpact = {
-                          maintenanceCredits: actualImpact.maintenanceCredits + count * flat.maintenanceCredits,
-                          power: actualImpact.power + count * flat.power,
-                          ecoBalance: actualImpact.ecoBalance + count * flat.ecoBalance,
-                        };
-                      }
-                      // undefined means untouched (0); null is invalid and must survive.
-                      const empireEntry = empireBalances[goodId];
-                      const capacity = empireEntry === undefined ? 0 : empireEntry.capacity;
-                      const required = planByGood.has(goodId) ? planByGood.get(goodId)! : 0;
-                      // Purely a planning gap: plan demand minus owned capacity.
-                      // Actual shortages live in island balances and transfer
-                      // needs, where demand comes from owned consumers only.
-                      const buildGap = capacity === null || required === null ? null : required - capacity;
-                      return (
-                        <div
-                          className="production-node__impact-line production-node__impact-line--actual"
-                          data-testid={`actuals-${node.id}`}
-                        >
-                          <span className="production-node__impact-label" title="actual operating costs (owned buildings)">act</span>
+                      {canonical && (
+                        <div className="production-node__impact-line production-node__impact-line--actual" data-testid={`actuals-${node.id}`}>
                           {actualImpact === null
                             ? <span>—</span>
                             : <OperatingImpactValues impact={actualImpact} />}
-                          <span className="production-node__impact-extras">
-                            <span
-                              className="production-node__mini"
-                              aria-label={`${building.label} owned across all islands and their capacity`}
-                              title="owned buildings → capacity in canonical units"
-                            >
-                              own {ownedTotal === null ? '—' : ownedTotal}
-                              {capacity !== null && ownedTotal !== null && Math.abs(capacity - ownedTotal) > BALANCE_EPSILON
-                                ? `→${formatRequirement(capacity)}`
-                                : capacity === null ? '→—' : ''}
-                            </span>
-                            {buildGap === null
-                              ? <span className="production-node__mini">build —</span>
-                              : buildGap > BALANCE_EPSILON
-                                ? (
-                                  <span
-                                    className="production-node__mini balance--shortfall"
-                                    aria-label={`${building.label} still to build for the plan`}
-                                  >
-                                    build {formatRequirement(buildGap)}
-                                  </span>
-                                )
-                                : (
-                                  <span
-                                    className="production-node__mini balance--surplus"
-                                    aria-label={`${building.label} plan covered`}
-                                  >
-                                    {buildGap < -BALANCE_EPSILON ? `over ${formatRequirement(-buildGap)}` : '✓'}
-                                  </span>
-                                )}
-                          </span>
                         </div>
-                      );
-                    })()}
+                      )}
+                    </div>
+                    {canonical && (
+                      <div className="production-node__extras" data-testid={`extras-${node.id}`}>
+                        <span
+                          className="production-node__mini"
+                          aria-label={`${building.label} owned across all islands and their capacity`}
+                          title="owned buildings → capacity in canonical units"
+                        >
+                          own {ownedTotal === null ? '—' : ownedTotal}
+                          {capacity !== null && ownedTotal !== null && Math.abs(capacity - ownedTotal) > BALANCE_EPSILON
+                            ? `→${formatRequirement(capacity)}`
+                            : capacity === null ? '→—' : ''}
+                        </span>
+                        {buildGap === null
+                          ? <span className="production-node__mini">build —</span>
+                          : buildGap > BALANCE_EPSILON
+                            ? (
+                              <span
+                                className="production-node__mini balance--shortfall"
+                                aria-label={`${building.label} still to build for the plan`}
+                              >
+                                build {formatRequirement(buildGap)}
+                              </span>
+                            )
+                            : (
+                              <span
+                                className="production-node__mini balance--surplus"
+                                aria-label={`${building.label} plan covered`}
+                              >
+                                {buildGap < -BALANCE_EPSILON ? `over ${formatRequirement(-buildGap)}` : '✓'}
+                              </span>
+                            )}
+                      </div>
+                    )}
                   </div>
                 </li>
               );
