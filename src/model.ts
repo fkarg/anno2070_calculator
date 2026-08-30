@@ -102,7 +102,7 @@ export function createInitialState(): CalculatorState {
   };
 }
 
-function createFactionState(faction: Faction): FactionState {
+export function createFactionState(faction: Faction): FactionState {
   const tierCount = FACTION_CONFIGS[faction].tierLabels.length;
   return {
     houses: { raw: '0', value: 0 },
