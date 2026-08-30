@@ -1,4 +1,5 @@
-import { BUILDINGS, type OperatingImpact } from './building-data';
+import type { IslandState } from '../island';
+import { BUILDINGS, type BuildingId, type OperatingImpact } from './building-data';
 import { PRODUCTION_NODES } from './production-data';
 import { buildProductionTrees } from './production-tree';
 
@@ -39,6 +40,21 @@ export type ProductionOperatingImpacts = Readonly<{
   direct: Readonly<Record<string, OperatingImpact | null>>;
   byRoot: Readonly<Record<string, readonly VariantOperatingImpact[]>>;
 }>;
+
+export function calculateOwnedImpact(islands: readonly IslandState[]): OperatingImpact | null {
+  let total = ZERO_OPERATING_IMPACT;
+  for (const island of islands) {
+    if (!island.settled) continue;
+    for (const [buildingId, entry] of Object.entries(island.owned)) {
+      if (entry.value === null) return null;
+      total = addOperatingImpacts(
+        total,
+        scaleOperatingImpact(BUILDINGS[buildingId as BuildingId].operatingImpact, entry.value),
+      );
+    }
+  }
+  return total;
+}
 
 export function calculateOperatingImpacts(
   requirements: Readonly<Record<string, number | null>>,

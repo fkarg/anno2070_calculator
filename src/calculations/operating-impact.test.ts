@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest';
 
+import { createIsland } from '../island';
 import { PRODUCTION_NODES } from './production-data';
-import { calculateOperatingImpacts, scaleOperatingImpact } from './operating-impact';
+import { calculateOperatingImpacts, calculateOwnedImpact, scaleOperatingImpact } from './operating-impact';
 
 describe('scaleOperatingImpact', () => {
   test('scales fractional requirements without rounding again', () => {
@@ -83,5 +84,31 @@ describe('calculateOperatingImpacts', () => {
     expect(result.byRoot.ecoCommunicators.every(({ impact }) => impact === null)).toBe(true);
     expect(result.byRoot.ecoServiceBots.every(({ impact }) => impact !== null)).toBe(true);
     expect(result.byRoot.tycoonFish[0].impact).not.toBeNull();
+  });
+});
+
+describe('calculateOwnedImpact', () => {
+  test('sums flat per-building impacts across settled islands', () => {
+    const a = createIsland('A');
+    a.owned = { fishery: { raw: '2', value: 2 } }; // -5 credits, -1 power each
+    const b = createIsland('B');
+    b.owned = { chipFactory: { raw: '1', value: 1 } }; // -10, -2, -4
+    const unsettled = { ...createIsland('C'), settled: false, owned: { fishery: { raw: '9', value: 9 } } };
+    expect(calculateOwnedImpact([a, b, unsettled])).toEqual({
+      maintenanceCredits: -20, power: -4, ecoBalance: -4,
+    });
+  });
+
+  test('productivity does not affect owned impacts', () => {
+    const island = createIsland('A');
+    island.owned = { fishery: { raw: '2', value: 2 } };
+    island.productivity = { fishery: { raw: '250', value: 250 } };
+    expect(calculateOwnedImpact([island])!.maintenanceCredits).toBe(-10);
+  });
+
+  test('an invalid owned count makes the total unavailable', () => {
+    const island = createIsland('A');
+    island.owned = { fishery: { raw: 'x', value: null } };
+    expect(calculateOwnedImpact([island])).toBeNull();
   });
 });
