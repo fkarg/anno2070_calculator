@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 
 import type { Faction } from './calculations/population';
-import { calculateProduction } from './calculations/calculate-production';
+import { calculateAvailableProduction } from './calculations/calculate-production';
 import { PRODUCTION_NODES } from './calculations/production-data';
 import { PopulationSection } from './components/PopulationSection';
 import { ProductionSection } from './components/ProductionSection';
 import {
   createInitialState,
-  effectivePopulations,
+  effectivePopulation,
   parsePositiveNumber,
   type EditableNumber,
   type FactionState,
@@ -17,20 +17,20 @@ import { loadCalculatorState, saveCalculatorState } from './storage';
 export function App() {
   const [state, setState] = useState(loadCalculatorState);
   useEffect(() => saveCalculatorState(state), [state]);
-  const population = effectivePopulations(state);
-  const productivityEntries = Object.entries(state.productivity);
-  const productivityValid = productivityEntries.every(([, entry]) => entry.value !== null);
-  const productivity = productivityValid
-    ? Object.fromEntries(productivityEntries.map(([id, entry]) => [id, entry.value as number]))
-    : null;
-  const production = population && productivity
-    ? calculateProduction({
-      population,
-      productivity,
-      recycling: state.recycling,
-      wholeBuildings: state.wholeBuildings,
-    })
-    : null;
+  const population = {
+    eco: effectivePopulation('eco', state.factions.eco),
+    tycoon: effectivePopulation('tycoon', state.factions.tycoon),
+    tech: effectivePopulation('tech', state.factions.tech),
+  };
+  const productivity = Object.fromEntries(
+    Object.entries(state.productivity).map(([id, entry]) => [id, entry.value]),
+  );
+  const production = calculateAvailableProduction({
+    population,
+    productivity,
+    recycling: state.recycling,
+    wholeBuildings: state.wholeBuildings,
+  });
 
   const updateFaction = (
     faction: Faction,
@@ -82,14 +82,14 @@ export function App() {
       />
 
       <aside className="calculator-section page-notes" aria-label="Calculator guidance">
-        <section>
-          <h2>How to use it</h2>
+        <details open>
+          <summary>How to use it</summary>
           <ul>
             <li>Enter residences and select the highest occupied population tier. Population and production update immediately.</li>
             <li>Edit any population field to hold it as a highlighted manual value; select Auto beside it to resume calculation.</li>
             <li>Set each building's productivity to match your island. Grey rows show alternate production sources, not additional requirements.</li>
           </ul>
-        </section>
+        </details>
         <section>
           <h2>Copper tip</h2>
           <div className="copper-tip">
@@ -101,7 +101,8 @@ export function App() {
       </aside>
 
       <footer>
-        Rebuilt from the archived Anno 2070 Deep Ocean calculator. Source work licensed under{' '}
+        Rebuilt from the{' '}
+        <a href="http://anno2070.atspace.eu/">archived Anno 2070 Deep Ocean calculator</a>. Source work licensed under{' '}
         <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>.
       </footer>
     </main>

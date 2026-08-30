@@ -6,7 +6,7 @@ import { NumericInput } from './NumericInput';
 
 type ProductionSectionProps = {
   state: CalculatorState;
-  results: Record<string, number> | null;
+  results: Record<string, number | null>;
   onProductivityChange: (id: string, value: EditableNumber) => void;
   onFactionProductivityChange: (faction: Faction, delta: number) => void;
   onRecyclingChange: (checked: boolean) => void;
@@ -66,6 +66,7 @@ function ProductionFaction({
         {nodes.map((node) => {
           const labelContext = context(node);
           const productivity = state.productivity[node.id];
+          const result = results[node.id];
           return (
             <div
               key={node.id}
@@ -76,7 +77,7 @@ function ProductionFaction({
               <img className="production-node__image" src={`/assets/${node.image}`} alt="" />
               <span className="production-node__label">{node.label}</span>
               <output aria-label={`${node.label} required buildings (${labelContext})`}>
-                {results === null ? '—' : formatRequirement(results[node.id])}
+                {result === null ? '—' : formatRequirement(result)}
               </output>
               <NumericInput
                 id={`${node.id}-productivity`}

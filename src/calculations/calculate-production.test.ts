@@ -1,6 +1,10 @@
 import { describe, expect, test } from 'vitest';
 
-import { calculateProduction, createDefaultProductivity } from './calculate-production';
+import {
+  calculateAvailableProduction,
+  calculateProduction,
+  createDefaultProductivity,
+} from './calculate-production';
 import { PRODUCTION_NODES, type ProductionNode } from './production-data';
 
 const expectedIds = {
@@ -193,5 +197,28 @@ describe('calculateProduction', () => {
     expect(result.ecoServiceBots).toBe(2);
     expect(result.ecoMicrochipsServiceBots).toBe(1);
     expect(result.ecoSandServiceBots).toBe(1);
+  });
+});
+
+describe('calculateAvailableProduction', () => {
+  test('suppresses only an invalid node and its descendants', () => {
+    const productivity: Record<string, number | null> = createDefaultProductivity();
+    productivity.ecoHealthFood = null;
+    const result = calculateAvailableProduction({
+      population: {
+        eco: [1000, 2000, 3000, 4000],
+        tycoon: [1100, 2100, 3100, 4100],
+        tech: [1200, 2200, 3200],
+      },
+      productivity,
+      recycling: false,
+      wholeBuildings: false,
+    });
+
+    expect(result.ecoHealthFood).toBeNull();
+    expect(result.ecoVegetablesHealthFood).toBeNull();
+    expect(result.ecoRice).toBeNull();
+    expect(result.ecoFish).not.toBeNull();
+    expect(result.tycoonFish).not.toBeNull();
   });
 });

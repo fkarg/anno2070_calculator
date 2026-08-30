@@ -1,7 +1,11 @@
 import { fc, test } from '@fast-check/vitest';
 import { expect } from 'vitest';
 
-import { calculateProduction, createDefaultProductivity } from './calculate-production';
+import {
+  calculateAvailableProduction,
+  calculateProduction,
+  createDefaultProductivity,
+} from './calculate-production';
 import { PRODUCTION_NODES } from './production-data';
 
 const population = fc.record({
@@ -142,3 +146,36 @@ test.prop({
     }
   },
 );
+
+test.prop({
+  population,
+  productivity,
+  nodeIndex: fc.integer({ min: 0, max: PRODUCTION_NODES.length - 1 }),
+})('an invalid productivity suppresses exactly that node and its descendants', ({
+  population,
+  productivity,
+  nodeIndex,
+}) => {
+  const invalidNode = PRODUCTION_NODES[nodeIndex];
+  const expectedMissing = descendantsOf(invalidNode.id);
+  const baseline = calculateProduction({
+    population,
+    productivity,
+    recycling: false,
+    wholeBuildings: false,
+  });
+  const partial = calculateAvailableProduction({
+    population,
+    productivity: { ...productivity, [invalidNode.id]: null },
+    recycling: false,
+    wholeBuildings: false,
+  });
+
+  for (const node of PRODUCTION_NODES) {
+    if (expectedMissing.has(node.id)) {
+      expect(partial[node.id]).toBeNull();
+    } else {
+      expect(partial[node.id]).toBe(baseline[node.id]);
+    }
+  }
+});

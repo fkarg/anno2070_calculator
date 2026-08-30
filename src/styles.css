@@ -212,7 +212,8 @@ input[aria-invalid="true"] { border-color: #ef665f; background: #321d1f; }
 .production-node label::after { content: "%"; position: absolute; right: 0; top: .38rem; color: var(--muted); font-size: .65rem; }
 
 .page-notes { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; }
-.page-notes section { padding: .9rem; }
+.page-notes section, .page-notes details { padding: .9rem; }
+.page-notes summary { font-weight: 700; font-size: 1rem; }
 .page-notes h2 { margin-bottom: .5rem; font-size: 1rem; }
 .page-notes p, .page-notes li { color: var(--muted); font-size: .82rem; line-height: 1.45; }
 .page-notes ul { margin: .35rem 0 0; padding-left: 1.15rem; }

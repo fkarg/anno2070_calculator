@@ -3,6 +3,8 @@ import {
   createInitialState,
   FACTIONS,
   FACTION_CONFIGS,
+  parseNonNegativeInteger,
+  parsePositiveNumber,
   type CalculatorState,
   type EditableNumber,
   type FactionState,
@@ -27,7 +29,7 @@ function isEditableNumber(value: unknown): value is EditableNumber {
 
 function isFactionState(value: unknown, faction: typeof FACTIONS[number]): value is FactionState {
   if (!isRecord(value) || !isEditableNumber(value.houses)) return false;
-  if (value.houses.value !== null && (!Number.isSafeInteger(value.houses.value) || value.houses.value < 0)) return false;
+  if (value.houses.value !== parseNonNegativeInteger(value.houses.raw)) return false;
 
   const tierCount = FACTION_CONFIGS[faction].tierLabels.length;
   if (!Number.isInteger(value.maxTier) || Number(value.maxTier) < 1 || Number(value.maxTier) > tierCount) return false;
@@ -36,7 +38,7 @@ function isFactionState(value: unknown, faction: typeof FACTIONS[number]): value
 
   return value.overrides.every((override) => override === null || (
     isEditableNumber(override)
-    && (override.value === null || (Number.isSafeInteger(override.value) && override.value >= 0))
+    && override.value === parseNonNegativeInteger(override.raw)
   ));
 }
 
@@ -46,11 +48,12 @@ function isCalculatorState(value: unknown): value is CalculatorState {
   const productivity = value.productivity;
   if (typeof value.recycling !== 'boolean' || typeof value.wholeBuildings !== 'boolean') return false;
   if (!FACTIONS.every((faction) => isFactionState(factions[faction], faction))) return false;
+  if (Object.keys(productivity).length !== PRODUCTION_NODES.length) return false;
 
   return PRODUCTION_NODES.every((node) => {
     const entry = productivity[node.id];
     return isEditableNumber(entry)
-      && (entry.value === null || entry.value > 0);
+      && entry.value === parsePositiveNumber(entry.raw);
   });
 }
 

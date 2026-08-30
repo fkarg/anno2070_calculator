@@ -19,7 +19,7 @@ Keep concise usage guidance, the Tips section, and source/license attribution. R
 - pnpm for package management and scripts.
 - Vitest for tests.
 - `fast-check` and its Vitest connector for property-based calculation tests.
-- No state library, backend, persistence layer, or generalized multi-island model.
+- No state library, backend, server-side persistence, or generalized multi-island model. User-owned inputs are stored in versioned browser local storage and derived results are never persisted.
 
 React is restricted to the presentation and interaction layer. Calculation modules must not import React or access the DOM.
 
@@ -43,6 +43,8 @@ Stored state contains only:
 - recycling and whole-building rounding choices.
 
 Derived population values, effective population, and factory counts are recalculated synchronously and are never copied into stored state.
+
+The user-owned state is saved locally after each change and restored for the same browser origin. Invalid, incompatible, or unavailable browser storage falls back to defaults without preventing the calculator from running.
 
 ### Calculation modules
 

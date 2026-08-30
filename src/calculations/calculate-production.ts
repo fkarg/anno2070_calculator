@@ -9,6 +9,13 @@ export type ProductionInput = {
   wholeBuildings: boolean;
 };
 
+export type AvailableProductionInput = {
+  population: Record<Faction, readonly number[] | null>;
+  productivity: Record<string, number | null>;
+  recycling: boolean;
+  wholeBuildings: boolean;
+};
+
 export function createDefaultProductivity(): Record<string, number> {
   return Object.fromEntries(PRODUCTION_NODES.map((node) => [node.id, 100]));
 }
@@ -33,6 +40,35 @@ export function calculateProduction(input: ProductionInput): Record<string, numb
         productivity,
         input.wholeBuildings,
       );
+    }
+  }
+
+  return result;
+}
+
+export function calculateAvailableProduction(
+  input: AvailableProductionInput,
+): Record<string, number | null> {
+  const result: Record<string, number | null> = {};
+
+  for (const node of PRODUCTION_NODES) {
+    const productivity = input.productivity[node.id];
+    if (productivity === null) {
+      result[node.id] = null;
+    } else if (node.calculation.kind === 'primary') {
+      const population = input.population[node.faction];
+      result[node.id] = population === null ? null : calculatePrimary(
+        node.calculation.satisfaction,
+        population,
+        productivity,
+        Boolean(node.calculation.recyclable && input.recycling),
+        input.wholeBuildings,
+      );
+    } else {
+      const parent = result[node.calculation.parentId];
+      result[node.id] = parent === null
+        ? null
+        : calculateMaterial(parent, node.calculation.multiplier, productivity, input.wholeBuildings);
     }
   }
 

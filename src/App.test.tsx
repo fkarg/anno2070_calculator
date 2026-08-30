@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, test } from 'vitest';
 
 import { App } from './App';
+import { PRODUCTION_NODES } from './calculations/production-data';
 
 beforeEach(() => {
   localStorage.clear();
@@ -47,17 +48,21 @@ describe('population calculator', () => {
 
     const engineersField = screen.getByTestId('eco-population-2');
     expect(within(engineersField).getByText('Manual')).toBeInTheDocument();
+    expect(screen.getByLabelText('Health food factory required buildings (Eco)')).toHaveTextContent('2.65');
+    expect(screen.getByLabelText('Vegetable farm required buildings (Eco, Health food factory)')).toHaveTextContent('5.3');
 
     await replaceInput(screen.getByLabelText('Eco houses'), '200');
 
     expect(screen.getByLabelText('Eco Workers population')).toHaveValue('320');
     expect(screen.getByLabelText('Eco Employees population')).toHaveValue('960');
     expect(screen.getByLabelText('Eco Engineers population')).toHaveValue('999');
+    expect(screen.getByLabelText('Health food factory required buildings (Eco)')).toHaveTextContent('4.13');
 
     await user.click(within(engineersField).getByRole('button', { name: 'Use automatic Eco Engineers population' }));
 
     expect(screen.getByLabelText('Eco Engineers population')).toHaveValue('1450');
     expect(within(engineersField).queryByText('Manual')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Health food factory required buildings (Eco)')).toHaveTextContent('4.66');
   });
 
   test('marks invalid numeric input and suppresses dependent automatic values', async () => {
@@ -90,6 +95,14 @@ describe('production calculator', () => {
     render(<App />);
 
     expect(screen.getAllByTestId(/^production-node-/)).toHaveLength(88);
+    for (const node of PRODUCTION_NODES) {
+      const row = screen.getByTestId(`production-node-${node.id}`);
+      expect(row).toHaveClass(`production-node--depth-${node.depth}`);
+      expect(row.querySelector(`img[src="/assets/${node.image}"]`)).not.toBeNull();
+      expect(within(row).getByText(node.label)).toBeInTheDocument();
+      if (node.alternate) expect(row).toHaveClass('production-node--alternate');
+      if (node.depth > 0) expect(row.querySelector('img[src="/assets/Speed_Qoor.png"]')).not.toBeNull();
+    }
     const fishOutput = screen.getByLabelText('Fishery required buildings (Eco)');
     expect(fishOutput.tagName).toBe('OUTPUT');
     expect(fishOutput).toHaveTextContent('0');
@@ -137,15 +150,28 @@ describe('production calculator', () => {
     expect(screen.getByLabelText('Chip factory required buildings (Eco, Robot factory)')).toHaveTextContent('1');
   });
 
-  test('marks invalid productivity and suppresses calculated output', async () => {
+  test('invalid productivity suppresses only its dependent production chain', async () => {
     render(<App />);
     await replaceInput(screen.getByLabelText('Eco houses'), '100');
+    await replaceInput(screen.getByLabelText('Tycoon houses'), '100');
     const productivity = screen.getByLabelText('Fishery productivity (Eco)');
 
     await replaceInput(productivity, '');
 
     expect(productivity).toHaveAttribute('aria-invalid', 'true');
     expect(screen.getByLabelText('Fishery required buildings (Eco)')).toHaveTextContent('—');
+    expect(screen.getByLabelText('Tea plantation required buildings (Eco)')).toHaveTextContent('4.17');
+    expect(screen.getByLabelText('Fishery required buildings (Tycoon)')).toHaveTextContent('4.18');
+  });
+
+  test('invalid population suppresses only that faction', async () => {
+    render(<App />);
+    await replaceInput(screen.getByLabelText('Tycoon houses'), '100');
+
+    await replaceInput(screen.getByLabelText('Eco houses'), 'invalid');
+
+    expect(screen.getByLabelText('Fishery required buildings (Eco)')).toHaveTextContent('—');
+    expect(screen.getByLabelText('Fishery required buildings (Tycoon)')).toHaveTextContent('4.18');
   });
 });
 
@@ -167,6 +193,7 @@ describe('saved calculator state', () => {
     expect(within(screen.getByTestId('eco-population-2')).getByText('Manual')).toBeInTheDocument();
     expect(screen.getByLabelText('Fishery productivity (Eco)')).toHaveValue('117.5');
     expect(screen.getByLabelText('Round up to whole buildings')).toBeChecked();
+    expect(screen.getByLabelText('Health food factory required buildings (Eco)')).toHaveTextContent('3');
   });
 
   test('persists reset defaults for the next reload', async () => {
