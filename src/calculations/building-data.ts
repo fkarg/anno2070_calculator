@@ -95,6 +95,77 @@ export const BUILDINGS = {
 
 export type BuildingId = keyof typeof BUILDINGS;
 
+// Island prerequisites per the Anno 2070 wiki (Fertility, All Items, and
+// per-building pages, verified 2026-08-30). Only picker semantics: a building
+// absent from BUILDING_REQUIREMENTS needs nothing from the island.
+export type IslandRequirement = Readonly<{
+  id: string;
+  label: string;
+  image: string;
+  kind: 'fertility' | 'deposit';
+}>;
+
+const fertility = (id: string, label: string, image: string): IslandRequirement =>
+  ({ id, label, image, kind: 'fertility' });
+const deposit = (id: string, label: string, image: string): IslandRequirement =>
+  ({ id, label, image, kind: 'deposit' });
+
+export const ISLAND_REQUIREMENTS: readonly IslandRequirement[] = [
+  fertility('tea', 'Tea', 'Tea_Qoor.png'),
+  fertility('rice', 'Rice', 'Rice_Qoor.png'),
+  fertility('vegetable', 'Vegetable', 'Vegetables_Qoor.png'),
+  fertility('fruit', 'Fruit', 'Fruits_Qoor.png'),
+  fertility('durumWheat', 'Durum wheat', 'Durum wheat_Qoor.png'),
+  fertility('corn', 'Corn', 'Corn_Qoor.png'),
+  fertility('coffee', 'Coffee', 'Caffeine_Qoor.png'),
+  fertility('sugar', 'Sugar', 'Sugar_Qoor.png'),
+  fertility('grapes', 'Grapes', 'Grapes_Qoor.png'),
+  fertility('truffle', 'Truffle', 'Truffle_Qoor.png'),
+  fertility('algae', 'Algae', 'Algae_Qoor.png'),
+  fertility('diamond', 'Diamond', 'Diamonds_Qoor.png'),
+  fertility('manganeseNodule', 'Manganese nodules', 'Manganese nodules_Qoor.png'),
+  fertility('spongeCultures', 'Sponge cultures', 'Sponges_Qoor.png'),
+  deposit('copperDeposit', 'Copper deposit', 'Copper_Qoor.png'),
+  deposit('coalMountain', 'Coal deposit (mountain)', 'Coal_Qoor.png'),
+  deposit('coalGround', 'Coal deposit (ground)', 'Coal_Qoor.png'),
+  deposit('ironOreDeposit', 'Iron ore deposit', 'Iron Ore_Qoor.png'),
+  deposit('sandDeposit', 'Sand deposit (river slot)', 'Sand_Qoor.png'),
+  deposit('goldDeposit', 'Gold deposit (river slot)', 'Gold nuggets_Qoor.png'),
+  deposit('oilLand', 'Crude oil (land)', 'Crude oil_Qoor.png'),
+  deposit('oilUnderwater', 'Crude oil (underwater)', 'Crude oil_Qoor.png'),
+  deposit('blackSmoker', 'Black smoker', 'gold_converter_Qoor.png'),
+];
+
+export const BUILDING_REQUIREMENTS: Partial<Record<BuildingId, string>> = {
+  teaPlantation: 'tea',
+  riceFarm: 'rice',
+  distillery: 'rice',
+  farmhouse: 'vegetable',
+  flavorLab: 'vegetable',
+  fruitPlantation: 'fruit',
+  grainFarm: 'durumWheat',
+  cornFarm: 'corn',
+  coffeePlantation: 'coffee',
+  sugarBeetPlantation: 'sugar',
+  vineyard: 'grapes',
+  truffleFarm: 'truffle',
+  aquafarm: 'algae',
+  diamondHarvestingStation: 'diamond',
+  manganeseExcavationRobot: 'manganeseNodule',
+  spongeFarm: 'spongeCultures',
+  copperMine: 'copperDeposit',
+  coalMine: 'coalMountain',
+  rotaryExcavator: 'coalGround',
+  ironOreMine: 'ironOreDeposit',
+  sandExtractor: 'sandDeposit',
+  goldRefinery: 'goldDeposit',
+  oilDriller: 'oilLand',
+  oilRig: 'oilUnderwater',
+  goldMetalConverter: 'blackSmoker',
+  platinumMetalConverter: 'blackSmoker',
+  ironMetalConverter: 'blackSmoker',
+};
+
 export function buildingIdForImage(image: string): BuildingId {
   const match = (Object.entries(BUILDINGS) as [BuildingId, BuildingDefinition][])
     .find(([, buildingDefinition]) => buildingDefinition.image === image);

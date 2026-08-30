@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { BUILDINGS } from './building-data';
+import { BUILDING_REQUIREMENTS, BUILDINGS, ISLAND_REQUIREMENTS } from './building-data';
 import { ALTERNATIVE_GROUPS, PRODUCTION_NODES } from './production-data';
 
 const expectedOperatingImpacts = {
@@ -97,5 +97,34 @@ describe('BUILDINGS', () => {
       'techLaboratoryIron',
       'techLaboratoryCoal',
     ]);
+  });
+});
+
+describe('ISLAND_REQUIREMENTS', () => {
+  test('uses unique ids and existing local good images', () => {
+    const ids = ISLAND_REQUIREMENTS.map((requirement) => requirement.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const requirement of ISLAND_REQUIREMENTS) {
+      expect(requirement.label, requirement.id).not.toBe('');
+      expect(requirement.image, requirement.id).toMatch(/_Qoor\.png$/);
+    }
+  });
+
+  test('every building requirement references a defined island requirement', () => {
+    const known = new Set(ISLAND_REQUIREMENTS.map((requirement) => requirement.id));
+    for (const [buildingId, requirementId] of Object.entries(BUILDING_REQUIREMENTS)) {
+      expect(buildingId in BUILDINGS, buildingId).toBe(true);
+      expect(known.has(requirementId!), `${buildingId} -> ${requirementId}`).toBe(true);
+    }
+  });
+
+  test('pins researched requirement spot checks', () => {
+    expect(BUILDING_REQUIREMENTS.teaPlantation).toBe('tea');
+    expect(BUILDING_REQUIREMENTS.copperMine).toBe('copperDeposit');
+    expect(BUILDING_REQUIREMENTS.oilRig).toBe('oilUnderwater');
+    expect(BUILDING_REQUIREMENTS.platinumMetalConverter).toBe('blackSmoker');
+    expect(BUILDING_REQUIREMENTS.fishery).toBeUndefined();
+    expect(BUILDING_REQUIREMENTS.electronicsRecycler).toBeUndefined();
+    expect(BUILDING_REQUIREMENTS.lithiumProductionFacility).toBeUndefined();
   });
 });
