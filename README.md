@@ -12,6 +12,8 @@ User-entered residences, manual population overrides, productivity percentages, 
 - Individually editable population values that remain fixed until returned to `Auto` mode.
 - Automatic requirements for the complete Deep Ocean production data set.
 - Per-building productivity controls, faction-wide productivity adjustments, recycling, and optional whole-building rounding.
+- Connector-tree production chains with every source alternative shown at full demand.
+- Per-building, directly required, and complete-variant maintenance-credit, power, and ecobalance impacts from reviewed wiki building data.
 - Versioned local browser storage for user-owned inputs and a complete reset control.
 - Pure calculation modules covered by example-based and property-based tests.
 
@@ -44,13 +46,7 @@ pnpm lint
 
 ## Roadmap and further ideas
 
-### Next: production-chain clarity and operating impacts
-
-- Render dependent supply chains as connector trees with clearly indented building images.
-- Show every source alternative at its full requirement rather than treating alternatives as selected ratios.
-- Add per-building, direct-required, and complete-variant maintenance-credit, power, and ecobalance totals.
-
-### Then: owned production and global statistics
+### Next: owned production and global statistics
 
 - Add integer inputs for actually owned production, power, and ecobalance buildings, kept separate from calculated requirements.
 - Aggregate shared building counts and operating impacts in a Statistics Center-style global view.

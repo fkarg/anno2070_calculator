@@ -6,7 +6,7 @@ const metrics = [
   { key: 'ecoBalance', className: 'eco-balance', label: 'ecobalance' },
 ] as const;
 
-export function formatOperatingImpact(value: number): string {
+function formatOperatingImpact(value: number): string {
   const rounded = Math.round(value * 100) / 100;
   return String(Object.is(rounded, -0) ? 0 : rounded);
 }
