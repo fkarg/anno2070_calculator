@@ -6,6 +6,7 @@ type NumericInputProps = {
   onChange: (raw: string) => void;
   className?: string;
   placeholder?: string;
+  inputMode?: 'numeric' | 'decimal';
 };
 
 export function NumericInput({
@@ -16,6 +17,7 @@ export function NumericInput({
   onChange,
   className,
   placeholder,
+  inputMode = 'numeric',
 }: NumericInputProps) {
   return (
     <label htmlFor={id} className={className}>
@@ -23,7 +25,7 @@ export function NumericInput({
       <input
         id={id}
         type="text"
-        inputMode="numeric"
+        inputMode={inputMode}
         value={raw}
         aria-invalid={!valid}
         placeholder={placeholder}
@@ -32,4 +34,3 @@ export function NumericInput({
     </label>
   );
 }
-

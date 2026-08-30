@@ -1,4 +1,5 @@
 import { calculatePopulation, type Faction } from './calculations/population';
+import { PRODUCTION_NODES } from './calculations/production-data';
 
 export type EditableNumber = {
   raw: string;
@@ -17,6 +18,9 @@ export type FactionState = {
 
 export type CalculatorState = {
   factions: Record<Faction, FactionState>;
+  productivity: Record<string, EditableNumber>;
+  recycling: boolean;
+  wholeBuildings: boolean;
 };
 
 export type FactionConfig = {
@@ -77,6 +81,12 @@ export function parseNonNegativeInteger(raw: string): number | null {
   return Number.isSafeInteger(value) ? value : null;
 }
 
+export function parsePositiveNumber(raw: string): number | null {
+  if (raw.trim() === '') return null;
+  const value = Number(raw);
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
 export function createInitialState(): CalculatorState {
   return {
     factions: {
@@ -84,6 +94,11 @@ export function createInitialState(): CalculatorState {
       tycoon: createFactionState('tycoon'),
       tech: createFactionState('tech'),
     },
+    productivity: Object.fromEntries(
+      PRODUCTION_NODES.map((node) => [node.id, { raw: '100', value: 100 }]),
+    ),
+    recycling: false,
+    wholeBuildings: false,
   };
 }
 
@@ -124,3 +139,12 @@ export function effectivePopulation(
     : null;
 }
 
+export function effectivePopulations(
+  state: CalculatorState,
+): Record<Faction, readonly number[]> | null {
+  const eco = effectivePopulation('eco', state.factions.eco);
+  const tycoon = effectivePopulation('tycoon', state.factions.tycoon);
+  const tech = effectivePopulation('tech', state.factions.tech);
+
+  return eco && tycoon && tech ? { eco, tycoon, tech } : null;
+}
