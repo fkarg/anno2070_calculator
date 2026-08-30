@@ -14,6 +14,8 @@ type PopulationSectionProps = {
   islandHouses?: FactionHouses;
   islandPopulations?: Record<Faction, number[] | null>;
   onFactionChange: (faction: Faction, update: (current: FactionState) => FactionState) => void;
+  // Bonuses are global per faction: the app mirrors them onto every island.
+  onBonusChange: (faction: Faction, bonus: 'livingSpace' | 'senate', checked: boolean) => void;
 };
 
 export function PopulationSection({
@@ -21,6 +23,7 @@ export function PopulationSection({
   islandHouses = NO_ISLAND_HOUSES,
   islandPopulations,
   onFactionChange,
+  onBonusChange,
 }: PopulationSectionProps) {
   return (
     <section className="calculator-section population-section">
@@ -37,12 +40,11 @@ export function PopulationSection({
             state={state.factions[faction]}
             islandHouses={islandHouses[faction]}
             islandPopulation={islandPopulations?.[faction]}
-            statsOnly={state.factions[faction].houses === null}
             onHousesChange={(houses) => onFactionChange(faction, (current) => ({ ...current, houses }))}
             onHousesClear={() => onFactionChange(faction, (current) => ({ ...current, houses: null }))}
             onMaxTierChange={(maxTier) => onFactionChange(faction, (current) => ({ ...current, maxTier }))}
-            onLivingSpaceChange={(livingSpace) => onFactionChange(faction, (current) => ({ ...current, livingSpace }))}
-            onSenateChange={(senate) => onFactionChange(faction, (current) => ({ ...current, senate }))}
+            onLivingSpaceChange={(checked) => onBonusChange(faction, 'livingSpace', checked)}
+            onSenateChange={(checked) => onBonusChange(faction, 'senate', checked)}
             onOverrideChange={(tierIndex, value) => onFactionChange(faction, (current) => ({
               ...current,
               overrides: current.overrides.map((override, index) => index === tierIndex ? value : override),

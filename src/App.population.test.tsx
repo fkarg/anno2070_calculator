@@ -41,3 +41,20 @@ describe('population calculator basics', () => {
     expect(input('eco-population-0')).toHaveAttribute('placeholder', '—');
   });
 });
+
+describe('global per-faction bonuses', () => {
+  test('living space toggled on the plan applies to island populations', async () => {
+    renderApp();
+    fireEvent.click([...document.querySelectorAll<HTMLButtonElement>('.islands-section button')]
+      .find((button) => button.textContent === 'Add island')!);
+    await replaceInput(input('island-0-eco-houses'), '100');
+    expect(input('eco-population-2')).toHaveValue('725');
+
+    const livingSpace = document
+      .querySelector<HTMLInputElement>('.population-faction--eco .population-options--compact input')!;
+    fireEvent.click(livingSpace);
+
+    // 29 engineer houses × 28 (living space) instead of × 25.
+    expect(input('eco-population-2')).toHaveValue('812');
+  });
+});

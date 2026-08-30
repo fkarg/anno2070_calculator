@@ -468,10 +468,9 @@ function IslandConfiguration({ island, index, idPrefix, onChange, onRemove }: {
               state={island.factions[faction]}
               islandHouses={0}
               idPrefix={`${idPrefix}config-`}
+              variant="island"
               onHousesChange={(houses) => updateFaction(faction, (current) => ({ ...current, houses }))}
               onMaxTierChange={(maxTier) => updateFaction(faction, (current) => ({ ...current, maxTier }))}
-              onLivingSpaceChange={(livingSpace) => updateFaction(faction, (current) => ({ ...current, livingSpace }))}
-              onSenateChange={(senate) => updateFaction(faction, (current) => ({ ...current, senate }))}
               onOverrideChange={(tierIndex, value) => updateFaction(faction, (current) => ({
                 ...current,
                 overrides: current.overrides.map((override, overrideIndex) =>

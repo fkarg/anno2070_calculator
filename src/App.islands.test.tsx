@@ -135,10 +135,9 @@ describe('islands section', () => {
     // Limit the island to tier 1: the plan's Auto stats follow the island's
     // actual distribution, not the plan's own ascension model.
     fireEvent.click(buttonWithLabel('Eco Workers', byTestId('island-0')));
-    expect(byTestId('eco-population-0')).toHaveTextContent('800');
-    expect(byTestId('eco-population-3')).toHaveTextContent('0');
-    // Auto plan factions expose no tier or override controls.
-    expect(document.getElementById('eco-population-0')).toBeNull();
+    // Reveal-edit: the Auto values are visible and directly editable.
+    expect(input('eco-population-0')).toHaveValue('800');
+    expect(input('eco-population-3')).toHaveValue('0');
   });
 
   test('manual plan houses ignore islands until returned to Auto', async () => {

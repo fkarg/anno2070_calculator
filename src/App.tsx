@@ -83,11 +83,41 @@ export function App() {
         islandHouses={islandHouses}
         islandPopulations={islandPopulations}
         onFactionChange={updateFaction}
+        onBonusChange={(faction, bonus, checked) => update((current) => ({
+          ...current,
+          // Bonuses are global per faction: mirror onto plan and every island
+          // so the per-island population math stays correct without new params.
+          plan: {
+            ...current.plan,
+            factions: {
+              ...current.plan.factions,
+              [faction]: { ...current.plan.factions[faction], [bonus]: checked },
+            },
+          },
+          islands: current.islands.map((island) => ({
+            ...island,
+            factions: {
+              ...island.factions,
+              [faction]: { ...island.factions[faction], [bonus]: checked },
+            },
+          })),
+        }))}
       />
       <IslandsSection
         islands={state.islands}
         planRequirements={production}
-        onIslandsChange={(updater) => update((current) => ({ ...current, islands: updater(current.islands) }))}
+        onIslandsChange={(updater) => update((current) => ({
+          ...current,
+          // New or edited islands inherit the global per-faction bonuses.
+          islands: updater(current.islands).map((island) => ({
+            ...island,
+            factions: {
+              eco: { ...island.factions.eco, livingSpace: current.plan.factions.eco.livingSpace, senate: current.plan.factions.eco.senate },
+              tycoon: { ...island.factions.tycoon, livingSpace: current.plan.factions.tycoon.livingSpace, senate: current.plan.factions.tycoon.senate },
+              tech: { ...island.factions.tech, livingSpace: current.plan.factions.tech.livingSpace, senate: current.plan.factions.tech.senate },
+            },
+          })),
+        }))}
       />
       <ProductionSection
         state={state.plan}

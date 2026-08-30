@@ -27,7 +27,7 @@ describe('saved calculator state', () => {
 
     expect(input('eco-houses')).toHaveValue('100');
     expect(input('eco-population-2')).toHaveValue('999');
-    expect(byTestId('eco-population-2')).toHaveTextContent('Manual');
+    expect(byTestId('eco-population-2')).toHaveTextContent('manual override');
     expect(input('ecoFish-productivity')).toHaveValue('117.5');
     expect(productionCheckbox(0)).toBeChecked();
     expect(requiredBuildings('ecoHealthFood')).toHaveTextContent('3');

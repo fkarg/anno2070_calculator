@@ -20,7 +20,7 @@ describe('population overrides', () => {
     await replaceInput(input('eco-population-2'), '999');
 
     const engineersField = byTestId('eco-population-2');
-    expect(engineersField).toHaveTextContent('Manual');
+    expect(engineersField).toHaveTextContent('manual override');
     expect(requiredBuildings('ecoHealthFood')).toHaveTextContent('2.65');
     expect(requiredBuildings('ecoVegetablesHealthFood')).toHaveTextContent('5.3');
 
@@ -36,7 +36,7 @@ describe('population overrides', () => {
     fireEvent.click(buttonWithLabel('Use automatic Eco Engineers population', engineersField));
 
     expect(input('eco-population-2')).toHaveValue('1450');
-    expect(engineersField).not.toHaveTextContent('Manual');
+    expect(engineersField).not.toHaveTextContent('manual override');
     expect(requiredBuildings('ecoHealthFood')).toHaveTextContent('4.66');
   });
 
@@ -49,7 +49,7 @@ describe('population overrides', () => {
     expect(input('eco-population-2')).toHaveValue('1200');
     expect(input('eco-population-0')).toHaveValue('160');
     expect(input('eco-population-1')).toHaveValue('480');
-    expect(byTestId('eco-population-3')).toHaveTextContent('Manual');
+    expect(byTestId('eco-population-3')).toHaveTextContent('manual override');
 
     fireEvent.click(buttonWithLabel('Use automatic Eco Executives population', byTestId('eco-population-3')));
     expect(input('eco-population-2')).toHaveValue('725');
@@ -66,8 +66,9 @@ describe('population overrides', () => {
     // Reset returns the plan to Auto: houses follow islands and the faction
     // becomes a read-only stats view without tier or override controls.
     expect(input('eco-houses')).toHaveValue('0');
-    expect(byTestId('eco-population-2')).toHaveTextContent('0');
-    expect(document.getElementById('eco-population-2')).toBeNull();
-    expect(document.body).not.toHaveTextContent('Manual');
+    // Reveal-edit keeps inputs present even in Auto mode; nothing is manual.
+    expect(input('eco-population-2')).toHaveValue('0');
+    expect(document.body).not.toHaveTextContent('manual override');
+    expect(document.body).not.toHaveTextContent('Manual plan');
   });
 });

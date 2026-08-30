@@ -8,6 +8,9 @@ type NumericInputProps = {
   placeholder?: string;
   inputMode?: 'numeric' | 'decimal';
   disabled?: boolean;
+  // Structurally hides the label text (screen-reader only). Prefer this over
+  // scoped CSS hiding, which has broken across browsers before.
+  hideLabel?: boolean;
 };
 
 export function NumericInput({
@@ -20,10 +23,11 @@ export function NumericInput({
   placeholder,
   inputMode = 'numeric',
   disabled = false,
+  hideLabel = false,
 }: NumericInputProps) {
   return (
     <label htmlFor={id} className={className}>
-      <span>{label}</span>
+      <span className={hideLabel ? 'visually-hidden' : undefined}>{label}</span>
       <input
         id={id}
         type="text"
