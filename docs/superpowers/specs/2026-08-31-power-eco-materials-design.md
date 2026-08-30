@@ -6,7 +6,7 @@ Extends 2026-08-30-island-actuals-design.md. Data source: docs/research/2026-08-
 
 `GoodId = BuildingId` and the goods graph derives entirely from `PRODUCTION_NODES`. A building without a production node is invisible to the goods graph (`producedGood()` → null) but fully counted by the owned-impact sums. New power/eco/material buildings therefore enter as **impact-only catalog entries**: addable to islands, counted in operating load and the island power/eco balance, absent from local-balance goods rows, coverage, and the production chain view.
 
-Consequence: construction-material *goods* (tools, wood, concrete, …) are NOT modeled as goods in v1. The wiki documents chain ratios but almost no absolute t/min rates, and the goods graph's unit system needs rates. What the user actually needs day-to-day is (a) the buildings' maintenance/energy/eco joining island totals and (b) deposit/placement gating in the add list — both covered. Chain ratios appear as static hint text.
+Consequence (v1): construction-material *goods* were kept out of the graph. **Revised on request the same day:** the graph is unit-agnostic (canonical-producer building units), so the wiki's building ratios are sufficient without absolute t/min rates. Material goods (granules, modules, trees, wood, limestone, glass, concrete, steel, tools, carbon, uranium, fuel rods) now join GOODS/CONSUMPTION as standalone entries in goods.ts, giving material buildings real capacity/demand/balance rows and chain-throttled effective capacities. Only power and eco buildings remain impact-only.
 
 ## Catalog changes (`building-data.ts`)
 
@@ -17,7 +17,7 @@ Consequence: construction-material *goods* (tools, wood, concrete, …) are NOT 
 - **Material (14):** basaltExtraction, basaltCrusher, smelter, underwaterRecyclingStation, toolsWorkshop, treeNursery, sawmill, limestoneQuarry, glassworks, concreteFactory, steelworks, carbonFactory, uraniumMine, fuelElementFactory.
 
 Simplifications (each a deliberate call):
-- **Thermal Power Station** = flat +70, **Waste Compactor** = flat +50. In-game both scale with inhabitants in range; radius mechanics are unmodelable here. UI note on the catalog entry (`title` attr), not a per-building effectiveness input.
+- **Thermal Power Station** / **Waste Compactor** scale with inhabitants in range. Originally flat-max; revised after user field-testing: they carry `scalableOutput`, and the per-island productivity % scales their positive output (maintenance stays full) so partial cities can be entered accurately.
 - **Energy Transmitter** = power 0 (it moves energy, it doesn't make it). Its −175 maintenance / −30 eco still count. Cross-island energy routing is out of scope; the transfer view for energy stays "per-island balance only".
 - **Underwater-placed entries** (marine current, geothermic, underwater recycling, metal-converter-adjacent) get `ecoBalance: 0` — no ecobalance exists underwater.
 - **Metal converter modes** beyond the three already catalogued (gold/platinum/iron): not added. Same for mirror fields, dam-building sub-parts.
@@ -33,7 +33,7 @@ New `islandEnergyEco(island)` in `operating-impact.ts` (or sibling), from owned 
 ## Fuel
 
 - **Coal Power Station** consumes coal, which is already a good. New tiny map `FUEL_CONSUMPTION: Partial<Record<BuildingId, readonly InputRate[]>>` consulted in `islandGoodLoads` next to `CONSUMPTION`: each station adds intermediate demand of 1 rotary-excavator-equivalent (= ½ coal mine) in the coal good's canonical units, at 100% (plants have no productivity slider). Coal shortage then shows up naturally in local balance / transfer needs.
-- **Nuclear Power Plant** fuel (uranium mine + fuel element factory, 1:1:1 per plant) stays OUT of the goods graph — uranium/fuel rods aren't goods and standalone goods would need a goods.ts refactor for two entries. Both buildings exist as impact-only entries; the nuclear plant's ledger row hint text states "fuel: 1 uranium mine + 1 fuel element factory per plant". Upgrade path exists if this ever matters.
+- **Nuclear Power Plant** fuel — originally a hint only; with material goods in the graph (revision above), fuel rods are a real good (uranium mine → fuel element factory → 1 rod unit per plant) consumed via the same FUEL_CONSUMPTION mechanism.
 
 ## Placement & requirements
 
