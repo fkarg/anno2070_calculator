@@ -1,4 +1,5 @@
 import type { Faction } from './population';
+import { BUILDINGS, buildingIdForImage, type BuildingId } from './building-data';
 
 type PrimaryCalculation = {
   kind: 'primary';
@@ -14,13 +15,18 @@ type MaterialCalculation = {
 
 export type ProductionNode = {
   id: string;
-  label: string;
+  buildingId: BuildingId;
   faction: Faction;
-  image: string;
-  depth: number;
-  alternate?: boolean;
   calculation: PrimaryCalculation | MaterialCalculation;
 };
+
+function resolveBuilding(label: string, image: string): BuildingId {
+  const buildingId = buildingIdForImage(image);
+  if (BUILDINGS[buildingId].label !== label) {
+    throw new Error(`Building label mismatch for ${image}: ${label}`);
+  }
+  return buildingId;
+}
 
 function primary(
   faction: Faction,
@@ -32,10 +38,8 @@ function primary(
 ): ProductionNode {
   return {
     id,
-    label,
+    buildingId: resolveBuilding(label, image),
     faction,
-    image,
-    depth: 0,
     calculation: {
       kind: 'primary',
       satisfaction,
@@ -51,19 +55,57 @@ function material(
   image: string,
   parentId: string,
   multiplier: number,
-  depth: number,
-  alternate = false,
+  _depth: number,
+  _alternate = false,
 ): ProductionNode {
   return {
     id,
-    label,
+    buildingId: resolveBuilding(label, image),
     faction,
-    image,
-    depth,
-    ...(alternate ? { alternate: true } : {}),
     calculation: { kind: 'material', parentId, multiplier },
   };
 }
+
+export type AlternativeGroup = Readonly<{
+  id: string;
+  rootId: string;
+  options: readonly Readonly<{ rootId: string; label: string }>[];
+}>;
+
+export const ALTERNATIVE_GROUPS: readonly AlternativeGroup[] = [
+  { id: 'ecoCommunicatorsChips', rootId: 'ecoCommunicators', options: [
+    { rootId: 'ecoMicrochipsCommunicators', label: 'Chip factory route' },
+    { rootId: 'ecoElectronicsRecyclerCommunicators', label: 'Electronics recycler route' },
+  ] },
+  { id: 'ecoServiceBotsChips', rootId: 'ecoServiceBots', options: [
+    { rootId: 'ecoMicrochipsServiceBots', label: 'Chip factory route' },
+    { rootId: 'ecoElectronicsRecyclerServiceBots', label: 'Electronics recycler route' },
+  ] },
+  { id: 'tycoonPlasticsOil', rootId: 'tycoonPlastics', options: [
+    { rootId: 'tycoonCrudeOil', label: 'Oil rig route' },
+    { rootId: 'tycoonOilDriller', label: 'Oil driller route' },
+  ] },
+  { id: 'tycoonJewelryGold', rootId: 'tycoonJewelry', options: [
+    { rootId: 'tycoonGoldNuggets', label: 'Gold refinery route' },
+    { rootId: 'tycoonGoldConverter', label: 'Gold converter route' },
+  ] },
+  { id: 'tycoonJewelryCoal', rootId: 'tycoonJewelry', options: [
+    { rootId: 'tycoonCoal', label: 'Coal mine route' },
+    { rootId: 'tycoonRotaryExcavator', label: 'Rotary excavator route' },
+  ] },
+  { id: 'techNeuroimplantsChips', rootId: 'techNeuroimplants', options: [
+    { rootId: 'techMicrochips', label: 'Chip factory route' },
+    { rootId: 'techElectronicsRecycler', label: 'Electronics recycler route' },
+  ] },
+  { id: 'techLaboratoryIron', rootId: 'techLaboratoryInstruments', options: [
+    { rootId: 'techIronOre', label: 'Iron ore route' },
+    { rootId: 'techIronConverter', label: 'Iron converter route' },
+  ] },
+  { id: 'techLaboratoryCoal', rootId: 'techLaboratoryInstruments', options: [
+    { rootId: 'techCoal', label: 'Coal mine route' },
+    { rootId: 'techRotaryExcavator', label: 'Rotary excavator route' },
+  ] },
+];
 
 export const PRODUCTION_NODES: readonly ProductionNode[] = [
   primary('eco', 'ecoFish', 'Fishery', 'Fish_Qoor.png', [250, 364, 571, 800]),

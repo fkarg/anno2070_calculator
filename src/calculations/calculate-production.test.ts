@@ -164,6 +164,10 @@ describe('PRODUCTION_NODES', () => {
       }
     }
   });
+
+  test('contains no presentation-only depth or alternate flags', () => {
+    expect(PRODUCTION_NODES.every((node) => !('depth' in node) && !('alternate' in node))).toBe(true);
+  });
 });
 
 describe('calculateProduction', () => {
