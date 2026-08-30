@@ -1,0 +1,69 @@
+import { BUILDINGS, type OperatingImpact } from './building-data';
+import { PRODUCTION_NODES } from './production-data';
+import { buildProductionTrees } from './production-tree';
+
+export const ZERO_OPERATING_IMPACT: OperatingImpact = {
+  maintenanceCredits: 0,
+  power: 0,
+  ecoBalance: 0,
+};
+
+export function addOperatingImpacts(
+  left: OperatingImpact,
+  right: OperatingImpact,
+): OperatingImpact {
+  return {
+    maintenanceCredits: left.maintenanceCredits + right.maintenanceCredits,
+    power: left.power + right.power,
+    ecoBalance: left.ecoBalance + right.ecoBalance,
+  };
+}
+
+export function scaleOperatingImpact(impact: OperatingImpact, count: number): OperatingImpact {
+  return {
+    maintenanceCredits: impact.maintenanceCredits * count,
+    power: impact.power * count,
+    ecoBalance: impact.ecoBalance * count,
+  };
+}
+
+export type VariantOperatingImpact = Readonly<{
+  id: string;
+  label: string;
+  impact: OperatingImpact | null;
+}>;
+
+export type ProductionOperatingImpacts = Readonly<{
+  direct: Readonly<Record<string, OperatingImpact | null>>;
+  byRoot: Readonly<Record<string, readonly VariantOperatingImpact[]>>;
+}>;
+
+export function calculateOperatingImpacts(
+  requirements: Readonly<Record<string, number | null>>,
+): ProductionOperatingImpacts {
+  const direct: Record<string, OperatingImpact | null> = {};
+  for (const node of PRODUCTION_NODES) {
+    const count = requirements[node.id];
+    direct[node.id] = count === null
+      ? null
+      : scaleOperatingImpact(BUILDINGS[node.buildingId].operatingImpact, count);
+  }
+
+  const byRoot: Record<string, readonly VariantOperatingImpact[]> = {};
+  for (const tree of (['eco', 'tycoon', 'tech'] as const).flatMap(buildProductionTrees)) {
+    byRoot[tree.rootId] = tree.variants.map((variant) => {
+      let impact: OperatingImpact | null = ZERO_OPERATING_IMPACT;
+      for (const nodeId of variant.nodeIds) {
+        const nodeImpact = direct[nodeId];
+        if (nodeImpact === null) {
+          impact = null;
+          break;
+        }
+        impact = addOperatingImpacts(impact, nodeImpact);
+      }
+      return { id: variant.id, label: variant.label, impact };
+    });
+  }
+
+  return { direct, byRoot };
+}
