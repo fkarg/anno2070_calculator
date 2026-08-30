@@ -79,6 +79,11 @@ describe('production structure and impacts', () => {
     const fish = productionRow('ecoFish');
     expect(fish.querySelector('[data-testid="direct-operating-impact"]'))
       .toHaveTextContent('maintenance credits per minute:-5.02power:-1ecobalance:0');
+    expect(fish.querySelector('[data-testid="per-building-operating-impact"]')).toBeNull();
+    const impactToggle = fish.querySelector<HTMLButtonElement>('[aria-label="Fishery per-building operating impact"]')!;
+    expect(impactToggle.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(impactToggle);
+    expect(impactToggle.getAttribute('aria-expanded')).toBe('true');
     expect(fish.querySelector('[data-testid="per-building-operating-impact"]'))
       .toHaveTextContent('maintenance credits per minute:-5power:-1ecobalance:0');
     expect(byTestId('variant-ecoCommunicators-ecoMicrochipsCommunicators'))

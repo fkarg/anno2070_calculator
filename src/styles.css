@@ -176,7 +176,7 @@ input[aria-invalid="true"] { border-color: #ef665f; background: #321d1f; }
 
 .production-node {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 4.3rem 4rem minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 4.3rem 4rem minmax(0, 1fr) 8.5rem;
   align-items: center;
   gap: .35rem;
   min-height: 49px;
@@ -289,7 +289,7 @@ main > footer { padding: .9rem .15rem; color: var(--muted); font-size: .75rem; t
 main > footer a { color: #8fc9f6; }
 
 .production-section__factions {
-  grid-template-columns: repeat(3, minmax(720px, 1fr));
+  grid-template-columns: repeat(3, minmax(54rem, 1fr));
   column-gap: .75rem;
   overflow-x: auto;
 }
@@ -462,3 +462,71 @@ main > footer a { color: #8fc9f6; }
 
 .balance--shortfall { color: #ff9d7a; }
 .balance--surplus { color: #9fd9a6; }
+
+/* Actuals in the production view */
+
+.production-node__actuals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.3rem;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  text-align: right;
+}
+
+.production-node__owned { color: var(--muted); }
+
+.production-node__perbuilding { position: relative; }
+
+.production-node__perbuilding > button {
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  width: 1.3rem;
+  height: 1.3rem;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-style: italic;
+  font-family: serif;
+  line-height: 1;
+}
+
+.production-node__perbuilding > small {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  top: 1.5rem;
+  min-width: 14rem;
+  background: var(--panel-raised);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+}
+
+.production-section__owned-impact {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+}
+
+.transfer-needs { margin-top: 1rem; }
+
+.transfer-needs ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.transfer-need {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.transfer-need__label { font-weight: 600; }
+
+.transfer-need--empire-shortfall .transfer-need__net { color: #ff9d7a; }

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 
 import type { Faction } from './calculations/population';
 import { calculateAvailableProduction } from './calculations/calculate-production';
-import { calculateOperatingImpacts } from './calculations/operating-impact';
+import { aggregateBalances, transferNeeds } from './calculations/island-balance';
+import { calculateOperatingImpacts, calculateOwnedImpact } from './calculations/operating-impact';
 import { PRODUCTION_NODES } from './calculations/production-data';
 import { IslandsSection } from './components/IslandsSection';
 import { PopulationSection } from './components/PopulationSection';
@@ -49,6 +50,9 @@ export function App() {
     wholeBuildings: state.plan.wholeBuildings,
   });
   const operatingImpacts = calculateOperatingImpacts(production);
+  const empireBalances = aggregateBalances(state.islands);
+  const needs = transferNeeds(state.islands);
+  const ownedImpact = calculateOwnedImpact(state.islands);
 
   const updateFaction = (
     faction: Faction,
@@ -83,6 +87,10 @@ export function App() {
         state={state.plan}
         results={production}
         operatingImpacts={operatingImpacts}
+        islands={state.islands}
+        empireBalances={empireBalances}
+        needs={needs}
+        ownedImpact={ownedImpact}
         onProductivityChange={(id: string, value: EditableNumber) => updatePlan((current) => ({
           ...current,
           productivity: {

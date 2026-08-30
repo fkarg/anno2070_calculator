@@ -1,9 +1,19 @@
-import { BUILDINGS } from '../calculations/building-data';
+import { useState } from 'react';
+
+import { BUILDINGS, type BuildingDefinition, type BuildingId } from '../calculations/building-data';
+import { GOODS, producedGood, type GoodId } from '../calculations/goods';
+import {
+  BALANCE_EPSILON,
+  type IslandBalances,
+  type TransferNeed,
+} from '../calculations/island-balance';
 import type { ProductionOperatingImpacts } from '../calculations/operating-impact';
+import type { OperatingImpact } from '../calculations/building-data';
 import type { Faction } from '../calculations/population';
 import { formatRequirement } from '../calculations/production';
 import { PRODUCTION_NODES, type ProductionNode } from '../calculations/production-data';
 import { buildProductionTrees, type ProductionTreeRow } from '../calculations/production-tree';
+import type { IslandState } from '../island';
 import { FACTIONS, FACTION_CONFIGS, type CalculatorState, type EditableNumber } from '../model';
 import { NumericInput } from './NumericInput';
 import { OperatingImpactValues } from './OperatingImpactValues';
@@ -12,6 +22,10 @@ type ProductionSectionProps = {
   state: CalculatorState;
   results: Record<string, number | null>;
   operatingImpacts: ProductionOperatingImpacts;
+  islands: readonly IslandState[];
+  empireBalances: IslandBalances;
+  needs: readonly TransferNeed[];
+  ownedImpact: OperatingImpact | null;
   onProductivityChange: (id: string, value: EditableNumber) => void;
   onFactionProductivityChange: (faction: Faction, delta: number) => void;
   onRecyclingChange: (checked: boolean) => void;
@@ -19,6 +33,54 @@ type ProductionSectionProps = {
 };
 
 const nodeById = new Map(PRODUCTION_NODES.map((node) => [node.id, node]));
+
+// Owned building counts summed over settled islands, per canonical building.
+function ownedByBuilding(islands: readonly IslandState[]): Map<BuildingId, number | null> {
+  const totals = new Map<BuildingId, number | null>();
+  for (const island of islands) {
+    if (!island.settled) continue;
+    for (const [buildingId, entry] of Object.entries(island.owned) as [BuildingId, EditableNumber][]) {
+      const current = totals.get(buildingId);
+      totals.set(buildingId, current === null || entry.value === null ? null : (current ?? 0) + entry.value);
+    }
+  }
+  return totals;
+}
+
+// Plan requirement per good: canonical rows only, summed across all chains.
+function planRequirementByGood(results: Record<string, number | null>): Map<GoodId, number | null> {
+  const required = new Map<GoodId, number | null>();
+  for (const node of PRODUCTION_NODES) {
+    if (producedGood(node.buildingId) !== node.buildingId) continue;
+    const goodId = node.buildingId;
+    const current = required.get(goodId);
+    const result = results[node.id];
+    required.set(goodId, current === null || result === null ? null : (current ?? 0) + (result ?? 0));
+  }
+  return required;
+}
+
+function PerBuildingImpact({ building }: { building: BuildingDefinition }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="production-node__perbuilding">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-label={`${building.label} per-building operating impact`}
+        onClick={() => setOpen((current) => !current)}
+      >
+        i
+      </button>
+      {open && (
+        <small data-testid="per-building-operating-impact">
+          <span>per building </span>
+          <OperatingImpactValues impact={building.operatingImpact} />
+        </small>
+      )}
+    </div>
+  );
+}
 
 function rootNode(node: ProductionNode): ProductionNode {
   let current = node;
@@ -51,12 +113,19 @@ function ProductionFaction({
   state,
   results,
   operatingImpacts,
+  owned,
+  planByGood,
+  empireBalances,
   onProductivityChange,
   onFactionProductivityChange,
 }: Pick<
   ProductionSectionProps,
-  'state' | 'results' | 'operatingImpacts' | 'onProductivityChange' | 'onFactionProductivityChange'
-> & { faction: Faction }) {
+  'state' | 'results' | 'operatingImpacts' | 'empireBalances' | 'onProductivityChange' | 'onFactionProductivityChange'
+> & {
+  faction: Faction;
+  owned: Map<BuildingId, number | null>;
+  planByGood: Map<GoodId, number | null>;
+}) {
   const factionLabel = FACTION_CONFIGS[faction].label;
 
   return (
@@ -136,11 +205,51 @@ function ProductionFaction({
                         ? <span><span className="visually-hidden">{building.label} direct operating impact unavailable:</span>—</span>
                         : <OperatingImpactValues impact={direct} />}
                     </div>
-                    <small data-testid="per-building-operating-impact">
-                      <span>per building </span>
-                      <OperatingImpactValues impact={building.operatingImpact} />
-                    </small>
+                    <PerBuildingImpact building={building} />
                   </div>
+                  {(() => {
+                    // Actuals render on the canonical producer's row only; other
+                    // producers of the same good (grey alternatives) stay empty
+                    // so one shared holding is never shown as several.
+                    const canonical = producedGood(node.buildingId) === node.buildingId;
+                    if (!canonical) {
+                      return <div className="production-node__actuals production-node__actuals--empty" aria-hidden="true" />;
+                    }
+                    const goodId = node.buildingId as GoodId;
+                    let ownedTotal: number | null = 0;
+                    for (const producer of GOODS.get(goodId)?.producers ?? []) {
+                      const count = owned.get(producer.buildingId);
+                      if (count === undefined) continue;
+                      ownedTotal = ownedTotal === null || count === null ? null : ownedTotal + count;
+                    }
+                    // undefined means untouched (0); null is invalid input and must survive.
+                    const empireEntry = empireBalances[goodId];
+                    const capacity = empireEntry === undefined ? 0 : empireEntry.capacity;
+                    const required = planByGood.has(goodId) ? planByGood.get(goodId)! : 0;
+                    const balance = capacity === null || required === null ? null : capacity - required;
+                    const balanceClass = balance === null
+                      ? ''
+                      : balance < -BALANCE_EPSILON ? ' balance--shortfall' : ' balance--surplus';
+                    return (
+                      <div className="production-node__actuals" data-testid={`actuals-${node.id}`}>
+                        <span
+                          className="production-node__owned"
+                          aria-label={`${building.label} owned buildings across all islands`}
+                        >
+                          {ownedTotal === null ? '—' : ownedTotal}
+                        </span>
+                        <span aria-label={`${building.label} actual capacity`}>
+                          {capacity === null ? '—' : formatRequirement(capacity)}
+                        </span>
+                        <span
+                          className={`production-node__balance${balanceClass}`}
+                          aria-label={`${building.label} capacity minus plan requirement`}
+                        >
+                          {balance === null ? '—' : formatRequirement(balance)}
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </li>
               );
             })}
@@ -164,6 +273,10 @@ function ProductionFaction({
 }
 
 export function ProductionSection(props: ProductionSectionProps) {
+  const owned = ownedByBuilding(props.islands);
+  const planByGood = planRequirementByGood(props.results);
+  const islandNames = new Map(props.islands.map((island) => [island.id, island.name]));
+
   return (
     <section className="calculator-section production-section">
       <div className="calculator-section__heading">
@@ -172,6 +285,12 @@ export function ProductionSection(props: ProductionSectionProps) {
           <h2>Production chains</h2>
         </div>
         <p>Every requirement updates as you type</p>
+        <div className="production-section__owned-impact" data-testid="owned-operating-impact">
+          <span>Actual operating impact (owned buildings): </span>
+          {props.ownedImpact === null
+            ? <span><span className="visually-hidden">unavailable:</span>—</span>
+            : <OperatingImpactValues impact={props.ownedImpact} />}
+        </div>
       </div>
 
       <div className="production-options">
@@ -196,9 +315,51 @@ export function ProductionSection(props: ProductionSectionProps) {
 
       <div className="production-section__factions">
         {FACTIONS.map((faction) => (
-          <ProductionFaction key={faction} faction={faction} {...props} />
+          <ProductionFaction
+            key={faction}
+            faction={faction}
+            owned={owned}
+            planByGood={planByGood}
+            {...props}
+          />
         ))}
       </div>
+
+      <section className="transfer-needs" aria-label="Transfer needs">
+        <h3>Transfer needs</h3>
+        {props.needs.length === 0
+          ? <p>No cross-island imbalances.</p>
+          : (
+            <ul>
+              {props.needs.map((need) => {
+                const empireShortfall = need.empireNet === null || need.empireNet < -BALANCE_EPSILON;
+                const describe = (entries: readonly { islandId: string; amount: number }[], sign: string) =>
+                  entries.map((entry) =>
+                    `${islandNames.get(entry.islandId) ?? 'Unknown island'} (${sign}${formatRequirement(entry.amount)})`).join(', ');
+                return (
+                  <li
+                    key={need.goodId}
+                    data-testid={`transfer-${need.goodId}`}
+                    className={`transfer-need${empireShortfall ? ' transfer-need--empire-shortfall' : ''}`}
+                  >
+                    <img src={`/assets/${BUILDINGS[need.goodId].image}`} alt="" width="24" height="24" />
+                    <span className="transfer-need__label">{BUILDINGS[need.goodId].label}:</span>
+                    <span>
+                      {need.surpluses.length > 0 ? `surplus ${describe(need.surpluses, '+')}` : 'no surplus anywhere'}
+                      {' → '}
+                      deficit {describe(need.deficits, '−')}
+                    </span>
+                    {empireShortfall && (
+                      <strong className="transfer-need__net">
+                        empire-wide shortfall{need.empireNet === null ? '' : ` (${formatRequirement(need.empireNet)})`}
+                      </strong>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+      </section>
     </section>
   );
 }
