@@ -200,56 +200,85 @@ function ProductionFaction({
                     })}
                   />
                   <div className="production-node__impact">
-                    <div data-testid="direct-operating-impact">
-                      {direct === null
-                        ? <span><span className="visually-hidden">{building.label} direct operating impact unavailable:</span>—</span>
-                        : <OperatingImpactValues impact={direct} />}
-                    </div>
-                    <PerBuildingImpact building={building} />
-                  </div>
-                  {(() => {
-                    // Actuals render on the canonical producer's row only; other
-                    // producers of the same good (grey alternatives) stay empty
-                    // so one shared holding is never shown as several.
-                    const canonical = producedGood(node.buildingId) === node.buildingId;
-                    if (!canonical) {
-                      return <div className="production-node__actuals production-node__actuals--empty" aria-hidden="true" />;
-                    }
-                    const goodId = node.buildingId as GoodId;
-                    let ownedTotal: number | null = 0;
-                    for (const producer of GOODS.get(goodId)?.producers ?? []) {
-                      const count = owned.get(producer.buildingId);
-                      if (count === undefined) continue;
-                      ownedTotal = ownedTotal === null || count === null ? null : ownedTotal + count;
-                    }
-                    // undefined means untouched (0); null is invalid input and must survive.
-                    const empireEntry = empireBalances[goodId];
-                    const capacity = empireEntry === undefined ? 0 : empireEntry.capacity;
-                    const required = planByGood.has(goodId) ? planByGood.get(goodId)! : 0;
-                    const balance = capacity === null || required === null ? null : capacity - required;
-                    const balanceClass = balance === null
-                      ? ''
-                      : balance < -BALANCE_EPSILON ? ' balance--shortfall' : ' balance--surplus';
-                    return (
-                      <div className="production-node__actuals" data-testid={`actuals-${node.id}`}>
-                        <span
-                          className="production-node__owned"
-                          aria-label={`${building.label} owned buildings across all islands`}
-                        >
-                          {ownedTotal === null ? '—' : ownedTotal}
-                        </span>
-                        <span aria-label={`${building.label} actual capacity`}>
-                          {capacity === null ? '—' : formatRequirement(capacity)}
-                        </span>
-                        <span
-                          className={`production-node__balance${balanceClass}`}
-                          aria-label={`${building.label} capacity minus plan requirement`}
-                        >
-                          {balance === null ? '—' : formatRequirement(balance)}
-                        </span>
+                    <div className="production-node__impact-line">
+                      <span className="production-node__impact-label">plan</span>
+                      <div data-testid="direct-operating-impact">
+                        {direct === null
+                          ? <span><span className="visually-hidden">{building.label} direct operating impact unavailable:</span>—</span>
+                          : <OperatingImpactValues impact={direct} />}
                       </div>
-                    );
-                  })()}
+                      <PerBuildingImpact building={building} />
+                    </div>
+                    {(() => {
+                      // Actuals render once per good, on its canonical producer's
+                      // row; owned counts, capacity, and actual costs aggregate
+                      // every producer of the good (owned recyclers count here).
+                      if (producedGood(node.buildingId) !== node.buildingId) return null;
+                      const goodId = node.buildingId as GoodId;
+                      let ownedTotal: number | null = 0;
+                      let actualImpact: OperatingImpact | null = { maintenanceCredits: 0, power: 0, ecoBalance: 0 };
+                      for (const producer of GOODS.get(goodId)?.producers ?? []) {
+                        const count = owned.get(producer.buildingId);
+                        if (count === undefined) continue;
+                        if (count === null || ownedTotal === null || actualImpact === null) {
+                          ownedTotal = null;
+                          actualImpact = null;
+                          continue;
+                        }
+                        ownedTotal += count;
+                        const flat = BUILDINGS[producer.buildingId].operatingImpact;
+                        actualImpact = {
+                          maintenanceCredits: actualImpact.maintenanceCredits + count * flat.maintenanceCredits,
+                          power: actualImpact.power + count * flat.power,
+                          ecoBalance: actualImpact.ecoBalance + count * flat.ecoBalance,
+                        };
+                      }
+                      // undefined means untouched (0); null is invalid and must survive.
+                      const empireEntry = empireBalances[goodId];
+                      const capacity = empireEntry === undefined ? 0 : empireEntry.capacity;
+                      const required = planByGood.has(goodId) ? planByGood.get(goodId)! : 0;
+                      // Purely a planning gap: plan demand minus owned capacity.
+                      // Actual shortages live in island balances and transfer
+                      // needs, where demand comes from owned consumers only.
+                      const buildGap = capacity === null || required === null ? null : required - capacity;
+                      return (
+                        <div
+                          className="production-node__impact-line production-node__impact-line--actual"
+                          data-testid={`actuals-${node.id}`}
+                        >
+                          <span className="production-node__impact-label">actual</span>
+                          {actualImpact === null
+                            ? <span>—</span>
+                            : <OperatingImpactValues impact={actualImpact} />}
+                          <span className="production-node__mini" aria-label={`${building.label} owned across all islands`}>
+                            own {ownedTotal === null ? '—' : ownedTotal}
+                          </span>
+                          <span className="production-node__mini" aria-label={`${building.label} actual capacity, empire-wide`}>
+                            cap {capacity === null ? '—' : formatRequirement(capacity)}
+                          </span>
+                          {buildGap === null
+                            ? <span className="production-node__mini">build —</span>
+                            : buildGap > BALANCE_EPSILON
+                              ? (
+                                <span
+                                  className="production-node__mini balance--shortfall"
+                                  aria-label={`${building.label} still to build for the plan`}
+                                >
+                                  build {formatRequirement(buildGap)}
+                                </span>
+                              )
+                              : (
+                                <span
+                                  className="production-node__mini balance--surplus"
+                                  aria-label={`${building.label} plan covered`}
+                                >
+                                  {buildGap < -BALANCE_EPSILON ? `over ${formatRequirement(-buildGap)}` : '✓'}
+                                </span>
+                              )}
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </li>
               );
             })}

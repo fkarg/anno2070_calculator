@@ -98,33 +98,43 @@ export type BuildingId = keyof typeof BUILDINGS;
 // Island prerequisites per the Anno 2070 wiki (Fertility, All Items, and
 // per-building pages, verified 2026-08-30). Only picker semantics: a building
 // absent from BUILDING_REQUIREMENTS needs nothing from the island.
+//
+// Land fertilities are seedable: an island's one free fertility slot can be
+// filled with any of them, so an open slot satisfies any land fertility.
+// Underwater fertilities and deposits are fixed per island.
 export type IslandRequirement = Readonly<{
   id: string;
   label: string;
   image: string;
   kind: 'fertility' | 'deposit';
+  placement: 'land' | 'underwater';
+  seedable: boolean;
 }>;
 
-const fertility = (id: string, label: string, image: string): IslandRequirement =>
-  ({ id, label, image, kind: 'fertility' });
-const deposit = (id: string, label: string, image: string): IslandRequirement =>
-  ({ id, label, image, kind: 'deposit' });
+export const OPEN_FERTILITY_SLOT = 'openSlot';
+
+const landFertility = (id: string, label: string, image: string): IslandRequirement =>
+  ({ id, label, image, kind: 'fertility', placement: 'land', seedable: true });
+const underwaterFertility = (id: string, label: string, image: string): IslandRequirement =>
+  ({ id, label, image, kind: 'fertility', placement: 'underwater', seedable: false });
+const deposit = (id: string, label: string, image: string, placement: 'land' | 'underwater' = 'land'): IslandRequirement =>
+  ({ id, label, image, kind: 'deposit', placement, seedable: false });
 
 export const ISLAND_REQUIREMENTS: readonly IslandRequirement[] = [
-  fertility('tea', 'Tea', 'Tea_Qoor.png'),
-  fertility('rice', 'Rice', 'Rice_Qoor.png'),
-  fertility('vegetable', 'Vegetable', 'Vegetables_Qoor.png'),
-  fertility('fruit', 'Fruit', 'Fruits_Qoor.png'),
-  fertility('durumWheat', 'Durum wheat', 'Durum wheat_Qoor.png'),
-  fertility('corn', 'Corn', 'Corn_Qoor.png'),
-  fertility('coffee', 'Coffee', 'Caffeine_Qoor.png'),
-  fertility('sugar', 'Sugar', 'Sugar_Qoor.png'),
-  fertility('grapes', 'Grapes', 'Grapes_Qoor.png'),
-  fertility('truffle', 'Truffle', 'Truffle_Qoor.png'),
-  fertility('algae', 'Algae', 'Algae_Qoor.png'),
-  fertility('diamond', 'Diamond', 'Diamonds_Qoor.png'),
-  fertility('manganeseNodule', 'Manganese nodules', 'Manganese nodules_Qoor.png'),
-  fertility('spongeCultures', 'Sponge cultures', 'Sponges_Qoor.png'),
+  landFertility('tea', 'Tea', 'Tea_Qoor.png'),
+  landFertility('rice', 'Rice', 'Rice_Qoor.png'),
+  landFertility('vegetable', 'Vegetable', 'Vegetables_Qoor.png'),
+  landFertility('fruit', 'Fruit', 'Fruits_Qoor.png'),
+  landFertility('durumWheat', 'Durum wheat', 'Durum wheat_Qoor.png'),
+  landFertility('corn', 'Corn', 'Corn_Qoor.png'),
+  landFertility('coffee', 'Coffee', 'Caffeine_Qoor.png'),
+  landFertility('sugar', 'Sugar', 'Sugar_Qoor.png'),
+  landFertility('grapes', 'Grapes', 'Grapes_Qoor.png'),
+  landFertility('truffle', 'Truffle', 'Truffle_Qoor.png'),
+  underwaterFertility('algae', 'Algae', 'Algae_Qoor.png'),
+  underwaterFertility('diamond', 'Diamond', 'Diamonds_Qoor.png'),
+  underwaterFertility('manganeseNodule', 'Manganese nodules', 'Manganese nodules_Qoor.png'),
+  underwaterFertility('spongeCultures', 'Sponge cultures', 'Sponges_Qoor.png'),
   deposit('copperDeposit', 'Copper deposit', 'Copper_Qoor.png'),
   deposit('coalMountain', 'Coal deposit (mountain)', 'Coal_Qoor.png'),
   deposit('coalGround', 'Coal deposit (ground)', 'Coal_Qoor.png'),
@@ -132,9 +142,81 @@ export const ISLAND_REQUIREMENTS: readonly IslandRequirement[] = [
   deposit('sandDeposit', 'Sand deposit (river slot)', 'Sand_Qoor.png'),
   deposit('goldDeposit', 'Gold deposit (river slot)', 'Gold nuggets_Qoor.png'),
   deposit('oilLand', 'Crude oil (land)', 'Crude oil_Qoor.png'),
-  deposit('oilUnderwater', 'Crude oil (underwater)', 'Crude oil_Qoor.png'),
-  deposit('blackSmoker', 'Black smoker', 'gold_converter_Qoor.png'),
+  deposit('oilUnderwater', 'Crude oil (underwater)', 'Crude oil_Qoor.png', 'underwater'),
+  deposit('blackSmoker', 'Black smoker', 'gold_converter_Qoor.png', 'underwater'),
 ];
+
+// Where each building can be placed (wiki-verified; coastal buildings sit on
+// land islands' harbor areas). Bionics factory and hydraulic plant are land
+// per indirect confirmation only (A.R.R.C. mod notes, Tech layout pages).
+export type Placement = 'land' | 'coastal' | 'underwater';
+
+export const BUILDING_PLACEMENTS: Record<BuildingId, Placement> = {
+  fishery: 'coastal',
+  teaPlantation: 'land',
+  healthFoodFactory: 'land',
+  farmhouse: 'land',
+  riceFarm: 'land',
+  electronicsFactory: 'land',
+  chipFactory: 'land',
+  copperMine: 'land',
+  sandExtractor: 'land',
+  electronicsRecycler: 'underwater',
+  healthDrinkFactory: 'land',
+  fruitPlantation: 'land',
+  dairyFarm: 'land',
+  pastaProduction: 'land',
+  flourMill: 'land',
+  grainFarm: 'land',
+  projectorPlant: 'land',
+  diamondHarvestingStation: 'underwater',
+  rareEarthBorer: 'underwater',
+  manganeseExcavationRobot: 'underwater',
+  robotFactory: 'land',
+  biopolymerFactory: 'land',
+  aquafarm: 'underwater',
+  cornFarm: 'land',
+  distillery: 'land',
+  foodSupplyFactory: 'land',
+  meatFactory: 'land',
+  flavorLab: 'land',
+  plasticsFactory: 'land',
+  oilRefinery: 'land',
+  oilRig: 'underwater',
+  oilDriller: 'land',
+  gourmetFactory: 'land',
+  lobsterFarm: 'coastal',
+  truffleFarm: 'land',
+  champagneCellar: 'land',
+  vineyard: 'land',
+  sugarBeetPlantation: 'land',
+  jeweleryManufactory: 'land',
+  goldSmeltery: 'land',
+  goldRefinery: 'land',
+  goldMetalConverter: 'underwater',
+  coalMine: 'land',
+  rotaryExcavator: 'land',
+  healthcareOffice: 'land',
+  chemicalPlant: 'land',
+  fatFactory: 'land',
+  functionalFoodFactory: 'underwater',
+  energyDrinkFactory: 'land',
+  coffeePlantation: 'land',
+  immunityDrugManufacturers: 'land',
+  genFarmingLaboratory: 'underwater',
+  coralBreeder: 'underwater',
+  cyberneticFactory: 'underwater',
+  spongeFarm: 'underwater',
+  laboratoryOutfitter: 'underwater',
+  platinumMetalConverter: 'underwater',
+  ironSmeltery: 'land',
+  ironOreMine: 'land',
+  ironMetalConverter: 'underwater',
+  bionicsFactory: 'land',
+  hydraulicPlant: 'land',
+  oxidationFacility: 'underwater',
+  lithiumProductionFacility: 'underwater',
+} as const;
 
 export const BUILDING_REQUIREMENTS: Partial<Record<BuildingId, string>> = {
   teaPlantation: 'tea',

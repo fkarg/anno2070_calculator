@@ -1,15 +1,20 @@
-import type { BuildingId } from './calculations/building-data';
+import {
+  BUILDING_PLACEMENTS,
+  BUILDING_REQUIREMENTS,
+  ISLAND_REQUIREMENTS,
+  OPEN_FERTILITY_SLOT,
+  type BuildingId,
+} from './calculations/building-data';
 import type { Faction } from './calculations/population';
 import {
   createFactionState,
   createInitialState,
   effectivePopulation,
+  FACTION_CONFIGS,
   type CalculatorState,
   type EditableNumber,
   type FactionState,
 } from './model';
-
-export type FertilityState = 'present' | 'absent'; // missing key = unknown
 
 export type IslandFactionState = FactionState & { recyclingCoverage: boolean };
 
@@ -17,7 +22,10 @@ export type IslandState = {
   id: string;
   name: string;
   settled: boolean;
-  fertilities: Record<string, FertilityState>;
+  underwater: boolean;
+  // Present fertility/deposit ids, plus OPEN_FERTILITY_SLOT when the island
+  // still has a free slot a seed item can fill.
+  fertilities: string[];
   factions: Record<Faction, IslandFactionState>;
   owned: Record<string, EditableNumber>;
   productivity: Record<string, EditableNumber>;
@@ -33,11 +41,25 @@ export function createIsland(name: string): IslandState {
     id: crypto.randomUUID(),
     name,
     settled: true,
-    fertilities: {},
+    underwater: false,
+    fertilities: [],
     factions: { eco: islandFaction('eco'), tycoon: islandFaction('tycoon'), tech: islandFaction('tech') },
     owned: {},
     productivity: {},
   };
+}
+
+const requirementById = new Map(ISLAND_REQUIREMENTS.map((requirement) => [requirement.id, requirement]));
+
+export function canBuildOn(island: IslandState, buildingId: BuildingId): boolean {
+  const placement = BUILDING_PLACEMENTS[buildingId];
+  if (island.underwater ? placement !== 'underwater' : placement === 'underwater') return false;
+  const requirementId = BUILDING_REQUIREMENTS[buildingId];
+  if (requirementId === undefined) return true;
+  if (island.fertilities.includes(requirementId)) return true;
+  // An open slot can be seeded with any land fertility.
+  return requirementById.get(requirementId)!.seedable
+    && island.fertilities.includes(OPEN_FERTILITY_SLOT);
 }
 
 export type AppState = { plan: CalculatorState; islands: IslandState[] };
@@ -58,6 +80,29 @@ export function islandProductivity(island: IslandState, buildingId: BuildingId):
 
 export function islandPopulation(island: IslandState, faction: Faction): number[] | null {
   return effectivePopulation(faction, island.factions[faction]);
+}
+
+// Per-tier effective populations summed over settled islands — this is what
+// feeds the plan's Auto values, so island tier limits and overrides propagate
+// into global demand. Null per faction when any island's inputs are invalid.
+export function sumIslandPopulations(islands: readonly IslandState[]): Record<Faction, number[] | null> {
+  const sums: Record<Faction, number[] | null> = {
+    eco: new Array<number>(FACTION_CONFIGS.eco.tierLabels.length).fill(0),
+    tycoon: new Array<number>(FACTION_CONFIGS.tycoon.tierLabels.length).fill(0),
+    tech: new Array<number>(FACTION_CONFIGS.tech.tierLabels.length).fill(0),
+  };
+  for (const island of islands) {
+    if (!island.settled) continue;
+    for (const faction of ['eco', 'tycoon', 'tech'] as const) {
+      const current = sums[faction];
+      if (current === null) continue;
+      const population = islandPopulation(island, faction);
+      sums[faction] = population === null
+        ? null
+        : current.map((total, tier) => total + population[tier]);
+    }
+  }
+  return sums;
 }
 
 export function sumIslandHouses(islands: readonly IslandState[]): Record<Faction, number | null> {

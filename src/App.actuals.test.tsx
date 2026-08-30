@@ -17,41 +17,63 @@ function addIsland() {
   fireEvent.click(button);
 }
 
-function addBuilding(islandLabel: string, buildingId: string) {
-  const select = document.querySelector<HTMLSelectElement>(`[aria-label="Add building to ${islandLabel}"]`)!;
-  fireEvent.change(select, { target: { value: buildingId } });
+function showAllBuildable(islandIndex: number) {
+  const checkbox = byTestId(`island-${islandIndex}`)
+    .querySelector<HTMLInputElement>('.island-card__ledger-heading input')!;
+  if (!checkbox.checked) fireEvent.click(checkbox);
 }
 
 describe('actuals in the production view', () => {
-  test('canonical rows show owned, capacity, and balance; alternatives stay empty', async () => {
+  test('canonical rows carry a labeled actual line; alternatives stay plan-only', async () => {
     renderApp();
     addIsland();
-    addBuilding('Island 1', 'fishery');
+    showAllBuildable(0);
     await replaceInput(input('island-0-owned-fishery'), '2');
 
     const actuals = byTestId('actuals-ecoFish');
-    expect(actuals).toHaveTextContent('2');
-    expect(actuals.querySelector('.balance--surplus')).not.toBeNull();
+    expect(actuals).toHaveTextContent('actual');
+    expect(actuals).toHaveTextContent('own 2');
+    expect(actuals).toHaveTextContent('cap 2');
+    // No plan demand: the plan is covered, shown as surplus, not a shortage.
+    expect(actuals.querySelector('.balance--surplus')).toHaveTextContent('over 2');
 
     const alternative = productionRow('ecoElectronicsRecyclerCommunicators');
     expect(alternative.querySelector('[data-testid^="actuals-"]')).toBeNull();
   });
 
-  test('alternative producers contribute converted capacity to the canonical row', async () => {
+  test('alternative producers contribute converted capacity and their actual costs', async () => {
     renderApp();
     addIsland();
-    addBuilding('Island 1', 'electronicsRecycler');
+    const underwater = byTestId('island-0')
+      .querySelectorAll<HTMLInputElement>('.island-card__flags input')[1];
+    fireEvent.click(underwater);
+    showAllBuildable(0);
     await replaceInput(input('island-0-owned-electronicsRecycler'), '2');
 
-    // 2 recyclers = 3 chip-factory units; owned counts both producer types.
+    // 2 recyclers = 3 chip-factory units; costs are the recyclers' flat costs.
     const chips = byTestId('actuals-ecoMicrochipsCommunicators');
-    expect(chips).toHaveTextContent('3');
+    expect(chips).toHaveTextContent('own 2');
+    expect(chips).toHaveTextContent('cap 3');
+    expect(chips).toHaveTextContent('maintenance credits per minute:-320');
+  });
+
+  test('the build gap is a planning number, not an actual shortage', async () => {
+    renderApp();
+    addIsland();
+    // Population creates plan demand for fish; no fisheries owned yet.
+    await replaceInput(input('island-0-eco-houses'), '100');
+    const fish = byTestId('actuals-ecoFish');
+    expect(fish).toHaveTextContent('build 4.18');
+
+    showAllBuildable(0);
+    await replaceInput(input('island-0-owned-fishery'), '5');
+    expect(byTestId('actuals-ecoFish')).toHaveTextContent('over 0.83');
   });
 
   test('owned buildings drive the actual operating impact summary', async () => {
     renderApp();
     addIsland();
-    addBuilding('Island 1', 'fishery');
+    showAllBuildable(0);
     await replaceInput(input('island-0-owned-fishery'), '2');
 
     expect(byTestId('owned-operating-impact'))
@@ -62,7 +84,7 @@ describe('actuals in the production view', () => {
     renderApp();
     addIsland();
     addIsland();
-    addBuilding('Island 1', 'fishery');
+    showAllBuildable(0);
     await replaceInput(input('island-0-owned-fishery'), '2');
     await replaceInput(input('island-1-eco-houses'), '500');
 

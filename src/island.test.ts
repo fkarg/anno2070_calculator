@@ -1,16 +1,44 @@
 import { describe, expect, test } from 'vitest';
 
-import { createIsland, islandPopulation, islandProductivity, ownedCount } from './island';
+import { OPEN_FERTILITY_SLOT } from './calculations/building-data';
+import { canBuildOn, createIsland, islandPopulation, islandProductivity, ownedCount } from './island';
 
 describe('island model', () => {
-  test('creates a settled island with empty sparse records', () => {
+  test('creates a settled land island with empty sparse records', () => {
     const island = createIsland('Walbruck');
     expect(island.name).toBe('Walbruck');
     expect(island.settled).toBe(true);
+    expect(island.underwater).toBe(false);
     expect(island.owned).toEqual({});
     expect(island.productivity).toEqual({});
-    expect(island.fertilities).toEqual({});
+    expect(island.fertilities).toEqual([]);
     expect(island.id).not.toBe(createIsland('Walbruck').id);
+  });
+
+  test('placement gates buildings by island type', () => {
+    const land = createIsland('Land');
+    expect(canBuildOn(land, 'fishery')).toBe(true);        // coastal on land islands
+    expect(canBuildOn(land, 'chipFactory')).toBe(true);
+    expect(canBuildOn(land, 'electronicsRecycler')).toBe(false);
+
+    const underwater = { ...createIsland('Deep'), underwater: true };
+    expect(canBuildOn(underwater, 'electronicsRecycler')).toBe(true);
+    expect(canBuildOn(underwater, 'fishery')).toBe(false);
+    expect(canBuildOn(underwater, 'chipFactory')).toBe(false);
+  });
+
+  test('fertility requirements gate buildings until present or seedable via the open slot', () => {
+    const island = createIsland('Land');
+    expect(canBuildOn(island, 'teaPlantation')).toBe(false);
+    expect(canBuildOn({ ...island, fertilities: ['tea'] }, 'teaPlantation')).toBe(true);
+    // An open slot satisfies any land fertility, but never a deposit.
+    expect(canBuildOn({ ...island, fertilities: [OPEN_FERTILITY_SLOT] }, 'teaPlantation')).toBe(true);
+    expect(canBuildOn({ ...island, fertilities: [OPEN_FERTILITY_SLOT] }, 'copperMine')).toBe(false);
+    expect(canBuildOn({ ...island, fertilities: ['copperDeposit'] }, 'copperMine')).toBe(true);
+    // Underwater fertilities are not seedable.
+    const underwater = { ...createIsland('Deep'), underwater: true };
+    expect(canBuildOn(underwater, 'aquafarm')).toBe(false);
+    expect(canBuildOn({ ...underwater, fertilities: ['algae'] }, 'aquafarm')).toBe(true);
   });
 
   test('missing owned and productivity entries default to 0 and 100', () => {

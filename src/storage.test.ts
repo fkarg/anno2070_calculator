@@ -24,7 +24,7 @@ function validV2() {
   state.plan.factions.eco.houses = { raw: '9', value: 9 };
   const island = createIsland('Home');
   island.owned = { fishery: { raw: '2', value: 2 } };
-  island.fertilities = { tea: 'present' };
+  island.fertilities = ['tea'];
   state.islands = [island];
   saveAppState(state);
   const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
@@ -111,5 +111,15 @@ describe('loadAppState', () => {
     const result = loadAppState();
     expect(result.storable).toBe(false);
     expect(result.state.plan.factions.eco.houses).toBeNull();
+  });
+});
+
+describe('legacy fertility records', () => {
+  test('tri-state records migrate to the present list', () => {
+    const stored = validV2();
+    stored.islands[0].fertilities = { tea: 'present', grapes: 'absent', bogus: 'present' };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+    const result = loadAppState();
+    expect(result.state.islands[0].fertilities).toEqual(['tea']);
   });
 });

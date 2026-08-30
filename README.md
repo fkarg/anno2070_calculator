@@ -14,10 +14,11 @@ User-entered residences, manual population overrides, productivity percentages, 
 - Per-building productivity controls, faction-wide productivity adjustments, recycling, and optional whole-building rounding.
 - Connector-tree production chains with every source alternative shown at full demand.
 - Per-building and directly required operating impacts, plus buildable complete-chain totals that round every production stage up to a whole building.
-- Per-island actuals: residences, owned production buildings with per-island productivity, tri-state fertility/deposit annotations, and settled/unsettled placeholders.
-- Plan house counts that follow the settled-island totals automatically until manually overridden.
+- Per-island actuals: residences, owned production buildings with per-island productivity, present-fertility and open-slot annotations, land/underwater island types with placement-filtered buildings, and settled/unsettled placeholders.
+- Compact island summary cards with an edit mode holding the full inputs and a gap-sorted building ledger with count steppers.
+- Plan house counts and per-tier populations that follow the settled-island actuals automatically until manually overridden, so island tier limits propagate into global demand.
 - Derived per-good island balances (capacity, demand, balance) and a transfer-needs view that reveals cross-island imbalances even when the empire-wide net is fine.
-- Owned, actual-capacity, and balance columns beside every canonical plan requirement, actual operating impacts from owned buildings, and per-building impact values behind an accessible info toggle.
+- Labeled plan/actual lines on every canonical production row: planned and actual operating costs, owned counts, capacity, and the remaining build gap toward the plan; per-building impact values behind an accessible info toggle.
 - Versioned local browser storage for user-owned inputs and a complete reset control. Unreadable or future-version payloads are preserved untouched instead of overwritten, and catalog changes no longer invalidate saved state.
 - Pure calculation modules covered by example-based and property-based tests, including a derived goods-and-rates layer with load-time cross-chain consistency validation.
 

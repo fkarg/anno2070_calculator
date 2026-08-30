@@ -1,42 +1,49 @@
-import { ISLAND_REQUIREMENTS } from '../calculations/building-data';
-import type { FertilityState } from '../island';
+import { ISLAND_REQUIREMENTS, OPEN_FERTILITY_SLOT } from '../calculations/building-data';
 
 type FertilityPickerProps = {
   islandName: string;
-  fertilities: Record<string, FertilityState>;
-  onChange: (requirementId: string, state: FertilityState | null) => void;
+  underwater: boolean;
+  fertilities: readonly string[];
+  onToggle: (requirementId: string) => void;
 };
 
-const NEXT_STATE: Record<string, FertilityState | null> = {
-  unknown: 'present',
-  present: 'absent',
-  absent: null, // back to unknown
-};
+export function FertilityPicker({ islandName, underwater, fertilities, onToggle }: FertilityPickerProps) {
+  const applicable = ISLAND_REQUIREMENTS.filter((requirement) =>
+    requirement.placement === (underwater ? 'underwater' : 'land'));
+  const slotOpen = fertilities.includes(OPEN_FERTILITY_SLOT);
 
-export function FertilityPicker({ islandName, fertilities, onChange }: FertilityPickerProps) {
   return (
     <fieldset className="fertility-picker">
-      <legend>Fertilities &amp; deposits</legend>
+      <legend>Fertilities &amp; deposits (click what the island has)</legend>
       <div className="fertility-picker__options">
-        {ISLAND_REQUIREMENTS.map((requirement) => {
-          const state: FertilityState | 'unknown' = Object.hasOwn(fertilities, requirement.id)
-            ? fertilities[requirement.id]
-            : 'unknown';
+        {applicable.map((requirement) => {
+          const present = fertilities.includes(requirement.id);
           return (
             <button
               key={requirement.id}
               type="button"
-              className={`fertility-picker__option fertility-picker__option--${state}`}
-              aria-pressed={state === 'present'}
-              aria-label={`${islandName} ${requirement.label}: ${state}`}
-              title={`${requirement.label} (${requirement.kind}): ${state}`}
-              onClick={() => onChange(requirement.id, NEXT_STATE[state])}
+              className={`fertility-picker__option${present ? ' fertility-picker__option--present' : ''}`}
+              aria-pressed={present}
+              aria-label={`${islandName} ${requirement.label}: ${present ? 'present' : 'not present'}`}
+              title={`${requirement.label} (${requirement.kind})`}
+              onClick={() => onToggle(requirement.id)}
             >
               <img src={`/assets/${requirement.image}`} alt="" width="28" height="28" />
-              {state === 'unknown' && <span className="fertility-picker__badge">?</span>}
             </button>
           );
         })}
+        {!underwater && (
+          <button
+            type="button"
+            className={`fertility-picker__option fertility-picker__option--slot${slotOpen ? ' fertility-picker__option--present' : ''}`}
+            aria-pressed={slotOpen}
+            aria-label={`${islandName} open fertility slot: ${slotOpen ? 'available' : 'none'}`}
+            title="Open fertility slot: can be filled with any seed item"
+            onClick={() => onToggle(OPEN_FERTILITY_SLOT)}
+          >
+            ?
+          </button>
+        )}
       </div>
     </fieldset>
   );

@@ -1,33 +1,33 @@
 import { describe, expect, test, vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/react';
 
-import { ISLAND_REQUIREMENTS } from '../calculations/building-data';
+import { ISLAND_REQUIREMENTS, OPEN_FERTILITY_SLOT } from '../calculations/building-data';
 import { FertilityPicker } from './FertilityPicker';
 
 describe('FertilityPicker', () => {
-  test('renders one tri-state button per island requirement', () => {
-    render(<FertilityPicker islandName="Home" fertilities={{}} onChange={() => {}} />);
-    const buttons = document.querySelectorAll('.fertility-picker__option');
-    expect(buttons).toHaveLength(ISLAND_REQUIREMENTS.length);
-    expect(document.querySelector('[aria-label="Home Tea: unknown"]')).not.toBeNull();
+  test('land islands offer land requirements plus the open slot', () => {
+    render(<FertilityPicker islandName="Home" underwater={false} fertilities={[]} onToggle={() => {}} />);
+    const landCount = ISLAND_REQUIREMENTS.filter((requirement) => requirement.placement === 'land').length;
+    expect(document.querySelectorAll('.fertility-picker__option')).toHaveLength(landCount + 1);
+    expect(document.querySelector('[aria-label="Home Tea: not present"]')).not.toBeNull();
+    expect(document.querySelector('[aria-label="Home open fertility slot: none"]')).not.toBeNull();
+    expect(document.querySelector('[aria-label^="Home Algae"]')).toBeNull();
   });
 
-  test('cycles unknown to present to absent to unknown', () => {
-    const onChange = vi.fn();
-    const { rerender } = render(
-      <FertilityPicker islandName="Home" fertilities={{}} onChange={onChange} />,
-    );
-    const tea = () => document.querySelector<HTMLButtonElement>('[aria-label^="Home Tea"]')!;
-    fireEvent.click(tea());
-    expect(onChange).toHaveBeenLastCalledWith('tea', 'present');
+  test('underwater islands offer underwater requirements and no slot', () => {
+    render(<FertilityPicker islandName="Deep" underwater fertilities={['algae']} onToggle={() => {}} />);
+    const underwaterCount = ISLAND_REQUIREMENTS.filter((requirement) => requirement.placement === 'underwater').length;
+    expect(document.querySelectorAll('.fertility-picker__option')).toHaveLength(underwaterCount);
+    expect(document.querySelector('[aria-label="Deep Algae: present"]')!.getAttribute('aria-pressed')).toBe('true');
+    expect(document.querySelector('[aria-label*="open fertility slot"]')).toBeNull();
+  });
 
-    rerender(<FertilityPicker islandName="Home" fertilities={{ tea: 'present' }} onChange={onChange} />);
-    expect(tea().getAttribute('aria-pressed')).toBe('true');
-    fireEvent.click(tea());
-    expect(onChange).toHaveBeenLastCalledWith('tea', 'absent');
-
-    rerender(<FertilityPicker islandName="Home" fertilities={{ tea: 'absent' }} onChange={onChange} />);
-    fireEvent.click(tea());
-    expect(onChange).toHaveBeenLastCalledWith('tea', null);
+  test('toggles fertilities and the open slot on click', () => {
+    const onToggle = vi.fn();
+    render(<FertilityPicker islandName="Home" underwater={false} fertilities={['tea']} onToggle={onToggle} />);
+    fireEvent.click(document.querySelector('[aria-label="Home Tea: present"]')!);
+    expect(onToggle).toHaveBeenLastCalledWith('tea');
+    fireEvent.click(document.querySelector('[aria-label="Home open fertility slot: none"]')!);
+    expect(onToggle).toHaveBeenLastCalledWith(OPEN_FERTILITY_SLOT);
   });
 });

@@ -13,6 +13,7 @@ type PopulationFactionProps = {
   config: FactionConfig;
   state: FactionState;
   islandHouses: number | null;
+  islandPopulation?: readonly number[] | null;
   idPrefix?: string;
   onHousesChange: (value: EditableNumber) => void;
   // Absent on islands: island houses are always concrete, Auto exists only on the plan.
@@ -28,6 +29,7 @@ export function PopulationFaction({
   config,
   state,
   islandHouses,
+  islandPopulation,
   idPrefix = '',
   onHousesChange,
   onHousesClear,
@@ -38,7 +40,7 @@ export function PopulationFaction({
   onOverrideClear,
 }: PopulationFactionProps) {
   // Redistributed values: a limited higher tier refills the lower one live.
-  const effective = effectivePopulation(config.id as Faction, state, islandHouses);
+  const effective = effectivePopulation(config.id as Faction, state, islandHouses, islandPopulation);
   const houses = resolveHouses(state, islandHouses);
   const housesManual = state.houses !== null;
 

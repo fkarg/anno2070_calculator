@@ -1,9 +1,8 @@
-import { BUILDINGS } from './calculations/building-data';
+import { BUILDINGS, ISLAND_REQUIREMENTS, OPEN_FERTILITY_SLOT } from './calculations/building-data';
 import { PRODUCTION_NODES } from './calculations/production-data';
 import {
   createInitialAppState,
   type AppState,
-  type FertilityState,
   type IslandFactionState,
   type IslandState,
 } from './island';
@@ -151,12 +150,18 @@ function sanitizeIsland(value: unknown, loss: Loss): IslandState | null {
     return { ...base, houses: base.houses ?? { raw: '0', value: 0 }, recyclingCoverage };
   };
 
-  const fertilities: Record<string, FertilityState> = {};
-  if (isRecord(value.fertilities)) {
-    for (const [id, state] of Object.entries(value.fertilities)) {
-      if (loss.markUnless(state === 'present' || state === 'absent')) {
-        fertilities[id] = state as FertilityState;
+  const knownFertilityIds = new Set([...ISLAND_REQUIREMENTS.map((requirement) => requirement.id), OPEN_FERTILITY_SLOT]);
+  const fertilities: string[] = [];
+  if (Array.isArray(value.fertilities)) {
+    for (const id of value.fertilities) {
+      if (loss.markUnless(typeof id === 'string') && knownFertilityIds.has(id as string) && !fertilities.includes(id as string)) {
+        fertilities.push(id as string);
       }
+    }
+  } else if (isRecord(value.fertilities)) {
+    // Legacy tri-state record: keep the present ids, drop the rest.
+    for (const [id, state] of Object.entries(value.fertilities)) {
+      if (state === 'present' && knownFertilityIds.has(id)) fertilities.push(id);
     }
   } else {
     loss.markUnless(value.fertilities === undefined);
@@ -166,6 +171,9 @@ function sanitizeIsland(value: unknown, loss: Loss): IslandState | null {
     id: value.id,
     name: value.name,
     settled: value.settled,
+    underwater: typeof value.underwater === 'boolean'
+      ? value.underwater
+      : (loss.markUnless(value.underwater === undefined), false),
     fertilities,
     factions: { eco: islandFaction('eco'), tycoon: islandFaction('tycoon'), tech: islandFaction('tech') },
     owned: sanitizeSparseMap(value.owned, BUILDING_IDS, parseNonNegativeInteger, loss),

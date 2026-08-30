@@ -128,10 +128,20 @@ export function effectivePopulation(
   faction: Faction,
   state: FactionState,
   settledIslandHouses: number | null = 0,
+  settledIslandPopulation?: readonly number[] | null,
 ): number[] | null {
+  if (state.overrides.some((override) => override !== null && override.value === null)) return null;
+
+  // In Auto mode with island data, the per-tier island populations are the
+  // base — island tier limits and overrides propagate into the plan. Plan
+  // overrides pin counts only; house redistribution happens on the islands.
+  if (state.houses === null && settledIslandPopulation !== undefined) {
+    if (settledIslandPopulation === null) return null;
+    return settledIslandPopulation.map((value, index) => state.overrides[index]?.value ?? value);
+  }
+
   const houses = resolveHouses(state, settledIslandHouses);
   if (houses.value === null) return null;
-  if (state.overrides.some((override) => override !== null && override.value === null)) return null;
 
   return applyPopulationOverrides({
     faction,

@@ -8,7 +8,7 @@ import { PRODUCTION_NODES } from './calculations/production-data';
 import { IslandsSection } from './components/IslandsSection';
 import { PopulationSection } from './components/PopulationSection';
 import { ProductionSection } from './components/ProductionSection';
-import { createInitialAppState, sumIslandHouses, type AppState } from './island';
+import { createInitialAppState, sumIslandHouses, sumIslandPopulations, type AppState } from './island';
 import {
   effectivePopulation,
   parsePositiveNumber,
@@ -35,10 +35,11 @@ export function App() {
     update((current) => ({ ...current, plan: updater(current.plan) }));
 
   const islandHouses = sumIslandHouses(state.islands);
+  const islandPopulations = sumIslandPopulations(state.islands);
   const population = {
-    eco: effectivePopulation('eco', state.plan.factions.eco, islandHouses.eco),
-    tycoon: effectivePopulation('tycoon', state.plan.factions.tycoon, islandHouses.tycoon),
-    tech: effectivePopulation('tech', state.plan.factions.tech, islandHouses.tech),
+    eco: effectivePopulation('eco', state.plan.factions.eco, islandHouses.eco, islandPopulations.eco),
+    tycoon: effectivePopulation('tycoon', state.plan.factions.tycoon, islandHouses.tycoon, islandPopulations.tycoon),
+    tech: effectivePopulation('tech', state.plan.factions.tech, islandHouses.tech, islandPopulations.tech),
   };
   const productivity = Object.fromEntries(
     Object.entries(state.plan.productivity).map(([id, entry]) => [id, entry.value]),
@@ -77,7 +78,12 @@ export function App() {
         <button type="button" onClick={() => update(createInitialAppState)}>Reset all</button>
       </header>
 
-      <PopulationSection state={state.plan} islandHouses={islandHouses} onFactionChange={updateFaction} />
+      <PopulationSection
+        state={state.plan}
+        islandHouses={islandHouses}
+        islandPopulations={islandPopulations}
+        onFactionChange={updateFaction}
+      />
       <IslandsSection
         islands={state.islands}
         planRequirements={production}

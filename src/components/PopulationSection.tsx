@@ -12,12 +12,14 @@ import { PopulationFaction } from './PopulationFaction';
 type PopulationSectionProps = {
   state: CalculatorState;
   islandHouses?: FactionHouses;
+  islandPopulations?: Record<Faction, number[] | null>;
   onFactionChange: (faction: Faction, update: (current: FactionState) => FactionState) => void;
 };
 
 export function PopulationSection({
   state,
   islandHouses = NO_ISLAND_HOUSES,
+  islandPopulations,
   onFactionChange,
 }: PopulationSectionProps) {
   return (
@@ -34,6 +36,7 @@ export function PopulationSection({
             config={FACTION_CONFIGS[faction]}
             state={state.factions[faction]}
             islandHouses={islandHouses[faction]}
+            islandPopulation={islandPopulations?.[faction]}
             onHousesChange={(houses) => onFactionChange(faction, (current) => ({ ...current, houses }))}
             onHousesClear={() => onFactionChange(faction, (current) => ({ ...current, houses: null }))}
             onMaxTierChange={(maxTier) => onFactionChange(faction, (current) => ({ ...current, maxTier }))}
