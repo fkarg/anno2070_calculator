@@ -9,12 +9,20 @@ export type EditableNumber = {
 export type PopulationOverride = EditableNumber | null;
 
 export type FactionState = {
-  houses: EditableNumber;
+  houses: EditableNumber | null; // null = Auto: follow settled-island actuals
   maxTier: number;
   livingSpace: boolean;
   senate: boolean;
   overrides: PopulationOverride[];
 };
+
+export type FactionHouses = Record<Faction, number>;
+
+export const NO_ISLAND_HOUSES: FactionHouses = { eco: 0, tycoon: 0, tech: 0 };
+
+export function resolveHouses(state: FactionState, settledIslandHouses: number): EditableNumber {
+  return state.houses ?? { raw: String(settledIslandHouses), value: settledIslandHouses };
+}
 
 export type CalculatorState = {
   factions: Record<Faction, FactionState>;
@@ -90,9 +98,9 @@ export function parsePositiveNumber(raw: string): number | null {
 export function createInitialState(): CalculatorState {
   return {
     factions: {
-      eco: createFactionState('eco'),
-      tycoon: createFactionState('tycoon'),
-      tech: createFactionState('tech'),
+      eco: { ...createFactionState('eco'), houses: null },
+      tycoon: { ...createFactionState('tycoon'), houses: null },
+      tech: { ...createFactionState('tech'), houses: null },
     },
     productivity: Object.fromEntries(
       PRODUCTION_NODES.map((node) => [node.id, { raw: '100', value: 100 }]),
@@ -113,11 +121,16 @@ export function createFactionState(faction: Faction): FactionState {
   };
 }
 
-export function derivePopulation(faction: Faction, state: FactionState): number[] | null {
-  if (state.houses.value === null) return null;
+export function derivePopulation(
+  faction: Faction,
+  state: FactionState,
+  settledIslandHouses = 0,
+): number[] | null {
+  const houses = resolveHouses(state, settledIslandHouses);
+  if (houses.value === null) return null;
   return calculatePopulation({
     faction,
-    houses: state.houses.value,
+    houses: houses.value,
     maxTier: state.maxTier,
     livingSpace: state.livingSpace,
     senate: state.senate,
@@ -127,8 +140,9 @@ export function derivePopulation(faction: Faction, state: FactionState): number[
 export function effectivePopulation(
   faction: Faction,
   state: FactionState,
+  settledIslandHouses = 0,
 ): number[] | null {
-  const derived = derivePopulation(faction, state);
+  const derived = derivePopulation(faction, state, settledIslandHouses);
   if (derived === null) return null;
 
   return derived.map((value, index) => {
@@ -141,10 +155,11 @@ export function effectivePopulation(
 
 export function effectivePopulations(
   state: CalculatorState,
+  islandHouses: FactionHouses = NO_ISLAND_HOUSES,
 ): Record<Faction, readonly number[]> | null {
-  const eco = effectivePopulation('eco', state.factions.eco);
-  const tycoon = effectivePopulation('tycoon', state.factions.tycoon);
-  const tech = effectivePopulation('tech', state.factions.tech);
+  const eco = effectivePopulation('eco', state.factions.eco, islandHouses.eco);
+  const tycoon = effectivePopulation('tycoon', state.factions.tycoon, islandHouses.tycoon);
+  const tech = effectivePopulation('tech', state.factions.tech, islandHouses.tech);
 
   return eco && tycoon && tech ? { eco, tycoon, tech } : null;
 }

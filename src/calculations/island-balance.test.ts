@@ -1,13 +1,16 @@
 import { describe, expect, test } from 'vitest';
 
 import { createIsland } from '../island';
+import type { EditableNumber } from '../model';
 import { aggregateBalances, calculateIslandBalance, transferNeeds } from './island-balance';
+
+const editable = (value: number): EditableNumber => ({ raw: String(value), value });
 
 const withOwned = (owned: Record<string, number>, productivity: Record<string, number> = {}) => ({
   ...createIsland('A'),
-  owned: Object.fromEntries(Object.entries(owned).map(([id, value]) => [id, { raw: String(value), value }])),
+  owned: Object.fromEntries(Object.entries(owned).map(([id, value]) => [id, editable(value)])),
   productivity: Object.fromEntries(
-    Object.entries(productivity).map(([id, value]) => [id, { raw: String(value), value }]),
+    Object.entries(productivity).map(([id, value]) => [id, editable(value)]),
   ),
 });
 

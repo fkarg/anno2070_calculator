@@ -28,8 +28,11 @@ function isEditableNumber(value: unknown): value is EditableNumber {
 }
 
 function isFactionState(value: unknown, faction: typeof FACTIONS[number]): value is FactionState {
-  if (!isRecord(value) || !isEditableNumber(value.houses)) return false;
-  if (value.houses.value !== parseNonNegativeInteger(value.houses.raw)) return false;
+  if (!isRecord(value)) return false;
+  if (value.houses !== null) {
+    if (!isEditableNumber(value.houses)) return false;
+    if (value.houses.value !== parseNonNegativeInteger(value.houses.raw)) return false;
+  }
 
   const tierCount = FACTION_CONFIGS[faction].tierLabels.length;
   if (!Number.isInteger(value.maxTier) || Number(value.maxTier) < 1 || Number(value.maxTier) > tierCount) return false;

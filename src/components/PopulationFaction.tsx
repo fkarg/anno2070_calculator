@@ -2,6 +2,7 @@ import type { Faction } from '../calculations/population';
 import {
   derivePopulation,
   parseNonNegativeInteger,
+  resolveHouses,
   type EditableNumber,
   type FactionConfig,
   type FactionState,
@@ -11,7 +12,9 @@ import { NumericInput } from './NumericInput';
 type PopulationFactionProps = {
   config: FactionConfig;
   state: FactionState;
+  islandHouses: number;
   onHousesChange: (value: EditableNumber) => void;
+  onHousesClear: () => void;
   onMaxTierChange: (tier: number) => void;
   onLivingSpaceChange: (checked: boolean) => void;
   onSenateChange: (checked: boolean) => void;
@@ -22,14 +25,18 @@ type PopulationFactionProps = {
 export function PopulationFaction({
   config,
   state,
+  islandHouses,
   onHousesChange,
+  onHousesClear,
   onMaxTierChange,
   onLivingSpaceChange,
   onSenateChange,
   onOverrideChange,
   onOverrideClear,
 }: PopulationFactionProps) {
-  const derived = derivePopulation(config.id as Faction, state);
+  const derived = derivePopulation(config.id as Faction, state, islandHouses);
+  const houses = resolveHouses(state, islandHouses);
+  const housesManual = state.houses !== null;
 
   return (
     <section className={`population-faction population-faction--${config.id}`}>
@@ -38,13 +45,30 @@ export function PopulationFaction({
         <h3>{config.label}</h3>
       </header>
 
-      <NumericInput
-        id={`${config.id}-houses`}
-        label={`${config.label} houses`}
-        raw={state.houses.raw}
-        valid={state.houses.value !== null}
-        onChange={(raw) => onHousesChange({ raw, value: parseNonNegativeInteger(raw) })}
-      />
+      <div
+        className={`population-value${housesManual ? ' population-value--manual' : ''}`}
+        data-testid={`${config.id}-houses-value`}
+      >
+        <div className="population-value__status">
+          <span>{housesManual ? 'Manual' : 'Auto'}</span>
+          {housesManual && (
+            <button
+              type="button"
+              onClick={onHousesClear}
+              aria-label={`Use island ${config.label} houses`}
+            >
+              Auto
+            </button>
+          )}
+        </div>
+        <NumericInput
+          id={`${config.id}-houses`}
+          label={`${config.label} houses`}
+          raw={houses.raw}
+          valid={houses.value !== null}
+          onChange={(raw) => onHousesChange({ raw, value: parseNonNegativeInteger(raw) })}
+        />
+      </div>
 
       <fieldset className="tier-selector">
         <legend>Highest population tier</legend>

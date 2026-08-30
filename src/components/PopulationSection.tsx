@@ -2,17 +2,24 @@ import type { Faction } from '../calculations/population';
 import {
   FACTIONS,
   FACTION_CONFIGS,
+  NO_ISLAND_HOUSES,
   type CalculatorState,
+  type FactionHouses,
   type FactionState,
 } from '../model';
 import { PopulationFaction } from './PopulationFaction';
 
 type PopulationSectionProps = {
   state: CalculatorState;
+  islandHouses?: FactionHouses;
   onFactionChange: (faction: Faction, update: (current: FactionState) => FactionState) => void;
 };
 
-export function PopulationSection({ state, onFactionChange }: PopulationSectionProps) {
+export function PopulationSection({
+  state,
+  islandHouses = NO_ISLAND_HOUSES,
+  onFactionChange,
+}: PopulationSectionProps) {
   return (
     <section className="calculator-section population-section">
       <div className="calculator-section__heading">
@@ -26,7 +33,9 @@ export function PopulationSection({ state, onFactionChange }: PopulationSectionP
             key={faction}
             config={FACTION_CONFIGS[faction]}
             state={state.factions[faction]}
+            islandHouses={islandHouses[faction]}
             onHousesChange={(houses) => onFactionChange(faction, (current) => ({ ...current, houses }))}
+            onHousesClear={() => onFactionChange(faction, (current) => ({ ...current, houses: null }))}
             onMaxTierChange={(maxTier) => onFactionChange(faction, (current) => ({ ...current, maxTier }))}
             onLivingSpaceChange={(livingSpace) => onFactionChange(faction, (current) => ({ ...current, livingSpace }))}
             onSenateChange={(senate) => onFactionChange(faction, (current) => ({ ...current, senate }))}
