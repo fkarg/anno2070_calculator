@@ -10,7 +10,7 @@ This is the next self-contained phase. A Statistics Center-style global view of 
 
 This phase will:
 
-- widen the dense desktop calculator from its current 1440 px maximum to approximately 2200 px while retaining the existing narrow-screen overflow behavior;
+- remove the current restrictive 1440 px ceiling and permit the dense desktop calculator to grow to approximately 2200 px when its content benefits, while retaining the existing narrow-screen overflow behavior;
 - replace depth-only production indentation with a connector tree that distinguishes continuation, branch, and last-child positions;
 - show every alternate source as a complete, independent way to satisfy the same demand rather than treating alternatives as a selected split;
 - attach canonical per-building maintenance-credit, power, and ecobalance values to production buildings;
@@ -126,7 +126,7 @@ The smallest meaningful automated coverage includes:
 - UI tests verify actual icon assets, full simultaneous alternatives, connector placement, per-building/direct values, and complete-chain totals; and
 - the existing calculation, persistence, lint, and production-build checks remain green.
 
-Desktop rendering will also be inspected at the user's wide viewport to confirm that the wider container is useful and that image indentation follows the connector tree.
+Desktop rendering will also be inspected at the user's wide viewport to confirm that the available width is useful and that image indentation follows the connector tree. The 2200 px ceiling is permission to use space, not a target: column and content needs determine the rendered width, and sparse content is not stretched merely to fill the monitor.
 
 On wide screens, the calculator uses a small responsive left gutter and leaves surplus space on the right instead of centering itself. This slightly left-aligned layout suits the primary 2560 px workspace while avoiding edge contact at smaller desktop widths.
 
