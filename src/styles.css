@@ -176,7 +176,7 @@ input[aria-invalid="true"] { border-color: #ef665f; background: #321d1f; }
 
 .production-node {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 4.3rem 4rem 18rem;
+  grid-template-columns: minmax(0, 1fr) 4.3rem 4rem minmax(0, 1fr);
   align-items: center;
   gap: .35rem;
   min-height: 49px;
