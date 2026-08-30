@@ -316,10 +316,14 @@ main > footer a { color: #8fc9f6; }
 }
 
 .islands-section__cards {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 44rem), 1fr));
   gap: 1rem;
+  align-items: start;
 }
+
+/* The configure panel needs the full row; plain cards pack two-up. */
+.island-card--configuring { grid-column: 1 / -1; }
 
 .island-card {
   border: 1px solid var(--line);

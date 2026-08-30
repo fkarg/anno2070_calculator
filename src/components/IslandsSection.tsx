@@ -642,7 +642,11 @@ export function IslandsSection({ islands, planRequirements, onIslandsChange }: I
           const onChange: IslandChange = (updater) => onIslandsChange((current) =>
             current.map((candidate) => candidate.id === island.id ? updater(candidate) : candidate));
           return (
-            <section key={island.id} className="island-card" data-testid={`island-${index}`}>
+            <section
+              key={island.id}
+              className={`island-card${configuring.has(island.id) ? ' island-card--configuring' : ''}`}
+              data-testid={`island-${index}`}
+            >
               <IslandPlaque
                 island={island}
                 index={index}
