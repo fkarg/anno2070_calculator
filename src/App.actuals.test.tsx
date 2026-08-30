@@ -44,8 +44,12 @@ describe('actuals in the production view', () => {
   test('alternative producers contribute converted capacity and their actual costs', async () => {
     renderApp();
     addIsland();
+    fireEvent.click(
+      [...document.querySelectorAll<HTMLButtonElement>('button')]
+        .find((button) => button.getAttribute('aria-label') === 'Configure island Island 1')!,
+    );
     const underwater = byTestId('island-0')
-      .querySelectorAll<HTMLInputElement>('.island-card__flags input')[1];
+      .querySelectorAll<HTMLInputElement>('.island-card__flags input[type="checkbox"]')[1];
     fireEvent.click(underwater);
     showAllBuildable(0);
     await replaceInput(input('island-0-owned-electronicsRecycler'), '2');

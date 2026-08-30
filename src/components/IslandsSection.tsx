@@ -6,8 +6,14 @@ import {
   OPEN_FERTILITY_SLOT,
   type BuildingId,
 } from '../calculations/building-data';
-import { calculateIslandBalance, type GoodBalance } from '../calculations/island-balance';
-import { producedGood, type GoodId } from '../calculations/goods';
+import {
+  BALANCE_EPSILON,
+  calculateIslandBalance,
+  type GoodBalance,
+  type IslandBalances,
+} from '../calculations/island-balance';
+import { GOODS, producedGood, type GoodId } from '../calculations/goods';
+import { calculateOwnedImpact } from '../calculations/operating-impact';
 import type { Faction } from '../calculations/population';
 import { formatRequirement } from '../calculations/production';
 import { PRODUCTION_NODES } from '../calculations/production-data';
@@ -27,6 +33,7 @@ import {
 } from '../model';
 import { FertilityPicker } from './FertilityPicker';
 import { NumericInput } from './NumericInput';
+import { OperatingImpactValues } from './OperatingImpactValues';
 import { PopulationFaction } from './PopulationFaction';
 
 type IslandsSectionProps = {
@@ -35,8 +42,10 @@ type IslandsSectionProps = {
   onIslandsChange: (updater: (current: readonly IslandState[]) => IslandState[]) => void;
 };
 
+type IslandChange = (updater: (current: IslandState) => IslandState) => void;
+
 const ALL_BUILDING_IDS = Object.keys(BUILDINGS) as BuildingId[];
-const requirementLabel = new Map(ISLAND_REQUIREMENTS.map((requirement) => [requirement.id, requirement.label]));
+const requirementById = new Map(ISLAND_REQUIREMENTS.map((requirement) => [requirement.id, requirement]));
 
 // Plan requirement per building: canonical rows only — non-canonical
 // alternatives restate demand the canonical producer already covers.
@@ -79,55 +88,145 @@ function balanceClass(value: number | null | undefined): string {
   return value < 0 ? 'balance--shortfall' : 'balance--surplus';
 }
 
-function LocalBalanceTable({ island, idPrefix }: { island: IslandState; idPrefix: string }) {
-  const balances = (Object.entries(calculateIslandBalance(island)) as [GoodId, GoodBalance][])
-    .sort(([left], [right]) => BUILDINGS[left].label.localeCompare(BUILDINGS[right].label));
-  if (balances.length === 0) return <p>No production or demand yet.</p>;
+// A deficit good suggests a producer actually buildable on this island —
+// an underwater island's chip deficit suggests recyclers, not chip factories.
+function buildableProducer(island: IslandState, goodId: GoodId): BuildingId | null {
+  const producers = GOODS.get(goodId)?.producers ?? [];
+  const canonical = producers.find((producer) => producer.buildingId === goodId);
+  const ordered = canonical ? [canonical, ...producers.filter((producer) => producer !== canonical)] : producers;
+  return ordered.find((producer) => canBuildOn(island, producer.buildingId))?.buildingId ?? null;
+}
 
+type Suggestion = { buildingId: BuildingId; reason: string };
+
+function buildSuggestions(
+  island: IslandState,
+  balances: IslandBalances,
+  planByBuilding: Map<BuildingId, number | null>,
+  ownedTotals: Map<BuildingId, number | null>,
+): Suggestion[] {
+  const local = (Object.entries(balances) as [GoodId, GoodBalance][])
+    .filter(([, balance]) => balance.balance !== null && balance.balance < -BALANCE_EPSILON)
+    .sort(([, left], [, right]) => (left.balance ?? 0) - (right.balance ?? 0))
+    .flatMap(([goodId, balance]): Suggestion[] => {
+      const buildingId = buildableProducer(island, goodId);
+      return buildingId === null ? [] : [{
+        buildingId,
+        reason: `local ${formatRequirement(balance.balance ?? 0)}`,
+      }];
+    });
+
+  const global = [...planByBuilding.entries()]
+    .map(([buildingId, plan]) => ({
+      buildingId,
+      gap: plan === null ? 0 : plan - (ownedTotals.get(buildingId) ?? 0),
+    }))
+    .filter(({ buildingId, gap }) => gap > BALANCE_EPSILON && canBuildOn(island, buildingId))
+    .sort((left, right) => right.gap - left.gap)
+    .map(({ buildingId, gap }): Suggestion => ({ buildingId, reason: `plan +${formatRequirement(gap)}` }));
+
+  const suggestions: Suggestion[] = [];
+  for (const candidate of [...local.slice(0, 2), ...global]) {
+    if (suggestions.some((suggestion) => suggestion.buildingId === candidate.buildingId)) continue;
+    suggestions.push(candidate);
+    if (suggestions.length === 4) break;
+  }
+  return suggestions;
+}
+
+function IslandPlaque({ island, index, editing, onToggleEdit }: {
+  island: IslandState;
+  index: number;
+  editing: boolean;
+  onToggleEdit: () => void;
+}) {
   return (
-    <table className="island-card__balance-table">
-      <thead>
-        <tr><th>Good</th><th>Capacity</th><th>Demand</th><th>Balance</th></tr>
-      </thead>
-      <tbody>
-        {balances.map(([goodId, balance]) => (
-          <tr key={goodId} data-testid={`${idPrefix}balance-${goodId}`}>
-            <th scope="row">
-              <img src={`/assets/${BUILDINGS[goodId].image}`} alt="" width="20" height="20" />
-              <span>{BUILDINGS[goodId].label}</span>
-            </th>
-            <td>{cell(balance.capacity)}</td>
-            <td>{cell(balance.demand)}</td>
-            <td className={balanceClass(balance.balance)}>{cell(balance.balance)}</td>
-          </tr>
+    <header className="island-card__plaque">
+      <div className="island-card__plaque-name">
+        <h3>{island.name}</h3>
+        {island.underwater && <span className="island-card__badge">underwater</span>}
+        {!island.settled && <span className="island-card__badge island-card__badge--unsettled">unsettled</span>}
+      </div>
+      <div className="island-card__plaque-fertilities" data-testid={`island-${index}-fertilities`}>
+        {island.fertilities.filter((id) => id !== OPEN_FERTILITY_SLOT).map((id) => (
+          <img
+            key={id}
+            src={`/assets/${requirementById.get(id)?.image}`}
+            alt={requirementById.get(id)?.label ?? id}
+            title={requirementById.get(id)?.label ?? id}
+            width="22"
+            height="22"
+          />
         ))}
-      </tbody>
-    </table>
+        {island.fertilities.includes(OPEN_FERTILITY_SLOT) && (
+          <span className="island-card__slot" title="Open fertility slot">?</span>
+        )}
+      </div>
+      <button
+        type="button"
+        aria-label={`${editing ? 'Finish configuring' : 'Configure'} island ${island.name}`}
+        onClick={onToggleEdit}
+      >
+        {editing ? 'Done' : 'Configure'}
+      </button>
+    </header>
+  );
+}
+
+function FactionSummaryRow({ island, faction, idPrefix, onChange }: {
+  island: IslandState;
+  faction: Faction;
+  idPrefix: string;
+  onChange: IslandChange;
+}) {
+  const config = FACTION_CONFIGS[faction];
+  const houses = resolveHouses(island.factions[faction], 0);
+  const population = islandPopulation(island, faction);
+  return (
+    <li className={`island-card__faction-row island-card__faction-row--${faction}`} data-testid={`${idPrefix}summary-${faction}`}>
+      <img src={config.houseImage} alt="" width="28" height="28" />
+      <NumericInput
+        id={`${idPrefix}${faction}-houses`}
+        label={`${island.name} ${config.label} houses`}
+        raw={houses.raw}
+        valid={houses.value !== null}
+        onChange={(raw) => onChange((current) => ({
+          ...current,
+          factions: {
+            ...current.factions,
+            [faction]: { ...current.factions[faction], houses: { raw, value: parseNonNegativeInteger(raw) } },
+          },
+        }))}
+      />
+      <span className="island-card__faction-populations">
+        {population === null ? '—' : population.join(' / ')}
+      </span>
+    </li>
   );
 }
 
 function BuildingLedger({
   island,
   idPrefix,
+  balances,
   planByBuilding,
   ownedTotals,
   onChange,
 }: {
   island: IslandState;
   idPrefix: string;
+  balances: IslandBalances;
   planByBuilding: Map<BuildingId, number | null>;
   ownedTotals: Map<BuildingId, number | null>;
-  onChange: (updater: (current: IslandState) => IslandState) => void;
+  onChange: IslandChange;
 }) {
   const [showAll, setShowAll] = useState(false);
   const [expanded, setExpanded] = useState<BuildingId | null>(null);
-  const balances = calculateIslandBalance(island);
 
   const gap = (buildingId: BuildingId): number => {
     const plan = planByBuilding.get(buildingId);
-    const owned = ownedTotals.get(buildingId);
     if (plan === null || plan === undefined) return 0;
-    return plan - (owned ?? 0);
+    return plan - (ownedTotals.get(buildingId) ?? 0);
   };
 
   const rows = ALL_BUILDING_IDS
@@ -148,6 +247,8 @@ function BuildingLedger({
     setOwned(buildingId, { raw: String(value), value });
   };
 
+  const suggestions = buildSuggestions(island, balances, planByBuilding, ownedTotals);
+
   return (
     <div className="island-card__ledger">
       <div className="island-card__ledger-heading">
@@ -157,6 +258,25 @@ function BuildingLedger({
           <span>Show all buildable</span>
         </label>
       </div>
+
+      {suggestions.length > 0 && (
+        <div className="island-card__suggestions" data-testid={`${idPrefix}suggestions`}>
+          <span>Build next:</span>
+          {suggestions.map(({ buildingId, reason }) => (
+            <button
+              key={buildingId}
+              type="button"
+              aria-label={`Build one ${BUILDINGS[buildingId].label} on ${island.name}`}
+              onClick={() => step(buildingId, 1)}
+            >
+              <img src={`/assets/${BUILDINGS[buildingId].image}`} alt="" width="20" height="20" />
+              <span>+1 {BUILDINGS[buildingId].label}</span>
+              <small>{reason}</small>
+            </button>
+          ))}
+        </div>
+      )}
+
       <table>
         <thead>
           <tr>
@@ -247,76 +367,40 @@ function BuildingLedger({
   );
 }
 
-function IslandViewCard({ island, idPrefix }: { island: IslandState; idPrefix: string }) {
-  const factionSummaries = FACTIONS
-    .map((faction) => {
-      const houses = resolveHouses(island.factions[faction], 0);
-      const population = islandPopulation(island, faction);
-      return { faction, houses, population };
-    })
-    .filter(({ houses }) => houses.value === null || houses.value > 0);
+function LocalBalanceTable({ island, idPrefix }: { island: IslandState; idPrefix: string }) {
+  const balances = (Object.entries(calculateIslandBalance(island)) as [GoodId, GoodBalance][])
+    .sort(([left], [right]) => BUILDINGS[left].label.localeCompare(BUILDINGS[right].label));
+  if (balances.length === 0) return <p>No production or demand yet.</p>;
 
   return (
-    <>
-      {factionSummaries.length === 0
-        ? <p className="island-card__summary-empty">No residences recorded.</p>
-        : (
-          <ul className="island-card__summaries">
-            {factionSummaries.map(({ faction, houses, population }) => (
-              <li key={faction} data-testid={`${idPrefix}summary-${faction}`}>
-                <strong>{FACTION_CONFIGS[faction].label}</strong>
-                <span>{houses.value === null ? '—' : houses.value} houses → {
-                  population === null ? '—' : population.map((value) => String(value)).join(' / ')
-                }</span>
-              </li>
-            ))}
-          </ul>
-        )}
-
-      <div className="island-card__chips">
-        {island.fertilities.map((id) => id === OPEN_FERTILITY_SLOT
-          ? <span key={id} className="island-card__chip island-card__chip--slot" title="Open fertility slot">?</span>
-          : (
-            <span key={id} className="island-card__chip" title={requirementLabel.get(id) ?? id}>
-              <img
-                src={`/assets/${ISLAND_REQUIREMENTS.find((requirement) => requirement.id === id)?.image}`}
-                alt={requirementLabel.get(id) ?? id}
-                width="22"
-                height="22"
-              />
-            </span>
-          ))}
-        {(Object.entries(island.owned) as [BuildingId, EditableNumber][])
-          .filter(([, entry]) => entry.value === null || entry.value > 0)
-          .map(([buildingId, entry]) => (
-            <span key={buildingId} className="island-card__chip island-card__chip--owned" title={BUILDINGS[buildingId].label}>
-              <img src={`/assets/${BUILDINGS[buildingId].image}`} alt={BUILDINGS[buildingId].label} width="22" height="22" />
-              <span>×{entry.value ?? '—'}</span>
-            </span>
-          ))}
-      </div>
-
-      <details className="island-card__balances" open>
-        <summary>Local balance</summary>
-        <LocalBalanceTable island={island} idPrefix={idPrefix} />
-      </details>
-    </>
+    <table className="island-card__balance-table">
+      <thead>
+        <tr><th>Good</th><th>Capacity</th><th>Demand</th><th>Balance</th></tr>
+      </thead>
+      <tbody>
+        {balances.map(([goodId, balance]) => (
+          <tr key={goodId} data-testid={`${idPrefix}balance-${goodId}`}>
+            <th scope="row">
+              <img src={`/assets/${BUILDINGS[goodId].image}`} alt="" width="20" height="20" />
+              <span>{BUILDINGS[goodId].label}</span>
+            </th>
+            <td>{cell(balance.capacity)}</td>
+            <td>{cell(balance.demand)}</td>
+            <td className={balanceClass(balance.balance)}>{cell(balance.balance)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
-function IslandEditCard({
-  island,
-  idPrefix,
-  planByBuilding,
-  ownedTotals,
-  onChange,
-  onRemove,
-}: {
+// Rarely-changed configuration: identity, flags, fertilities, and the full
+// population distribution. Everything that changes often lives on the card.
+function IslandConfiguration({ island, index, idPrefix, onChange, onRemove }: {
   island: IslandState;
+  index: number;
   idPrefix: string;
-  planByBuilding: Map<BuildingId, number | null>;
-  ownedTotals: Map<BuildingId, number | null>;
-  onChange: (updater: (current: IslandState) => IslandState) => void;
+  onChange: IslandChange;
   onRemove: () => void;
 }) {
   const updateFaction = (faction: Faction, update: (current: IslandFactionState) => IslandFactionState) =>
@@ -326,8 +410,17 @@ function IslandEditCard({
     }));
 
   return (
-    <>
+    <div className="island-card__configuration">
       <div className="island-card__flags">
+        <label>
+          <span className="visually-hidden">Island name</span>
+          <input
+            type="text"
+            value={island.name}
+            aria-label={`Island ${index + 1} name`}
+            onChange={(event) => onChange((current) => ({ ...current, name: event.target.value }))}
+          />
+        </label>
         <label>
           <input
             type="checkbox"
@@ -374,7 +467,7 @@ function IslandEditCard({
               config={FACTION_CONFIGS[faction]}
               state={island.factions[faction]}
               islandHouses={0}
-              idPrefix={idPrefix}
+              idPrefix={`${idPrefix}config-`}
               onHousesChange={(houses) => updateFaction(faction, (current) => ({ ...current, houses }))}
               onMaxTierChange={(maxTier) => updateFaction(faction, (current) => ({ ...current, maxTier }))}
               onLivingSpaceChange={(livingSpace) => updateFaction(faction, (current) => ({ ...current, livingSpace }))}
@@ -404,29 +497,16 @@ function IslandEditCard({
           </div>
         ))}
       </div>
-
-      <BuildingLedger
-        island={island}
-        idPrefix={idPrefix}
-        planByBuilding={planByBuilding}
-        ownedTotals={ownedTotals}
-        onChange={onChange}
-      />
-
-      <details className="island-card__balances">
-        <summary>Local balance</summary>
-        <LocalBalanceTable island={island} idPrefix={idPrefix} />
-      </details>
-    </>
+    </div>
   );
 }
 
 export function IslandsSection({ islands, planRequirements, onIslandsChange }: IslandsSectionProps) {
-  const [editing, setEditing] = useState<ReadonlySet<string>>(new Set());
+  const [configuring, setConfiguring] = useState<ReadonlySet<string>>(new Set());
   const planByBuilding = planRequirementByBuilding(planRequirements);
   const ownedTotals = ownedTotalsByBuilding(islands);
 
-  const toggleEdit = (islandId: string) => setEditing((current) => {
+  const toggleConfigure = (islandId: string) => setConfiguring((current) => {
     const next = new Set(current);
     if (next.has(islandId)) next.delete(islandId);
     else next.add(islandId);
@@ -442,11 +522,7 @@ export function IslandsSection({ islands, planRequirements, onIslandsChange }: I
         <p>Record what you actually own; the plan compares against it</p>
         <button
           type="button"
-          onClick={() => onIslandsChange((current) => {
-            const island = createIsland(`Island ${current.length + 1}`);
-            setEditing((editingIds) => new Set(editingIds).add(island.id));
-            return [...current, island];
-          })}
+          onClick={() => onIslandsChange((current) => [...current, createIsland(`Island ${current.length + 1}`)])}
         >
           Add island
         </button>
@@ -455,51 +531,65 @@ export function IslandsSection({ islands, planRequirements, onIslandsChange }: I
       <div className="islands-section__cards">
         {islands.map((island, index) => {
           const idPrefix = `island-${index}-`;
-          const isEditing = editing.has(island.id);
+          const balances = calculateIslandBalance(island);
+          // The island's own operating load, settled or not: production
+          // consumption only until power/eco producers join the catalog.
+          const operatingLoad = calculateOwnedImpact([{ ...island, settled: true }]);
+          const onChange: IslandChange = (updater) => onIslandsChange((current) =>
+            current.map((candidate) => candidate.id === island.id ? updater(candidate) : candidate));
           return (
-            <section
-              key={island.id}
-              className={`island-card${isEditing ? ' island-card--editing' : ''}`}
-              data-testid={`island-${index}`}
-            >
-              <header className="island-card__header">
-                {isEditing
-                  ? (
-                    <input
-                      type="text"
-                      value={island.name}
-                      aria-label={`Island ${index + 1} name`}
-                      onChange={(event) => onIslandsChange((current) =>
-                        current.map((candidate) => candidate.id === island.id
-                          ? { ...candidate, name: event.target.value }
-                          : candidate))}
-                    />
-                  )
-                  : <h3>{island.name}</h3>}
-                {island.underwater && <span className="island-card__badge">underwater</span>}
-                {!island.settled && <span className="island-card__badge island-card__badge--unsettled">unsettled</span>}
-                <button
-                  type="button"
-                  aria-label={`${isEditing ? 'Finish editing' : 'Edit'} island ${island.name}`}
-                  onClick={() => toggleEdit(island.id)}
-                >
-                  {isEditing ? 'Done' : 'Edit'}
-                </button>
-              </header>
-              {isEditing
-                ? (
-                  <IslandEditCard
+            <section key={island.id} className="island-card" data-testid={`island-${index}`}>
+              <IslandPlaque
+                island={island}
+                index={index}
+                editing={configuring.has(island.id)}
+                onToggleEdit={() => toggleConfigure(island.id)}
+              />
+
+              {configuring.has(island.id) && (
+                <IslandConfiguration
+                  island={island}
+                  index={index}
+                  idPrefix={idPrefix}
+                  onChange={onChange}
+                  onRemove={() => onIslandsChange((current) =>
+                    current.filter((candidate) => candidate.id !== island.id))}
+                />
+              )}
+
+              <ul className="island-card__faction-rows">
+                {FACTIONS.map((faction) => (
+                  <FactionSummaryRow
+                    key={faction}
                     island={island}
+                    faction={faction}
                     idPrefix={idPrefix}
-                    planByBuilding={planByBuilding}
-                    ownedTotals={ownedTotals}
-                    onChange={(updater) => onIslandsChange((current) =>
-                      current.map((candidate) => candidate.id === island.id ? updater(candidate) : candidate))}
-                    onRemove={() => onIslandsChange((current) =>
-                      current.filter((candidate) => candidate.id !== island.id))}
+                    onChange={onChange}
                   />
-                )
-                : <IslandViewCard island={island} idPrefix={idPrefix} />}
+                ))}
+              </ul>
+
+              <BuildingLedger
+                island={island}
+                idPrefix={idPrefix}
+                balances={balances}
+                planByBuilding={planByBuilding}
+                ownedTotals={ownedTotals}
+                onChange={onChange}
+              />
+
+              <div className="island-card__load" data-testid={`${idPrefix}operating-load`}>
+                <span>Operating load (owned buildings): </span>
+                {operatingLoad === null
+                  ? <span>—</span>
+                  : <OperatingImpactValues impact={operatingLoad} />}
+                <small>power &amp; eco producers arrive with a later catalog</small>
+              </div>
+
+              <details className="island-card__balances" open>
+                <summary>Local balance</summary>
+                <LocalBalanceTable island={island} idPrefix={idPrefix} />
+              </details>
             </section>
           );
         })}

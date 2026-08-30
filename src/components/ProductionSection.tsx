@@ -250,31 +250,33 @@ function ProductionFaction({
                           {actualImpact === null
                             ? <span>—</span>
                             : <OperatingImpactValues impact={actualImpact} />}
-                          <span className="production-node__mini" aria-label={`${building.label} owned across all islands`}>
-                            own {ownedTotal === null ? '—' : ownedTotal}
+                          <span className="production-node__impact-extras">
+                            <span className="production-node__mini" aria-label={`${building.label} owned across all islands`}>
+                              own {ownedTotal === null ? '—' : ownedTotal}
+                            </span>
+                            <span className="production-node__mini" aria-label={`${building.label} actual capacity, empire-wide`}>
+                              cap {capacity === null ? '—' : formatRequirement(capacity)}
+                            </span>
+                            {buildGap === null
+                              ? <span className="production-node__mini">build —</span>
+                              : buildGap > BALANCE_EPSILON
+                                ? (
+                                  <span
+                                    className="production-node__mini balance--shortfall"
+                                    aria-label={`${building.label} still to build for the plan`}
+                                  >
+                                    build {formatRequirement(buildGap)}
+                                  </span>
+                                )
+                                : (
+                                  <span
+                                    className="production-node__mini balance--surplus"
+                                    aria-label={`${building.label} plan covered`}
+                                  >
+                                    {buildGap < -BALANCE_EPSILON ? `over ${formatRequirement(-buildGap)}` : '✓'}
+                                  </span>
+                                )}
                           </span>
-                          <span className="production-node__mini" aria-label={`${building.label} actual capacity, empire-wide`}>
-                            cap {capacity === null ? '—' : formatRequirement(capacity)}
-                          </span>
-                          {buildGap === null
-                            ? <span className="production-node__mini">build —</span>
-                            : buildGap > BALANCE_EPSILON
-                              ? (
-                                <span
-                                  className="production-node__mini balance--shortfall"
-                                  aria-label={`${building.label} still to build for the plan`}
-                                >
-                                  build {formatRequirement(buildGap)}
-                                </span>
-                              )
-                              : (
-                                <span
-                                  className="production-node__mini balance--surplus"
-                                  aria-label={`${building.label} plan covered`}
-                                >
-                                  {buildGap < -BALANCE_EPSILON ? `over ${formatRequirement(-buildGap)}` : '✓'}
-                                </span>
-                              )}
                         </div>
                       );
                     })()}

@@ -15,8 +15,8 @@ User-entered residences, manual population overrides, productivity percentages, 
 - Connector-tree production chains with every source alternative shown at full demand.
 - Per-building and directly required operating impacts, plus buildable complete-chain totals that round every production stage up to a whole building.
 - Per-island actuals: residences, owned production buildings with per-island productivity, present-fertility and open-slot annotations, land/underwater island types with placement-filtered buildings, and settled/unsettled placeholders.
-- Compact island summary cards with an edit mode holding the full inputs and a gap-sorted building ledger with count steppers.
-- Plan house counts and per-tier populations that follow the settled-island actuals automatically until manually overridden, so island tier limits propagate into global demand.
+- Game-style island cards: a name-and-fertilities plaque, inline house counts with live populations, a gap-sorted building ledger with count steppers and build-next suggestion shortcuts, per-island operating load, and a local balance table. Rarely-changed configuration (name, flags, fertilities, population distribution) sits behind a Configure toggle.
+- The global residences section acts as a read-only stats view while following island actuals, per faction, with a manual planning mode holding the full tier/bonus/override controls; island tier limits propagate into global demand.
 - Derived per-good island balances (capacity, demand, balance) and a transfer-needs view that reveals cross-island imbalances even when the empire-wide net is fine.
 - Labeled plan/actual lines on every canonical production row: planned and actual operating costs, owned counts, capacity, and the remaining build gap toward the plan; per-building impact values behind an accessible info toggle.
 - Versioned local browser storage for user-owned inputs and a complete reset control. Unreadable or future-version payloads are preserved untouched instead of overwritten, and catalog changes no longer invalidate saved state.

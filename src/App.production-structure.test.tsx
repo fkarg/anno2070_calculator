@@ -17,8 +17,10 @@ import {
 beforeEach(() => localStorage.clear());
 
 describe('production structure and impacts', () => {
-  test('dims production trees unavailable at the selected highest tier', () => {
+  test('dims production trees unavailable at the selected highest tier', async () => {
     renderApp();
+    // Manual planning mode: tier selection only exists off Auto.
+    fireEvent.click(buttonWithLabel('Plan Eco manually'));
     fireEvent.click(buttonWithLabel('Eco Workers'));
 
     const healthFoodTree = productionRow('ecoHealthFood').closest('.production-tree')!;
@@ -74,6 +76,7 @@ describe('production structure and impacts', () => {
 
   test('updates direct and full-chain operating impacts and honors rounding', async () => {
     renderApp();
+    fireEvent.click(buttonWithLabel('Plan Eco manually'));
     await replaceInput(input('eco-population-0'), '251');
 
     const fish = productionRow('ecoFish');

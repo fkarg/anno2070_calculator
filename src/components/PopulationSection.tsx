@@ -37,6 +37,7 @@ export function PopulationSection({
             state={state.factions[faction]}
             islandHouses={islandHouses[faction]}
             islandPopulation={islandPopulations?.[faction]}
+            statsOnly={state.factions[faction].houses === null}
             onHousesChange={(houses) => onFactionChange(faction, (current) => ({ ...current, houses }))}
             onHousesClear={() => onFactionChange(faction, (current) => ({ ...current, houses: null }))}
             onMaxTierChange={(maxTier) => onFactionChange(faction, (current) => ({ ...current, maxTier }))}

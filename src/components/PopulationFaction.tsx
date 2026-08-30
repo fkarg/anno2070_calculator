@@ -15,6 +15,9 @@ type PopulationFactionProps = {
   islandHouses: number | null;
   islandPopulation?: readonly number[] | null;
   idPrefix?: string;
+  // Auto plan factions are a read-only global stats view: population follows
+  // the islands and only the houses field (which switches to manual) remains.
+  statsOnly?: boolean;
   onHousesChange: (value: EditableNumber) => void;
   // Absent on islands: island houses are always concrete, Auto exists only on the plan.
   onHousesClear?: () => void;
@@ -31,6 +34,7 @@ export function PopulationFaction({
   islandHouses,
   islandPopulation,
   idPrefix = '',
+  statsOnly = false,
   onHousesChange,
   onHousesClear,
   onMaxTierChange,
@@ -67,6 +71,15 @@ export function PopulationFaction({
                 Auto
               </button>
             )}
+            {!housesManual && (
+              <button
+                type="button"
+                onClick={() => onHousesChange(houses)}
+                aria-label={`Plan ${config.label} manually`}
+              >
+                Plan
+              </button>
+            )}
           </div>
         )}
         <NumericInput
@@ -78,6 +91,19 @@ export function PopulationFaction({
         />
       </div>
 
+      {statsOnly && (
+        <ul className="population-stats" aria-label={`${config.label} population from islands`}>
+          {config.tierLabels.map((tierLabel, index) => (
+            <li key={tierLabel} data-testid={`${idPrefix}${config.id}-population-${index}`}>
+              <img src={config.tierImages[index]} alt="" width="28" height="28" />
+              <span>{tierLabel}</span>
+              <output>{effective === null ? '—' : effective[index]}</output>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {!statsOnly && (
       <fieldset className="tier-selector">
         <legend>Highest population tier</legend>
         <div className="tier-selector__options">
@@ -97,6 +123,9 @@ export function PopulationFaction({
         </div>
       </fieldset>
 
+      )}
+
+      {!statsOnly && (
       <div className="population-options">
         <label>
           <img src={config.livingSpaceImage} alt="" width="50" height="50" />
@@ -117,7 +146,9 @@ export function PopulationFaction({
           <span>{config.senateLabel}</span>
         </label>
       </div>
+      )}
 
+      {!statsOnly && (
       <div className="population-values">
         {config.tierLabels.map((tierLabel, index) => {
           const override = state.overrides[index];
@@ -159,6 +190,7 @@ export function PopulationFaction({
           );
         })}
       </div>
+      )}
     </section>
   );
 }

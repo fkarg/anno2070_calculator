@@ -63,9 +63,11 @@ describe('population overrides', () => {
 
     fireEvent.click(resetButton());
 
+    // Reset returns the plan to Auto: houses follow islands and the faction
+    // becomes a read-only stats view without tier or override controls.
     expect(input('eco-houses')).toHaveValue('0');
-    expect(input('eco-population-2')).toHaveValue('0');
+    expect(byTestId('eco-population-2')).toHaveTextContent('0');
+    expect(document.getElementById('eco-population-2')).toBeNull();
     expect(document.body).not.toHaveTextContent('Manual');
-    expect(buttonWithLabel('Eco Executives')).toHaveAttribute('aria-pressed', 'true');
   });
 });

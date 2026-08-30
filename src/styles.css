@@ -654,3 +654,138 @@ main > footer a { color: #8fc9f6; }
 .island-card__ledger-expansion td { text-align: left; background: rgb(255 255 255 / 3%); }
 .island-card__ledger-expansion label { display: inline-flex; align-items: center; gap: .5rem; }
 .island-card__ledger-expansion input { width: 5rem; }
+
+/* Aligned plan/actual metric columns in production rows */
+
+.production-node__impact-line {
+  display: grid;
+  grid-template-columns: 2.6rem minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.production-node__impact-line .operating-impact-values { display: grid; grid-template-columns: repeat(3, minmax(3.9rem, auto)); gap: .15rem; }
+.production-node__impact-line .operating-impact-values__metric { justify-content: flex-end; }
+
+.production-node__impact-line > .production-node__mini,
+.production-node__impact-line > span:not(.production-node__impact-label) { justify-self: end; }
+
+.production-node__impact-extras {
+  display: inline-flex;
+  gap: .55rem;
+  justify-self: end;
+  white-space: nowrap;
+}
+
+/* Island plaque and compact card */
+
+.island-card__plaque {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  padding: .45rem .7rem;
+  border: 1px solid #57687a;
+  border-radius: 6px;
+  background: linear-gradient(#3d5266, #2b3b4a);
+  box-shadow: inset 0 1px rgb(255 255 255 / 14%);
+}
+
+.island-card__plaque-name { display: flex; align-items: center; gap: .5rem; }
+.island-card__plaque-name h3 { margin: 0; font-size: 1.05rem; text-shadow: 0 1px 2px rgb(0 0 0 / 55%); }
+
+.island-card__plaque-fertilities {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+}
+
+.island-card__plaque-fertilities img { filter: drop-shadow(0 1px 1px rgb(0 0 0 / 45%)); }
+
+.island-card__slot { color: #ffd9a0; font-weight: 700; font-size: 1rem; }
+
+.island-card__plaque > button { margin-left: auto; }
+
+.island-card__faction-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem 1.4rem;
+}
+
+.island-card__faction-row {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+}
+
+.island-card__faction-row label { display: inline-flex; }
+.island-card__faction-row label > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.island-card__faction-row input { width: 4.2rem; }
+
+.island-card__faction-populations { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.island-card__suggestions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .4rem;
+  font-size: .8rem;
+  color: var(--muted);
+}
+
+.island-card__suggestions button {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .25rem .5rem;
+}
+
+.island-card__suggestions small { color: var(--muted); }
+
+.island-card__load {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  color: var(--muted);
+  font-size: .85rem;
+}
+
+.island-card__configuration {
+  display: grid;
+  gap: .9rem;
+  padding: .7rem;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+}
+
+/* Plan factions in Auto mode: read-only stats list */
+
+.population-stats {
+  list-style: none;
+  margin: 0;
+  padding: .55rem;
+  display: grid;
+  gap: .35rem;
+  border-top: 1px solid #344148;
+}
+
+.population-stats li {
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  align-items: center;
+  gap: .5rem;
+  font-size: .82rem;
+}
+
+.population-stats output { font-variant-numeric: tabular-nums; font-weight: 650; }
+
+.island-card__stepper label { display: inline-flex; }
+.island-card__stepper label > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
