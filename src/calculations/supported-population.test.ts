@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { createIsland } from '../island';
-import { calculateSupportedPopulation, effectiveCapacities } from './supported-population';
+import { calculateSupportedPopulation, effectiveCapacities, throttleCause } from './supported-population';
 
 const editable = (value: number) => ({ raw: String(value), value });
 
@@ -37,6 +37,18 @@ describe('effectiveCapacities', () => {
     const capacities = effectiveCapacities([island]);
     // Chip factories: no copper at all -> factor 0; recyclers contribute 2 × 1.5.
     expect(capacities.chipFactory).toBeCloseTo(3, 9);
+  });
+});
+
+describe('throttleCause', () => {
+  test('names the deepest under-supplied input of a throttled good', () => {
+    // 2 plastic factories + 1 carbon factory both draw refined oil: demand 3
+    // vs 2 refineries -> the plastics fleet runs at 2/3. The cause is oil.
+    const island = withOwned({ plasticsFactory: 2, oilRefinery: 2, oilRig: 3, carbonFactory: 1 });
+    expect(throttleCause([island], 'plasticsFactory'))
+      .toEqual({ goodId: 'oilRefinery', supply: 2, demand: 3 });
+    // The refineries themselves are crude-fed adequately (3 rigs vs 2 needed).
+    expect(throttleCause([island], 'oilRefinery')).toBeNull();
   });
 });
 

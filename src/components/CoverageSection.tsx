@@ -11,6 +11,7 @@ import { FACTIONS, FACTION_CONFIGS } from '../model';
 import {
   calculateSupportedPopulation,
   effectiveCapacities,
+  throttleCause,
   type GoodConstraint,
 } from '../calculations/supported-population';
 import type { IslandState } from '../island';
@@ -78,13 +79,22 @@ function demandView(islands: readonly IslandState[]): { cards: Card[]; unbuilt: 
   const cards = acute.slice(0, 4).map((constraint, index) => {
     const available = Math.max(0, constraint.effectiveCapacity - constraint.intermediateDemand);
     const successor = acute[index + 1];
+    // Chain-throttled producers: the real fix is the starved input, not more
+    // of the throttled building itself.
+    const starved = constraint.effectiveCapacity < constraint.nominalCapacity - 1e-9
+      ? throttleCause(islands, constraint.goodId)
+      : null;
     return {
       goodId: constraint.goodId,
       title: `${canonicalProducerLabel(constraint.goodId)} · ×${formatRequirement(constraint.scale)}`,
-      why: `${formatRequirement(available)} available vs ${formatRequirement(constraint.finalDemand)} needed by the current population`,
-      solve: constraint.goodId === support.limitingGood && support.scaleAfterNextBuilding !== null
-        ? `+1 ${canonicalProducerLabel(constraint.goodId)} → supports ×${formatRequirement(support.scaleAfterNextBuilding)}`
-        : `+1 ${canonicalProducerLabel(constraint.goodId)} → ×${formatRequirement((available + 1) / constraint.finalDemand)} on this good`,
+      why: starved
+        ? `${formatRequirement(available)} available vs ${formatRequirement(constraint.finalDemand)} needed — your ${formatRequirement(constraint.nominalCapacity)} buildings are starved: ${canonicalProducerLabel(starved.goodId)} covers ${formatRequirement(starved.supply)} of ${formatRequirement(starved.demand)} demanded`
+        : `${formatRequirement(available)} available vs ${formatRequirement(constraint.finalDemand)} needed by the current population`,
+      solve: starved
+        ? `+1 ${canonicalProducerLabel(starved.goodId)} → feeds the starved chain`
+        : constraint.goodId === support.limitingGood && support.scaleAfterNextBuilding !== null
+          ? `+1 ${canonicalProducerLabel(constraint.goodId)} → supports ×${formatRequirement(support.scaleAfterNextBuilding)}`
+          : `+1 ${canonicalProducerLabel(constraint.goodId)} → ×${formatRequirement((available + 1) / constraint.finalDemand)} on this good`,
       next: successor ? canonicalProducerLabel(successor.goodId) : null,
     };
   });

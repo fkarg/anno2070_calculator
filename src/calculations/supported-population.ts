@@ -96,6 +96,44 @@ export function effectiveCapacities(islands: readonly IslandState[]): Partial<Re
   return result;
 }
 
+export type ThrottleCause = Readonly<{ goodId: GoodId; supply: number; demand: number }>;
+
+// When a good's producers are chain-throttled (effective < nominal capacity),
+// name the under-supplied input responsible — walked to the deepest shortage,
+// so the fix ("build one of these") lands at the true bottleneck.
+export function throttleCause(
+  islands: readonly IslandState[],
+  goodId: GoodId,
+): ThrottleCause | null {
+  const nominal = capacityByBuilding(islands);
+  const loads = aggregateGoodLoads(islands);
+  const capacities = effectiveCapacities(islands);
+
+  const visit = (id: GoodId, seen: Set<GoodId>): ThrottleCause | null => {
+    if (seen.has(id)) return null;
+    seen.add(id);
+    let worst: ThrottleCause | null = null;
+    let worstRatio = 1;
+    for (const producer of GOODS.get(id)?.producers ?? []) {
+      if (!nominal.has(producer.buildingId)) continue;
+      for (const input of CONSUMPTION.get(producer.buildingId) ?? []) {
+        const demand = loads[input.goodId]?.intermediateDemand;
+        if (demand === undefined || demand === null || demand === 0) continue;
+        const supply = input.goodId in capacities ? capacities[input.goodId] : 0;
+        if (supply === null || supply === undefined) continue;
+        const ratio = supply / demand;
+        if (ratio < worstRatio - BALANCE_EPSILON) {
+          worstRatio = ratio;
+          worst = { goodId: input.goodId, supply, demand };
+        }
+      }
+    }
+    if (worst === null) return null;
+    return visit(worst.goodId, seen) ?? worst;
+  };
+  return visit(goodId, new Set());
+}
+
 export function calculateSupportedPopulation(islands: readonly IslandState[]): SupportedPopulation {
   const populations = sumIslandPopulations(islands);
   const unavailable: SupportedPopulation = {

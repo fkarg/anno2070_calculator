@@ -122,4 +122,12 @@ describe('legacy fertility records', () => {
     const result = loadAppState();
     expect(result.state.islands[0].fertilities).toEqual(['tea']);
   });
+
+  test('the split coal deposit ids merge into coalDeposit', () => {
+    const stored = validV2();
+    stored.islands[0].fertilities = ['coalMountain', 'coalGround', 'tea'];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+    const result = loadAppState();
+    expect(result.state.islands[0].fertilities).toEqual(['coalDeposit', 'tea']);
+  });
 });

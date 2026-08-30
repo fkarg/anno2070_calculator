@@ -50,8 +50,14 @@ describe('tierHeadroom', () => {
     expect(headroom?.limitingGood).toBe('fishery');
   });
 
-  test('no surplus capacity means zero headroom', () => {
-    expect(tierHeadroom([island({}, 100, 1)], 'eco', 0)?.additional).toBe(0);
+  test('unbuilt chains do not zero the headroom; built goods limit it', () => {
+    // Tea is unbuilt — known future work, listed separately. Fish alone
+    // limits: surplus 4 − 3.2 = 0.8 buildings × 250 = 200 workers.
+    const headroom = tierHeadroom([island({ fishery: 4 }, 100, 1)], 'eco', 0);
+    expect(headroom?.additional).toBeCloseTo(200, 6);
+    expect(headroom?.limitingGood).toBe('fishery');
+    // Nothing built at all: there is no headroom statement to make.
+    expect(tierHeadroom([island({}, 100, 1)], 'eco', 0)).toBeNull();
   });
 });
 

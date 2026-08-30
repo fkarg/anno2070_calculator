@@ -468,6 +468,13 @@ main > footer a { color: #8fc9f6; }
 .balance--surplus { color: #9fd9a6; }
 .operating-impact-values__metric--short { color: #ff9d7a; }
 
+.island-card__plaque-group { display: inline-flex; align-items: center; gap: .25rem; }
+.island-card__plaque-group--deposits {
+  margin-left: .35rem;
+  padding-left: .55rem;
+  border-left: 1px solid rgba(255, 255, 255, .18);
+}
+
 /* Actuals in the production view */
 
 .production-node__perbuilding { position: relative; }

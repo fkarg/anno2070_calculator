@@ -1,6 +1,7 @@
 import type { IslandState } from '../island';
+import type { BuildingId } from './building-data';
 import { tierCapacities, type Faction } from './population';
-import { GOODS, type GoodId } from './goods';
+import { GOODS, producedGood, type GoodId } from './goods';
 import { aggregateGoodLoads } from './island-balance';
 import { effectiveCapacities } from './supported-population';
 
@@ -67,6 +68,21 @@ function perInhabitantDemands(faction: Faction, tier: number): Map<GoodId, numbe
 
 export type TierHeadroom = Readonly<{ additional: number; limitingGood: GoodId }>;
 
+// Goods with at least one owned producer anywhere. Unbuilt chains are known
+// future work (listed separately); headroom answers how far the chains the
+// player actually operates can carry additional population.
+function builtGoods(islands: readonly IslandState[]): ReadonlySet<GoodId> {
+  const built = new Set<GoodId>();
+  for (const island of islands) {
+    if (!island.settled) continue;
+    for (const [buildingId, entry] of Object.entries(island.owned)) {
+      const goodId = producedGood(buildingId as BuildingId);
+      if (goodId !== null && entry.value !== 0) built.add(goodId);
+    }
+  }
+  return built;
+}
+
 export function tierHeadroom(
   islands: readonly IslandState[],
   faction: Faction,
@@ -75,10 +91,12 @@ export function tierHeadroom(
   const demands = perInhabitantDemands(faction, tier);
   if (demands.size === 0) return null;
   const surplus = surpluses(islands);
+  const built = builtGoods(islands);
 
   let additional = Infinity;
   let limitingGood: GoodId | null = null;
   for (const [goodId, perInhabitant] of demands) {
+    if (!built.has(goodId)) continue;
     const available = goodId in surplus ? surplus[goodId]! : 0;
     if (available === null) return null;
     const supportable = available / perInhabitant;

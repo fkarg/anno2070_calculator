@@ -151,17 +151,21 @@ function sanitizeIsland(value: unknown, loss: Loss): IslandState | null {
   };
 
   const knownFertilityIds = new Set([...ISLAND_REQUIREMENTS.map((requirement) => requirement.id), OPEN_FERTILITY_SLOT]);
+  // Renamed requirement ids from earlier catalogs.
+  const legacyFertilityIds: Record<string, string> = { coalMountain: 'coalDeposit', coalGround: 'coalDeposit' };
   const fertilities: string[] = [];
+  const addFertility = (stored: string) => {
+    const id = legacyFertilityIds[stored] ?? stored;
+    if (knownFertilityIds.has(id) && !fertilities.includes(id)) fertilities.push(id);
+  };
   if (Array.isArray(value.fertilities)) {
     for (const id of value.fertilities) {
-      if (loss.markUnless(typeof id === 'string') && knownFertilityIds.has(id as string) && !fertilities.includes(id as string)) {
-        fertilities.push(id as string);
-      }
+      if (loss.markUnless(typeof id === 'string')) addFertility(id as string);
     }
   } else if (isRecord(value.fertilities)) {
     // Legacy tri-state record: keep the present ids, drop the rest.
     for (const [id, state] of Object.entries(value.fertilities)) {
-      if (state === 'present' && knownFertilityIds.has(id)) fertilities.push(id);
+      if (state === 'present') addFertility(id);
     }
   } else {
     loss.markUnless(value.fertilities === undefined);

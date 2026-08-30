@@ -178,19 +178,35 @@ function IslandPlaque({ island, index, editing, onToggleEdit }: {
         {!island.settled && <span className="island-card__badge island-card__badge--unsettled">unsettled</span>}
       </div>
       <div className="island-card__plaque-fertilities" data-testid={`island-${index}-fertilities`}>
-        {island.fertilities.filter((id) => id !== OPEN_FERTILITY_SLOT).map((id) => (
-          <img
-            key={id}
-            src={`/assets/${requirementById.get(id)?.image}`}
-            alt={requirementById.get(id)?.label ?? id}
-            title={requirementById.get(id)?.label ?? id}
-            width="22"
-            height="22"
-          />
-        ))}
-        {island.fertilities.includes(OPEN_FERTILITY_SLOT) && (
-          <span className="island-card__slot" title="Open fertility slot">?</span>
-        )}
+        {(['fertility', 'deposit'] as const).map((kind) => {
+          const icons = island.fertilities
+            .filter((id) => id !== OPEN_FERTILITY_SLOT && requirementById.get(id)?.kind === kind)
+            .map((id) => (
+              <img
+                key={id}
+                src={`/assets/${requirementById.get(id)?.image}`}
+                alt={requirementById.get(id)?.label ?? id}
+                title={requirementById.get(id)?.label ?? id}
+                width="22"
+                height="22"
+              />
+            ));
+          if (kind === 'fertility') {
+            return (
+              <span key={kind} className="island-card__plaque-group">
+                {icons}
+                {island.fertilities.includes(OPEN_FERTILITY_SLOT) && (
+                  <span className="island-card__slot" title="Open fertility slot">?</span>
+                )}
+              </span>
+            );
+          }
+          return icons.length === 0 ? null : (
+            <span key={kind} className="island-card__plaque-group island-card__plaque-group--deposits">
+              {icons}
+            </span>
+          );
+        })}
       </div>
       <button
         type="button"
