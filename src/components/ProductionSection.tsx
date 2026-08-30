@@ -1,6 +1,4 @@
-import { useState } from 'react';
-
-import { BUILDINGS, type BuildingDefinition, type BuildingId } from '../calculations/building-data';
+import { BUILDINGS, type BuildingId } from '../calculations/building-data';
 import { GOODS, producedGood, type GoodId } from '../calculations/goods';
 import {
   BALANCE_EPSILON,
@@ -58,28 +56,6 @@ function planRequirementByGood(results: Record<string, number | null>): Map<Good
     required.set(goodId, current === null || result === null ? null : (current ?? 0) + (result ?? 0));
   }
   return required;
-}
-
-function PerBuildingImpact({ building }: { building: BuildingDefinition }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="production-node__perbuilding">
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-label={`${building.label} per-building operating impact`}
-        onClick={() => setOpen((current) => !current)}
-      >
-        i
-      </button>
-      {open && (
-        <small data-testid="per-building-operating-impact">
-          <span>per building </span>
-          <OperatingImpactValues impact={building.operatingImpact} />
-        </small>
-      )}
-    </div>
-  );
 }
 
 function rootNode(node: ProductionNode): ProductionNode {
@@ -182,7 +158,13 @@ function ProductionFaction({
                       aria-hidden="true"
                     >{connector(row)}</span>
                     <img className="production-node__image" src={`/assets/${building.image}`} alt="" />
-                    <span className="production-node__label">{building.label}</span>
+                    <span className="production-node__label">
+                      {building.label}
+                      <small className="production-node__perbuilding" data-testid="per-building-operating-impact">
+                        <span className="visually-hidden">per building </span>
+                        <OperatingImpactValues impact={building.operatingImpact} />
+                      </small>
+                    </span>
                   </div>
                   <output aria-label={`${building.label} required buildings (${labelContext})`}>
                     {result === null ? '—' : formatRequirement(result)}
@@ -201,13 +183,12 @@ function ProductionFaction({
                   />
                   <div className="production-node__impact">
                     <div className="production-node__impact-line">
-                      <span className="production-node__impact-label">plan</span>
+                      <span className="production-node__impact-label" title="planned operating costs">plan</span>
                       <div data-testid="direct-operating-impact">
                         {direct === null
                           ? <span><span className="visually-hidden">{building.label} direct operating impact unavailable:</span>—</span>
                           : <OperatingImpactValues impact={direct} />}
                       </div>
-                      <PerBuildingImpact building={building} />
                     </div>
                     {(() => {
                       // Actuals render once per good, on its canonical producer's
@@ -246,16 +227,20 @@ function ProductionFaction({
                           className="production-node__impact-line production-node__impact-line--actual"
                           data-testid={`actuals-${node.id}`}
                         >
-                          <span className="production-node__impact-label">actual</span>
+                          <span className="production-node__impact-label" title="actual operating costs (owned buildings)">act</span>
                           {actualImpact === null
                             ? <span>—</span>
                             : <OperatingImpactValues impact={actualImpact} />}
                           <span className="production-node__impact-extras">
-                            <span className="production-node__mini" aria-label={`${building.label} owned across all islands`}>
+                            <span
+                              className="production-node__mini"
+                              aria-label={`${building.label} owned across all islands and their capacity`}
+                              title="owned buildings → capacity in canonical units"
+                            >
                               own {ownedTotal === null ? '—' : ownedTotal}
-                            </span>
-                            <span className="production-node__mini" aria-label={`${building.label} actual capacity, empire-wide`}>
-                              cap {capacity === null ? '—' : formatRequirement(capacity)}
+                              {capacity !== null && ownedTotal !== null && Math.abs(capacity - ownedTotal) > BALANCE_EPSILON
+                                ? `→${formatRequirement(capacity)}`
+                                : capacity === null ? '→—' : ''}
                             </span>
                             {buildGap === null
                               ? <span className="production-node__mini">build —</span>

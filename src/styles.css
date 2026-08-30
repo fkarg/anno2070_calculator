@@ -864,3 +864,73 @@ main > footer a { color: #8fc9f6; }
 .population-options--compact { display: flex; gap: 1rem; padding: .45rem .55rem; }
 .population-options--compact label { display: inline-flex; align-items: center; gap: .35rem; font-size: .68rem; color: var(--muted); }
 .population-options--compact span { max-width: 11rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Compact production rows: per-building costs under the name, tight P/A lines */
+
+.production-node__label { display: grid; gap: .05rem; }
+.production-node__perbuilding { color: var(--muted); font-size: .62rem; }
+.production-node__perbuilding .operating-impact-values { display: inline-flex; gap: .35rem; }
+
+.production-node__impact-line { grid-template-columns: 2rem minmax(0, 1fr) auto; }
+.production-node__impact-line .operating-impact-values {
+  grid-template-columns: repeat(3, minmax(3.1rem, auto));
+  gap: .1rem;
+  font-size: .72rem;
+}
+.production-node__impact-label { width: 2rem; font-size: .6rem; }
+.production-node__impact-extras { gap: .4rem; font-size: .72rem; }
+
+/* Island tier minis and coverage bars */
+
+.island-card__tier-mini { display: inline-flex; align-items: center; gap: .1rem; }
+.island-card__tier-reset { padding: .05rem .25rem; font-size: .6rem; }
+
+.reveal-edit--inline { display: inline-block; width: 3.6rem; }
+.reveal-edit--inline output { padding: .25rem .3rem; font-weight: 600; font-size: .78rem; }
+.reveal-edit--manual { border: 1px solid #e48a3a; border-radius: 3px; background: rgb(180 90 26 / 16%); }
+.reveal-edit--manual output { visibility: hidden; }
+.reveal-edit--manual input { opacity: 1; }
+
+.island-card__prod-cell input { width: 3.6rem; padding: .2rem .25rem; font-size: .72rem; }
+
+.island-card__coverage-cell { white-space: nowrap; }
+.coverage-bar {
+  display: inline-block;
+  width: 3.2rem;
+  height: .45rem;
+  margin-right: .35rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #182024;
+  overflow: hidden;
+  vertical-align: middle;
+}
+.coverage-bar__fill { display: block; height: 100%; background: #4f9e5f; }
+.coverage-bar__fill--short { background: #c76a3f; }
+
+/* Coverage & bottlenecks section */
+
+.coverage-section__frames { display: flex; gap: .4rem; }
+.coverage-section__frames button[aria-pressed="true"] { border-color: #f4a75e; background: #3c4a51; }
+.coverage-section__empty { margin: 0; padding: .8rem; color: var(--muted); }
+
+.coverage-section__cards {
+  list-style: none;
+  margin: 0;
+  padding: .7rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: .6rem;
+}
+
+.bottleneck-card {
+  border: 1px solid #6c5439;
+  border-radius: 5px;
+  background: #27221e;
+  padding: .55rem .7rem;
+  font-size: .8rem;
+}
+.bottleneck-card h3 { display: flex; align-items: center; gap: .4rem; margin: 0 0 .3rem; font-size: .85rem; color: #ffc27c; }
+.bottleneck-card p { margin: 0 0 .25rem; }
+.bottleneck-card__solve { font-weight: 600; }
+.bottleneck-card__next { color: var(--muted); font-size: .72rem; }

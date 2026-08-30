@@ -31,9 +31,10 @@ describe('actuals in the production view', () => {
     await replaceInput(input('island-0-owned-fishery'), '2');
 
     const actuals = byTestId('actuals-ecoFish');
-    expect(actuals).toHaveTextContent('actual');
+    expect(actuals).toHaveTextContent('act');
+    // own and capacity merge into one cell; the arrow only appears when they differ.
     expect(actuals).toHaveTextContent('own 2');
-    expect(actuals).toHaveTextContent('cap 2');
+    expect(actuals).not.toHaveTextContent('→');
     // No plan demand: the plan is covered, shown as surplus, not a shortage.
     expect(actuals.querySelector('.balance--surplus')).toHaveTextContent('over 2');
 
@@ -56,8 +57,7 @@ describe('actuals in the production view', () => {
 
     // 2 recyclers = 3 chip-factory units; costs are the recyclers' flat costs.
     const chips = byTestId('actuals-ecoMicrochipsCommunicators');
-    expect(chips).toHaveTextContent('own 2');
-    expect(chips).toHaveTextContent('cap 3');
+    expect(chips).toHaveTextContent('own 2→3');
     expect(chips).toHaveTextContent('maintenance credits per minute:-320');
   });
 

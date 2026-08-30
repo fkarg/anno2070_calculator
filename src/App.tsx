@@ -5,6 +5,7 @@ import { calculateAvailableProduction } from './calculations/calculate-productio
 import { aggregateBalances, transferNeeds } from './calculations/island-balance';
 import { calculateOperatingImpacts, calculateOwnedImpact } from './calculations/operating-impact';
 import { PRODUCTION_NODES } from './calculations/production-data';
+import { CoverageSection } from './components/CoverageSection';
 import { IslandsSection } from './components/IslandsSection';
 import { PopulationSection } from './components/PopulationSection';
 import { ProductionSection } from './components/ProductionSection';
@@ -119,6 +120,7 @@ export function App() {
           })),
         }))}
       />
+      <CoverageSection islands={state.islands} planRequirements={production} />
       <ProductionSection
         state={state.plan}
         results={production}

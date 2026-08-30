@@ -39,7 +39,13 @@ describe('islands section', () => {
     addIsland();
     // Houses are editable on the card without entering any mode.
     await replaceInput(input('island-0-eco-houses'), '100');
-    expect(byTestId('island-0-summary-eco')).toHaveTextContent('160 / 480 / 725 / 760');
+    // Per-tier populations are reveal-edit minis on the card itself.
+    expect(input('island-0-eco-population-0')).toHaveValue('160');
+    expect(input('island-0-eco-population-2')).toHaveValue('725');
+    await replaceInput(input('island-0-eco-population-3'), '0');
+    expect(input('island-0-eco-population-2')).toHaveValue('1200');
+    fireEvent.click(buttonWithLabel('Use automatic Island 1 Eco Executives population'));
+    expect(input('island-0-eco-population-3')).toHaveValue('760');
     expect(document.querySelector('[aria-label="Island 1 name"]')).toBeNull();
 
     openConfiguration('Island 1');

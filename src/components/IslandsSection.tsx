@@ -35,6 +35,7 @@ import { FertilityPicker } from './FertilityPicker';
 import { NumericInput } from './NumericInput';
 import { OperatingImpactValues } from './OperatingImpactValues';
 import { PopulationFaction } from './PopulationFaction';
+import { RevealEditValue } from './RevealEditValue';
 
 type IslandsSectionProps = {
   islands: readonly IslandState[];
@@ -180,8 +181,15 @@ function FactionSummaryRow({ island, faction, idPrefix, onChange }: {
   onChange: IslandChange;
 }) {
   const config = FACTION_CONFIGS[faction];
-  const houses = resolveHouses(island.factions[faction], 0);
+  const state = island.factions[faction];
+  const houses = resolveHouses(state, 0);
   const population = islandPopulation(island, faction);
+  const updateFactionState = (updateState: (current: typeof state) => typeof state) =>
+    onChange((current) => ({
+      ...current,
+      factions: { ...current.factions, [faction]: updateState(current.factions[faction] as typeof state) },
+    }));
+
   return (
     <li className={`island-card__faction-row island-card__faction-row--${faction}`} data-testid={`${idPrefix}summary-${faction}`}>
       <img src={config.houseImage} alt="" width="28" height="28" />
@@ -190,16 +198,48 @@ function FactionSummaryRow({ island, faction, idPrefix, onChange }: {
         label={`${island.name} ${config.label} houses`}
         raw={houses.raw}
         valid={houses.value !== null}
-        onChange={(raw) => onChange((current) => ({
+        onChange={(raw) => updateFactionState((current) => ({
           ...current,
-          factions: {
-            ...current.factions,
-            [faction]: { ...current.factions[faction], houses: { raw, value: parseNonNegativeInteger(raw) } },
-          },
+          houses: { raw, value: parseNonNegativeInteger(raw) },
         }))}
       />
       <span className="island-card__faction-populations">
-        {population === null ? '—' : population.join(' / ')}
+        {config.tierLabels.map((tierLabel, index) => {
+          const override = state.overrides[index];
+          const manual = override !== null;
+          const raw = manual ? override.raw : population?.[index]?.toString() ?? '';
+          const valid = manual ? override.value !== null : population !== null;
+          return (
+            <span key={tierLabel} className="island-card__tier-mini">
+              <RevealEditValue
+                id={`${idPrefix}${faction}-population-${index}`}
+                label={`${island.name} ${config.label} ${tierLabel} population`}
+                raw={raw}
+                valid={valid}
+                manual={manual}
+                onChange={(newRaw) => updateFactionState((current) => ({
+                  ...current,
+                  overrides: current.overrides.map((entry, entryIndex) =>
+                    entryIndex === index ? { raw: newRaw, value: parseNonNegativeInteger(newRaw) } : entry),
+                }))}
+              />
+              {manual && (
+                <button
+                  type="button"
+                  className="island-card__tier-reset"
+                  aria-label={`Use automatic ${island.name} ${config.label} ${tierLabel} population`}
+                  onClick={() => updateFactionState((current) => ({
+                    ...current,
+                    overrides: current.overrides.map((entry, entryIndex) =>
+                      entryIndex === index ? null : entry),
+                  }))}
+                >
+                  ↺
+                </button>
+              )}
+            </span>
+          );
+        })}
       </span>
     </li>
   );
@@ -221,7 +261,6 @@ function BuildingLedger({
   onChange: IslandChange;
 }) {
   const [showAll, setShowAll] = useState(false);
-  const [expanded, setExpanded] = useState<BuildingId | null>(null);
 
   const gap = (buildingId: BuildingId): number => {
     const plan = planByBuilding.get(buildingId);
@@ -286,7 +325,7 @@ function BuildingLedger({
             <th>Here</th>
             <th title="This island's demand">Demand</th>
             <th title="This island's capacity minus demand">Balance</th>
-            <th><span className="visually-hidden">Productivity</span></th>
+            <th title="Productivity on this island">Prod %</th>
           </tr>
         </thead>
         <tbody>
@@ -329,35 +368,24 @@ function BuildingLedger({
                   <td className={canonical ? balanceClass(balance?.balance) : ''}>
                     {canonical ? cell(balance?.balance) : '·'}
                   </td>
-                  <td>
-                    <button
-                      type="button"
-                      aria-expanded={expanded === buildingId}
-                      aria-label={`${building.label} productivity on ${island.name}`}
-                      onClick={() => setExpanded((current) => current === buildingId ? null : buildingId)}
-                    >%</button>
+                  <td className="island-card__prod-cell">
+                    <NumericInput
+                      id={`${idPrefix}productivity-${buildingId}`}
+                      label={`${island.name} ${building.label} productivity`}
+                      raw={productivity?.raw ?? '100'}
+                      valid={productivity === undefined || productivity.value !== null}
+                      inputMode="decimal"
+                      hideLabel
+                      onChange={(raw) => onChange((current) => ({
+                        ...current,
+                        productivity: {
+                          ...current.productivity,
+                          [buildingId]: { raw, value: raw.trim() === '' ? null : Number(raw) },
+                        },
+                      }))}
+                    />
                   </td>
                 </tr>
-                {expanded === buildingId && (
-                  <tr className="island-card__ledger-expansion">
-                    <td colSpan={7}>
-                      <NumericInput
-                        id={`${idPrefix}productivity-${buildingId}`}
-                        label={`${island.name} ${building.label} productivity`}
-                        raw={productivity?.raw ?? '100'}
-                        valid={productivity === undefined || productivity.value !== null}
-                        inputMode="decimal"
-                        onChange={(raw) => onChange((current) => ({
-                          ...current,
-                          productivity: {
-                            ...current.productivity,
-                            [buildingId]: { raw, value: raw.trim() === '' ? null : Number(raw) },
-                          },
-                        }))}
-                      />
-                    </td>
-                  </tr>
-                )}
               </Fragment>
             );
           })}
@@ -365,6 +393,13 @@ function BuildingLedger({
       </table>
     </div>
   );
+}
+
+function coverageCell(balance: GoodBalance): { text: string; ratio: number | null } {
+  if (balance.capacity === null || balance.demand === null) return { text: '—', ratio: null };
+  if (balance.demand === 0) return { text: balance.capacity > 0 ? 'export' : '—', ratio: null };
+  const ratio = balance.capacity / balance.demand;
+  return { text: `${Math.round(Math.min(1, ratio) * 100)}%${ratio > 1 ? ' +' : ''}`, ratio };
 }
 
 function LocalBalanceTable({ island, idPrefix }: { island: IslandState; idPrefix: string }) {
@@ -375,20 +410,36 @@ function LocalBalanceTable({ island, idPrefix }: { island: IslandState; idPrefix
   return (
     <table className="island-card__balance-table">
       <thead>
-        <tr><th>Good</th><th>Capacity</th><th>Demand</th><th>Balance</th></tr>
+        <tr><th>Good</th><th>Capacity</th><th>Demand</th><th>Balance</th><th>Coverage</th></tr>
       </thead>
       <tbody>
-        {balances.map(([goodId, balance]) => (
-          <tr key={goodId} data-testid={`${idPrefix}balance-${goodId}`}>
-            <th scope="row">
-              <img src={`/assets/${BUILDINGS[goodId].image}`} alt="" width="20" height="20" />
-              <span>{BUILDINGS[goodId].label}</span>
-            </th>
-            <td>{cell(balance.capacity)}</td>
-            <td>{cell(balance.demand)}</td>
-            <td className={balanceClass(balance.balance)}>{cell(balance.balance)}</td>
-          </tr>
-        ))}
+        {balances.map(([goodId, balance]) => {
+          const coverage = coverageCell(balance);
+          return (
+            <tr key={goodId} data-testid={`${idPrefix}balance-${goodId}`}>
+              <th scope="row">
+                <img src={`/assets/${BUILDINGS[goodId].image}`} alt="" width="20" height="20" />
+                <span>{BUILDINGS[goodId].label}</span>
+              </th>
+              <td>{cell(balance.capacity)}</td>
+              <td>{cell(balance.demand)}</td>
+              <td className={balanceClass(balance.balance)}>{cell(balance.balance)}</td>
+              <td className="island-card__coverage-cell">
+                {coverage.ratio !== null && (
+                  <span className="coverage-bar" aria-hidden="true">
+                    <span
+                      className={`coverage-bar__fill${coverage.ratio < 1 ? ' coverage-bar__fill--short' : ''}`}
+                      style={{ width: `${Math.round(Math.min(1, coverage.ratio) * 100)}%` }}
+                    />
+                  </span>
+                )}
+                <span className={coverage.ratio !== null && coverage.ratio < 1 ? 'balance--shortfall' : 'balance--surplus'}>
+                  {coverage.text}
+                </span>
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );
