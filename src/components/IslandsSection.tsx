@@ -14,7 +14,7 @@ import {
   type IslandBalances,
 } from '../calculations/island-balance';
 import { GOODS, producedGood, type GoodId } from '../calculations/goods';
-import { calculateOwnedImpact } from '../calculations/operating-impact';
+import { islandOperatingImpact } from '../calculations/operating-impact';
 import type { Faction } from '../calculations/population';
 import { formatRequirement } from '../calculations/production';
 import { PRODUCTION_NODES } from '../calculations/production-data';
@@ -66,7 +66,12 @@ const BUILDING_TIER: ReadonlyMap<BuildingId, number> = (() => {
   return tiers;
 })();
 
+const CATEGORY_ORDER = { production: 0, power: 1, eco: 2, material: 3 } as const;
+const CATEGORY_LABELS = { production: 'Production', power: 'Power', eco: 'Ecobalance', material: 'Materials' } as const;
+
 function compareByChainTier(left: BuildingId, right: BuildingId): number {
+  const categoryDifference = CATEGORY_ORDER[BUILDINGS[left].category] - CATEGORY_ORDER[BUILDINGS[right].category];
+  if (categoryDifference !== 0) return categoryDifference;
   const tierDifference = (BUILDING_TIER.get(left) ?? 9) - (BUILDING_TIER.get(right) ?? 9);
   if (tierDifference !== 0) return tierDifference;
   return BUILDINGS[left].label.localeCompare(BUILDINGS[right].label);
@@ -314,7 +319,7 @@ function BuildingLedger({
   return (
     <div className="island-card__ledger">
       <div className="island-card__ledger-heading">
-        <h4>Owned production buildings</h4>
+        <h4>Owned buildings</h4>
         <select
           aria-label={`Add building to ${island.name}`}
           value=""
@@ -324,18 +329,25 @@ function BuildingLedger({
           }}
         >
           <option value="">Add building…</option>
-          {addable.map((buildingId) => {
-            // The produced good's empire balance orients the pick; goods with
-            // no activity anywhere stay a plain label.
-            const goodId = producedGood(buildingId);
-            const empireBalance = goodId === null ? undefined : empire[goodId]?.balance;
-            const suffix = empireBalance === undefined ? ''
-              : empireBalance === null ? ' · empire —'
-              : ` · empire ${empireBalance > 0 ? '+' : ''}${formatRequirement(empireBalance)}`;
-            return (
-              <option key={buildingId} value={buildingId}>{BUILDINGS[buildingId].label}{suffix}</option>
-            );
-          })}
+          {(Object.keys(CATEGORY_ORDER) as (keyof typeof CATEGORY_ORDER)[])
+            .map((category) => ({ category, ids: addable.filter((buildingId) => BUILDINGS[buildingId].category === category) }))
+            .filter(({ ids }) => ids.length > 0)
+            .map(({ category, ids }) => (
+              <optgroup key={category} label={CATEGORY_LABELS[category]}>
+                {ids.map((buildingId) => {
+                  // The produced good's empire balance orients the pick; goods
+                  // with no activity anywhere stay a plain label.
+                  const goodId = producedGood(buildingId);
+                  const empireBalance = goodId === null ? undefined : empire[goodId]?.balance;
+                  const suffix = empireBalance === undefined ? ''
+                    : empireBalance === null ? ' · empire —'
+                    : ` · empire ${empireBalance > 0 ? '+' : ''}${formatRequirement(empireBalance)}`;
+                  return (
+                    <option key={buildingId} value={buildingId}>{BUILDINGS[buildingId].label}{suffix}</option>
+                  );
+                })}
+              </optgroup>
+            ))}
         </select>
       </div>
 
@@ -359,7 +371,7 @@ function BuildingLedger({
 
       {rows.length === 0 && (
         <p className="island-card__ledger-empty">
-          No production buildings recorded yet — use Build next or the add list.
+          No buildings recorded yet — use Build next or the add list.
         </p>
       )}
       {rows.length > 0 && (
@@ -387,12 +399,12 @@ function BuildingLedger({
               <Fragment key={buildingId}>
                 <tr data-testid={`${idPrefix}ledger-${buildingId}`}>
                   <th scope="row">
-                    <span className="island-card__building-cell">
+                    <span className="island-card__building-cell" title={building.note}>
                       <img src={`/assets/${building.image}`} alt="" width="22" height="22" />
-                      <span>{building.label}</span>
+                      <span>{building.label}{building.note !== undefined && '*'}</span>
                     </span>
                   </th>
-                  <td>{cell(planByBuilding.get(buildingId))}</td>
+                  <td>{building.category === 'production' ? cell(planByBuilding.get(buildingId)) : '·'}</td>
                   <td>{ownedTotals.get(buildingId) === null ? '—' : ownedTotals.get(buildingId) ?? 0}</td>
                   <td className="island-card__stepper">
                     <button
@@ -418,21 +430,23 @@ function BuildingLedger({
                     {canonical ? cell(balance?.balance) : '·'}
                   </td>
                   <td className="island-card__prod-cell">
-                    <NumericInput
-                      id={`${idPrefix}productivity-${buildingId}`}
-                      label={`${island.name} ${building.label} productivity`}
-                      raw={productivity?.raw ?? '100'}
-                      valid={productivity === undefined || productivity.value !== null}
-                      inputMode="decimal"
-                      hideLabel
-                      onChange={(raw) => onChange((current) => ({
-                        ...current,
-                        productivity: {
-                          ...current.productivity,
-                          [buildingId]: { raw, value: raw.trim() === '' ? null : Number(raw) },
-                        },
-                      }))}
-                    />
+                    {goodId === null ? '·' : (
+                      <NumericInput
+                        id={`${idPrefix}productivity-${buildingId}`}
+                        label={`${island.name} ${building.label} productivity`}
+                        raw={productivity?.raw ?? '100'}
+                        valid={productivity === undefined || productivity.value !== null}
+                        inputMode="decimal"
+                        hideLabel
+                        onChange={(raw) => onChange((current) => ({
+                          ...current,
+                          productivity: {
+                            ...current.productivity,
+                            [buildingId]: { raw, value: raw.trim() === '' ? null : Number(raw) },
+                          },
+                        }))}
+                      />
+                    )}
                   </td>
                 </tr>
               </Fragment>
@@ -651,9 +665,8 @@ export function IslandsSection({ islands, planRequirements, onIslandsChange }: I
         {islands.map((island, index) => {
           const idPrefix = `island-${index}-`;
           const balances = calculateIslandBalance(island);
-          // The island's own operating load, settled or not: production
-          // consumption only until power/eco producers join the catalog.
-          const operatingLoad = calculateOwnedImpact([{ ...island, settled: true }]);
+          // The island's own operating load, settled or not.
+          const operatingLoad = islandOperatingImpact(island);
           const onChange: IslandChange = (updater) => onIslandsChange((current) =>
             current.map((candidate) => candidate.id === island.id ? updater(candidate) : candidate));
           return (
@@ -716,8 +729,13 @@ export function IslandsSection({ islands, planRequirements, onIslandsChange }: I
                 <span>Operating load (owned buildings): </span>
                 {operatingLoad === null
                   ? <span>—</span>
-                  : <OperatingImpactValues impact={operatingLoad} />}
-                <small>power &amp; eco producers arrive with a later catalog</small>
+                  : (
+                    <OperatingImpactValues
+                      impact={operatingLoad}
+                      ecoUnavailable={island.underwater}
+                      highlightDeficits
+                    />
+                  )}
               </div>
 
               <details className="island-card__balances" open>

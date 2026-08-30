@@ -466,6 +466,7 @@ main > footer a { color: #8fc9f6; }
 
 .balance--shortfall { color: #ff9d7a; }
 .balance--surplus { color: #9fd9a6; }
+.operating-impact-values__metric--short { color: #ff9d7a; }
 
 /* Actuals in the production view */
 

@@ -5,13 +5,20 @@ import { PRODUCTION_NODES } from './production-data';
 import { BUILDINGS, type BuildingId } from './building-data';
 
 describe('GOODS derivation', () => {
-  test('every canonical building produces exactly one good', () => {
+  test('every production building produces exactly one good; other categories none', () => {
     const producerIds = new Set(
       [...GOODS.values()].flatMap((good) => good.producers.map((producer) => producer.buildingId)),
     );
     for (const buildingId of Object.keys(BUILDINGS) as BuildingId[]) {
-      expect(producedGood(buildingId), buildingId).not.toBeNull();
-      expect(producerIds.has(buildingId), buildingId).toBe(true);
+      if (BUILDINGS[buildingId].category === 'production') {
+        expect(producedGood(buildingId), buildingId).not.toBeNull();
+        expect(producerIds.has(buildingId), buildingId).toBe(true);
+      } else {
+        // Power/eco/material buildings are impact-only: invisible to the
+        // goods graph, counted only in operating impacts (and fuel).
+        expect(producedGood(buildingId), buildingId).toBeNull();
+        expect(producerIds.has(buildingId), buildingId).toBe(false);
+      }
     }
   });
 

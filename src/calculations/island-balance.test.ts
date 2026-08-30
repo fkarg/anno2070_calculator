@@ -28,6 +28,16 @@ describe('calculateIslandBalance', () => {
     expect(balances.chipFactory?.capacity).toBeCloseTo(2, 9);
   });
 
+  test('coal power stations burn coal as productivity-independent fuel demand', () => {
+    // 2 stations = 2 rotary-excavator-equivalents = 1 coal mine unit; the
+    // station has no productivity slider, so a coal-mine productivity entry
+    // must not leak onto the fuel demand.
+    const balances = calculateIslandBalance(withOwned({ coalPowerStation: 2, coalMine: 1 }, { coalMine: 50 }));
+    expect(balances.coalMine?.demand).toBeCloseTo(1, 9);
+    expect(balances.coalMine?.capacity).toBeCloseTo(0.5, 9);
+    expect(balances.coalMine?.balance).toBeCloseTo(-0.5, 9);
+  });
+
   test('final demand follows island population and satisfaction', () => {
     const island = createIsland('A');
     island.factions.eco.houses = { raw: '100', value: 100 };

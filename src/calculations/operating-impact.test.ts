@@ -2,7 +2,46 @@ import { describe, expect, test } from 'vitest';
 
 import { createIsland } from '../island';
 import { PRODUCTION_NODES } from './production-data';
-import { calculateOperatingImpacts, calculateOwnedImpact, scaleOperatingImpact } from './operating-impact';
+import {
+  calculateOperatingImpacts,
+  calculateOwnedImpact,
+  islandOperatingImpact,
+  scaleOperatingImpact,
+} from './operating-impact';
+
+const editable = (value: number) => ({ raw: String(value), value });
+
+describe('islandOperatingImpact', () => {
+  test('power plants raise the island power balance', () => {
+    const island = createIsland('A');
+    island.owned = { fishery: editable(2), windPark: editable(1) };
+    expect(islandOperatingImpact(island))
+      .toEqual({ maintenanceCredits: -35, power: 13, ecoBalance: 0 });
+  });
+
+  test('tycoon eco output only fills the balance up to zero', () => {
+    const island = createIsland('A');
+    // 3 chip factories: eco -12; 1 waste compactor outputs +50 but may only
+    // neutralize, never push positive. Its power/maintenance count in full.
+    island.owned = { chipFactory: editable(3), wasteCompactor: editable(1) };
+    expect(islandOperatingImpact(island))
+      .toEqual({ maintenanceCredits: -70, power: -11, ecoBalance: 0 });
+  });
+
+  test('eco-faction eco buildings can push the balance positive', () => {
+    const island = createIsland('A');
+    island.owned = { chipFactory: editable(1), weatherControlStation: editable(2) };
+    expect(islandOperatingImpact(island)!.ecoBalance).toBe(26);
+  });
+
+  test('underwater islands have no ecobalance', () => {
+    const island = createIsland('A');
+    island.underwater = true;
+    island.owned = { electronicsRecycler: editable(1), marineCurrentPowerPlant: editable(1) };
+    expect(islandOperatingImpact(island))
+      .toEqual({ maintenanceCredits: -200, power: -10, ecoBalance: 0 });
+  });
+});
 
 describe('scaleOperatingImpact', () => {
   test('scales fractional requirements without rounding again', () => {

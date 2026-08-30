@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { BUILDING_REQUIREMENTS, BUILDINGS, ISLAND_REQUIREMENTS } from './building-data';
+import { BUILDING_PLACEMENTS, BUILDING_REQUIREMENTS, BUILDINGS, ISLAND_REQUIREMENTS } from './building-data';
 import { ALTERNATIVE_GROUPS, PRODUCTION_NODES } from './production-data';
 
 const expectedOperatingImpacts = {
@@ -31,13 +31,27 @@ const expectedOperatingImpacts = {
   ironMetalConverter: [-100, -25, 0], bionicsFactory: [-90, -40, -15],
   hydraulicPlant: [-50, -20, -10], oxidationFacility: [-40, -15, 0],
   lithiumProductionFacility: [-30, -10, 0],
+  windPark: [-25, 15, 0], thermalPowerStation: [-65, 70, 0], offshoreWindPark: [-50, 30, 0],
+  solarTowerGenerator: [-120, 120, 0], coalPowerStation: [-10, 60, -15],
+  nuclearPowerPlant: [-100, 500, -10], marineCurrentPowerPlant: [-40, 25, 0],
+  hydroelectricPowerPlant: [-140, 500, -10], geothermicPowerPlant: [-200, 750, 0],
+  energyTransmitter: [-175, 0, -30],
+  weatherControlStation: [-20, -2, 15], monitoringStation: [-40, -25, 40],
+  ozoneMakerStation: [-120, -60, 100], riverSewageTreatmentPlant: [-200, -250, 300],
+  guardian: [-500, -250, 500], wasteCompactor: [-40, -5, 50],
+  deacidificationStation: [-80, -60, 90], co2Reservoir: [-160, -110, 200],
+  basaltExtraction: [-5, -1, 0], basaltCrusher: [-5, -2, -4], smelter: [-5, -1, 0],
+  underwaterRecyclingStation: [-60, -4, 0], toolsWorkshop: [-10, -3, -4],
+  treeNursery: [-10, -2, 0], sawmill: [-5, -2, -3], limestoneQuarry: [-20, -2, -2],
+  glassworks: [-60, -3, -6], concreteFactory: [-10, -4, -4], steelworks: [-20, -6, -6],
+  carbonFactory: [-40, -6, -6], uraniumMine: [-50, -4, -6], fuelElementFactory: [-60, -4, -6],
 } as const;
 
 describe('BUILDINGS', () => {
   test('covers every occurrence with one canonical operating configuration', () => {
     const ids = new Set(Object.keys(BUILDINGS));
 
-    expect(ids.size).toBe(64);
+    expect(ids.size).toBe(96);
     expect(PRODUCTION_NODES).toHaveLength(88);
     for (const node of PRODUCTION_NODES) {
       expect(ids.has(node.buildingId), node.id).toBe(true);
@@ -86,6 +100,25 @@ describe('BUILDINGS', () => {
     expect(PRODUCTION_NODES.filter(({ buildingId }) => buildingId === 'chipFactory')).toHaveLength(3);
   });
 
+  test('categorizes power, eco, and material entries with sign invariants', () => {
+    const byCategory = (category: string) =>
+      Object.values(BUILDINGS).filter((building) => building.category === category);
+    expect(byCategory('power')).toHaveLength(10);
+    expect(byCategory('eco')).toHaveLength(8);
+    expect(byCategory('material')).toHaveLength(14);
+    expect(byCategory('production')).toHaveLength(64);
+
+    for (const [id, building] of Object.entries(BUILDINGS)) {
+      // The energy transmitter moves power, so 0 is legitimate for 'power'.
+      if (building.category === 'power') expect(building.operatingImpact.power, id).toBeGreaterThanOrEqual(0);
+      if (building.category === 'eco') expect(building.operatingImpact.ecoBalance, id).toBeGreaterThan(0);
+      // No ecobalance exists underwater.
+      if (BUILDING_PLACEMENTS[id as keyof typeof BUILDING_PLACEMENTS] === 'underwater') {
+        expect(building.operatingImpact.ecoBalance, id).toBe(0);
+      }
+    }
+  });
+
   test('declares the eight independent alternative groups', () => {
     expect(ALTERNATIVE_GROUPS.map(({ id }) => id)).toEqual([
       'ecoCommunicatorsChips',
@@ -106,7 +139,7 @@ describe('ISLAND_REQUIREMENTS', () => {
     expect(new Set(ids).size).toBe(ids.length);
     for (const requirement of ISLAND_REQUIREMENTS) {
       expect(requirement.label, requirement.id).not.toBe('');
-      expect(requirement.image, requirement.id).toMatch(/_Qoor\.png$/);
+      expect(requirement.image, requirement.id).toMatch(/\.png$/);
     }
   });
 

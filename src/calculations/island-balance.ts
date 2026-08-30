@@ -1,6 +1,6 @@
 import { islandPopulation, islandProductivity, type IslandState } from '../island';
 import type { BuildingId } from './building-data';
-import { CONSUMPTION, GOODS, producedGood, type GoodId } from './goods';
+import { CONSUMPTION, FUEL_CONSUMPTION, GOODS, producedGood, type GoodId } from './goods';
 
 export const BALANCE_EPSILON = 1e-9;
 // Below the two-decimal display precision: differences this small render as 0
@@ -37,6 +37,12 @@ export function islandGoodLoads(island: IslandState): GoodLoads {
 
   for (const [ownedId, entry] of Object.entries(island.owned)) {
     const buildingId = ownedId as BuildingId;
+    // Fuel burns at full rate regardless of the productivity slider.
+    for (const input of FUEL_CONSUMPTION[buildingId] ?? []) {
+      const consumed = entry.value === null ? null : entry.value * input.rate;
+      intermediate[input.goodId] = add(intermediate[input.goodId], consumed);
+    }
+
     const goodId = producedGood(buildingId);
     if (goodId === null) continue;
     const productivity = islandProductivity(island, buildingId);

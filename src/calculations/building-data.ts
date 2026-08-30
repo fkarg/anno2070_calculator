@@ -4,27 +4,39 @@ export type OperatingImpact = Readonly<{
   ecoBalance: number;
 }>;
 
+export type BuildingCategory = 'production' | 'power' | 'eco' | 'material';
+
 export type BuildingDefinition = Readonly<{
   label: string;
   image: string;
   source: string;
+  category: BuildingCategory;
+  // Modeling caveat shown as a tooltip wherever the building appears.
+  note?: string;
   operatingImpact: OperatingImpact;
 }>;
 
 const wiki = (page: string) => `https://anno2070.fandom.com/wiki/${page}`;
-const building = (
+const catalogEntry = (category: BuildingCategory) => (
   label: string,
   image: string,
   maintenanceCredits: number,
   power: number,
   ecoBalance: number,
   page: string,
+  note?: string,
 ): BuildingDefinition => ({
   label,
   image,
   source: wiki(page),
+  category,
+  ...(note === undefined ? {} : { note }),
   operatingImpact: { maintenanceCredits, power, ecoBalance },
 });
+const building = catalogEntry('production');
+const powerPlant = catalogEntry('power');
+const ecoBuilding = catalogEntry('eco');
+const materialBuilding = catalogEntry('material');
 
 export const BUILDINGS = {
   fishery: building('Fishery', 'Fish_Qoor.png', -5, -1, 0, 'Fishery'),
@@ -91,7 +103,51 @@ export const BUILDINGS = {
   hydraulicPlant: building('Hydraulic plant', 'Exoskeletons_Qoor.png', -50, -20, -10, 'Hydraulic_Plant'),
   oxidationFacility: building('Oxidation facility', 'Electrolite Cells_Qoor.png', -40, -15, 0, 'Oxidation_Facility'),
   lithiumProductionFacility: building('Lithium production facility', 'Lithium_Qoor.png', -30, -10, 0, 'Lithium_Production_Facility'),
+
+  // Power plants (docs/research/2026-08-31-power-eco-materials.md). Underwater
+  // placements carry ecoBalance 0: no ecobalance exists underwater.
+  windPark: powerPlant('Wind park', 'Wind-park-icon.png', -25, 15, 0, 'Wind_Park'),
+  thermalPowerStation: powerPlant('Thermal power station', 'Thermal-power-icon.png', -65, 70, 0, 'Thermal_Power_Station', 'Modeled at full output; in game it scales with inhabitants in range (100% at 650).'),
+  offshoreWindPark: powerPlant('Offshore wind park', 'Offshore-wind-icon.png', -50, 30, 0, 'Offshore_Wind_Park'),
+  solarTowerGenerator: powerPlant('Solar tower generator', 'Solar-power-icon.png', -120, 120, 0, 'Solar_Tower_Generator'),
+  coalPowerStation: powerPlant('Coal power station', 'Coal-power-stn-icon.png', -10, 60, -15, 'Coal_Power_Station', 'Burns the coal of 1 rotary excavator (= ½ coal mine) per station.'),
+  nuclearPowerPlant: powerPlant('Nuclear power plant', 'Nuclear-power-icon.png', -100, 500, -10, 'Nuclear_Power_Plant', 'Fuel: 1 uranium mine + 1 fuel element factory per plant (not in the goods graph).'),
+  marineCurrentPowerPlant: powerPlant('Marine current power plant', 'Marine-power-icon.png', -40, 25, 0, 'Marine_Current_Power_Plant'),
+  hydroelectricPowerPlant: powerPlant('Hydroelectric power plant', 'Hydro-dam-icon.png', -140, 500, -10, 'Hydroelectric_Power_Plant'),
+  geothermicPowerPlant: powerPlant('Geothermic power plant', 'Geothermal_Power_Plant_Icon.png', -200, 750, 0, 'Geothermic_Power_Plant'),
+  energyTransmitter: powerPlant('Energy transmitter', 'Energy_Transmitter_Icon.png', -175, 0, -30, 'Energy_Transmitter', 'Moves energy between islands; the transfer itself is not modeled.'),
+
+  // Ecobalance buildings. Tycoon entries cannot raise island eco above 0.
+  weatherControlStation: ecoBuilding('Weather control station', 'Weather-stn-icon.png', -20, -2, 15, 'Weather_Control_Station'),
+  monitoringStation: ecoBuilding('Monitoring station', 'Monitor-stn-icon.png', -40, -25, 40, 'Monitoring_Station'),
+  ozoneMakerStation: ecoBuilding('Ozone maker station', 'Ozone-maker-icon.png', -120, -60, 100, 'Ozone_Maker_Station'),
+  riverSewageTreatmentPlant: ecoBuilding('River sewage treatment plant', 'River-treatment-icon.png', -200, -250, 300, 'River_Sewage_Treatment_Plant'),
+  guardian: ecoBuilding('Guardian 1.0', 'Guardian-icon.png', -500, -250, 500, 'Guardian_1.0'),
+  wasteCompactor: ecoBuilding('Waste compactor', 'Waste-comp-icon.png', -40, -5, 50, 'Waste_Compactor', 'Modeled at full output; in game it scales with inhabitants in range.'),
+  deacidificationStation: ecoBuilding('Deacidification station', 'Deacid-stn-icon.png', -80, -60, 90, 'Deacidification_Station'),
+  co2Reservoir: ecoBuilding('CO2 reservoir', 'Co2-res-icon.png', -160, -110, 200, 'CO2_Reservoir'),
+
+  // Construction-material buildings: impact-only (material goods flows carry
+  // no wiki-documented absolute rates and stay out of the goods graph).
+  basaltExtraction: materialBuilding('Basalt extraction', 'Basalt.png', -5, -1, 0, 'Basalt_Extraction'),
+  basaltCrusher: materialBuilding('Basalt crusher', 'Granules.png', -5, -2, -4, 'Basalt_Crusher'),
+  smelter: materialBuilding('Smelter', 'Smelter.png', -5, -1, 0, 'Smelter'),
+  underwaterRecyclingStation: materialBuilding('Underwater recycling station', 'Building_modules.png', -60, -4, 0, 'Underwater_Recycling_Station'),
+  toolsWorkshop: materialBuilding('Tools workshop', 'Tools.png', -10, -3, -4, 'Tools_Workshop'),
+  treeNursery: materialBuilding('Tree nursery', 'Nursery-icon.png', -10, -2, 0, 'Tree_Nursery'),
+  sawmill: materialBuilding('Sawmill', 'Wood.png', -5, -2, -3, 'Sawmill'),
+  limestoneQuarry: materialBuilding('Limestone quarry', 'Limestone.png', -20, -2, -2, 'Limestone_Quarry'),
+  glassworks: materialBuilding('Glassworks', 'Glass.png', -60, -3, -6, 'Glassworks'),
+  concreteFactory: materialBuilding('Concrete factory', 'Concrete.png', -10, -4, -4, 'Concrete_Factory'),
+  steelworks: materialBuilding('Steelworks', 'Steel.png', -20, -6, -6, 'Steelworks'),
+  carbonFactory: materialBuilding('Carbon factory', 'Carbon.png', -40, -6, -6, 'Carbon_Producing_Factory'),
+  uraniumMine: materialBuilding('Uranium mine', 'Uranium.png', -50, -4, -6, 'Uranium_Mine'),
+  fuelElementFactory: materialBuilding('Fuel element factory', 'Fuel.png', -60, -4, -6, 'Fuel_Element_Factory'),
 } as const;
+
+// Wiki rule: Tycoon eco buildings only fill an island's ecobalance up to 0.
+export const TYCOON_ECO_BUILDINGS: ReadonlySet<BuildingId> =
+  new Set<BuildingId>(['wasteCompactor', 'deacidificationStation', 'co2Reservoir']);
 
 export type BuildingId = keyof typeof BUILDINGS;
 
@@ -144,12 +200,20 @@ export const ISLAND_REQUIREMENTS: readonly IslandRequirement[] = [
   deposit('oilLand', 'Crude oil (land)', 'Crude oil_Qoor.png'),
   deposit('oilUnderwater', 'Crude oil (underwater)', 'Crude oil_Qoor.png', 'underwater'),
   deposit('blackSmoker', 'Black smoker', 'gold_converter_Qoor.png', 'underwater'),
+  deposit('basaltDeposit', 'Basalt deposit', 'Basalt.png'),
+  deposit('limestoneDeposit', 'Limestone deposit', 'Limestone.png'),
+  deposit('uraniumDeposit', 'Uranium deposit', 'Uranium.png'),
+  deposit('rubbleHeap', 'Rubble heap', 'Building_modules.png', 'underwater'),
+  deposit('damSlot', 'Dam slot', 'Hydro-dam-icon.png'),
+  deposit('geothermalVent', 'Geothermal vent', 'Geothermal_Power_Plant_Icon.png', 'underwater'),
+  deposit('riverSlot', 'River slot', 'River-treatment-icon.png'),
 ];
 
 // Where each building can be placed (wiki-verified; coastal buildings sit on
 // land islands' harbor areas). Bionics factory and hydraulic plant are land
 // per indirect confirmation only (A.R.R.C. mod notes, Tech layout pages).
-export type Placement = 'land' | 'coastal' | 'underwater';
+// 'any' fits both land and underwater islands (energy transmitter).
+export type Placement = 'land' | 'coastal' | 'underwater' | 'any';
 
 export const BUILDING_PLACEMENTS: Record<BuildingId, Placement> = {
   fishery: 'coastal',
@@ -216,6 +280,38 @@ export const BUILDING_PLACEMENTS: Record<BuildingId, Placement> = {
   hydraulicPlant: 'land',
   oxidationFacility: 'underwater',
   lithiumProductionFacility: 'underwater',
+  windPark: 'land',
+  thermalPowerStation: 'land',
+  offshoreWindPark: 'coastal',
+  solarTowerGenerator: 'land',
+  coalPowerStation: 'land',
+  nuclearPowerPlant: 'land',
+  marineCurrentPowerPlant: 'underwater',
+  hydroelectricPowerPlant: 'land',
+  geothermicPowerPlant: 'underwater',
+  energyTransmitter: 'any',
+  weatherControlStation: 'land',
+  monitoringStation: 'land',
+  ozoneMakerStation: 'land',
+  riverSewageTreatmentPlant: 'land',
+  guardian: 'land',
+  wasteCompactor: 'land',
+  deacidificationStation: 'land',
+  co2Reservoir: 'land',
+  basaltExtraction: 'land',
+  basaltCrusher: 'land',
+  smelter: 'land',
+  underwaterRecyclingStation: 'underwater',
+  toolsWorkshop: 'land',
+  treeNursery: 'land',
+  sawmill: 'land',
+  limestoneQuarry: 'land',
+  glassworks: 'land',
+  concreteFactory: 'land',
+  steelworks: 'land',
+  carbonFactory: 'land',
+  uraniumMine: 'land',
+  fuelElementFactory: 'land',
 } as const;
 
 export const BUILDING_REQUIREMENTS: Partial<Record<BuildingId, string>> = {
@@ -246,6 +342,14 @@ export const BUILDING_REQUIREMENTS: Partial<Record<BuildingId, string>> = {
   goldMetalConverter: 'blackSmoker',
   platinumMetalConverter: 'blackSmoker',
   ironMetalConverter: 'blackSmoker',
+  basaltExtraction: 'basaltDeposit',
+  basaltCrusher: 'basaltDeposit',
+  limestoneQuarry: 'limestoneDeposit',
+  uraniumMine: 'uraniumDeposit',
+  underwaterRecyclingStation: 'rubbleHeap',
+  hydroelectricPowerPlant: 'damSlot',
+  geothermicPowerPlant: 'geothermalVent',
+  riverSewageTreatmentPlant: 'riverSlot',
 };
 
 export function buildingIdForImage(image: string): BuildingId {

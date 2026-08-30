@@ -101,3 +101,12 @@ export const CONSUMPTION: ReadonlyMap<BuildingId, readonly InputRate[]> = new Ma
     [...inputs.entries()].map(([goodId, rate]) => ({ goodId, rate })),
   ]),
 );
+
+// Fuel burned by owned power plants, in the fuel good's canonical units.
+// Unlike CONSUMPTION this is independent of productivity: plants run flat.
+// A coal power station burns the output of 1 rotary excavator (= ½ coal mine).
+const coalGood = producedGood('rotaryExcavator')!;
+const excavatorRate = producerRates.get(coalGood)!.get('rotaryExcavator')!;
+export const FUEL_CONSUMPTION: Partial<Record<BuildingId, readonly InputRate[]>> = {
+  coalPowerStation: [{ goodId: coalGood, rate: excavatorRate }],
+};

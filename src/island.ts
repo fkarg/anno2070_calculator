@@ -53,7 +53,8 @@ const requirementById = new Map(ISLAND_REQUIREMENTS.map((requirement) => [requir
 
 export function canBuildOn(island: IslandState, buildingId: BuildingId): boolean {
   const placement = BUILDING_PLACEMENTS[buildingId];
-  if (island.underwater ? placement !== 'underwater' : placement === 'underwater') return false;
+  if (placement !== 'any'
+    && (island.underwater ? placement !== 'underwater' : placement === 'underwater')) return false;
   const requirementId = BUILDING_REQUIREMENTS[buildingId];
   if (requirementId === undefined) return true;
   if (island.fertilities.includes(requirementId)) return true;

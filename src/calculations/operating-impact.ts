@@ -1,5 +1,5 @@
 import type { IslandState } from '../island';
-import { BUILDINGS, type BuildingId, type OperatingImpact } from './building-data';
+import { BUILDINGS, TYCOON_ECO_BUILDINGS, type BuildingId, type OperatingImpact } from './building-data';
 import { PRODUCTION_NODES } from './production-data';
 import { buildProductionTrees } from './production-tree';
 
@@ -41,17 +41,34 @@ export type ProductionOperatingImpacts = Readonly<{
   byRoot: Readonly<Record<string, readonly VariantOperatingImpact[]>>;
 }>;
 
+// One island's summed impact, with the wiki eco rules applied: Tycoon eco
+// buildings only fill the balance up to 0, and underwater islands have no
+// ecobalance at all (their eco reads 0; the display shows a dash).
+export function islandOperatingImpact(island: IslandState): OperatingImpact | null {
+  let total = ZERO_OPERATING_IMPACT;
+  let tycoonEcoOutput = 0;
+  for (const [buildingId, entry] of Object.entries(island.owned)) {
+    if (entry.value === null) return null;
+    let scaled = scaleOperatingImpact(BUILDINGS[buildingId as BuildingId].operatingImpact, entry.value);
+    if (TYCOON_ECO_BUILDINGS.has(buildingId as BuildingId)) {
+      tycoonEcoOutput += scaled.ecoBalance;
+      scaled = { ...scaled, ecoBalance: 0 };
+    }
+    total = addOperatingImpacts(total, scaled);
+  }
+  const ecoBalance = island.underwater
+    ? 0
+    : total.ecoBalance + Math.min(tycoonEcoOutput, Math.max(0, -total.ecoBalance));
+  return { ...total, ecoBalance };
+}
+
 export function calculateOwnedImpact(islands: readonly IslandState[]): OperatingImpact | null {
   let total = ZERO_OPERATING_IMPACT;
   for (const island of islands) {
     if (!island.settled) continue;
-    for (const [buildingId, entry] of Object.entries(island.owned)) {
-      if (entry.value === null) return null;
-      total = addOperatingImpacts(
-        total,
-        scaleOperatingImpact(BUILDINGS[buildingId as BuildingId].operatingImpact, entry.value),
-      );
-    }
+    const impact = islandOperatingImpact(island);
+    if (impact === null) return null;
+    total = addOperatingImpacts(total, impact);
   }
   return total;
 }
