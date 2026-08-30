@@ -10,5 +10,17 @@ The downloaded original page and its companion asset directory are kept in the r
 
 ## Development
 
-The application will use pnpm, React, TypeScript, and Vite. Development commands will be documented here once the application scaffold is added.
+The application uses pnpm, React, TypeScript, and Vite.
 
+```bash
+pnpm install
+pnpm dev
+```
+
+Run the automated verification with:
+
+```bash
+pnpm test
+pnpm build
+pnpm lint
+```
