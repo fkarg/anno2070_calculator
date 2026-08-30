@@ -1,9 +1,17 @@
-import { fireEvent, screen, within } from '@testing-library/react';
+import { fireEvent } from '@testing-library/react';
 import { beforeEach, describe, expect, test } from 'vitest';
 
 import { BUILDINGS } from './calculations/building-data';
 import { PRODUCTION_NODES } from './calculations/production-data';
-import { renderApp, replaceInput } from './test/app-test-utils';
+import {
+  byTestId,
+  input,
+  productionCheckbox,
+  productionRow,
+  renderApp,
+  replaceInput,
+  requiredBuildings,
+} from './test/app-test-utils';
 
 beforeEach(() => localStorage.clear());
 
@@ -11,78 +19,82 @@ describe('production structure and impacts', () => {
   test('renders all archived production fields as output-only live requirements', () => {
     renderApp();
 
-    expect(screen.getAllByTestId(/^production-node-/)).toHaveLength(88);
+    const rows = document.querySelectorAll<HTMLElement>('[data-testid^="production-node-"]');
+    expect(rows).toHaveLength(88);
+    const rowById = new Map([...rows].map((row) => [row.dataset.testid, row]));
     for (const node of PRODUCTION_NODES) {
-      const row = screen.getByTestId(`production-node-${node.id}`);
+      const row = rowById.get(`production-node-${node.id}`)!;
       const building = BUILDINGS[node.buildingId];
       expect(row.querySelector(`img[src="/assets/${building.image}"]`)).not.toBeNull();
-      expect(within(row).getByText(building.label)).toBeInTheDocument();
+      expect(row).toHaveTextContent(building.label);
     }
-    const fishOutput = screen.getByLabelText('Fishery required buildings (Eco)');
+    const fishOutput = requiredBuildings('ecoFish');
     expect(fishOutput.tagName).toBe('OUTPUT');
+    expect(fishOutput).toHaveAccessibleName('Fishery required buildings (Eco)');
     expect(fishOutput).toHaveTextContent('0');
-    expect(screen.queryByRole('button', { name: /calculate/i })).not.toBeInTheDocument();
+    expect([...document.querySelectorAll('button')]
+      .some((button) => /calculate/i.test(button.textContent ?? ''))).toBe(false);
   });
 
   test('renders intrinsic connector prefixes and every alternative at full demand', async () => {
     renderApp();
-    await replaceInput(screen.getByLabelText('Eco houses'), '100');
+    await replaceInput(input('eco-houses'), '100');
 
-    const connector = (id: string) => within(screen.getByTestId(`production-node-${id}`))
-      .getByTestId('tree-connector').textContent;
+    const connector = (id: string) => productionRow(id)
+      .querySelector<HTMLElement>('[data-testid="tree-connector"]')!.textContent;
     expect(connector('ecoMicrochipsCommunicators')).toBe('├── ');
     expect(connector('ecoCopperCommunicators')).toBe('│   ├── ');
     expect(connector('ecoSandCommunicators')).toBe('│   └── ');
     expect(connector('ecoElectronicsRecyclerCommunicators')).toBe('└── ');
 
-    expect(screen.getByLabelText('Chip factory required buildings (Eco, Electronics factory)'))
-      .toHaveTextContent('2.36');
-    expect(screen.getByLabelText('Electronics recycler required buildings (Eco, Electronics factory)'))
-      .toHaveTextContent('1.57');
-    expect(screen.getByRole('list', { name: 'Electronics factory production tree' }))
-      .toContainElement(screen.getByTestId('production-node-ecoCopperCommunicators'));
-    expect(within(screen.getByTestId('production-node-ecoCopperCommunicators'))
-      .getByText('Level 3 dependency of Chip factory.')).toHaveClass('visually-hidden');
-    expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+    expect(requiredBuildings('ecoMicrochipsCommunicators')).toHaveTextContent('2.36');
+    expect(requiredBuildings('ecoElectronicsRecyclerCommunicators')).toHaveTextContent('1.57');
+    const copper = productionRow('ecoCopperCommunicators');
+    const tree = copper.closest('ol')!;
+    expect(tree).toHaveAccessibleName('Electronics factory production tree');
+    expect(tree).toContainElement(copper);
+    expect(copper.querySelector('.visually-hidden')).toHaveTextContent('Level 3 dependency of Chip factory.');
+    expect(document.querySelector('input[type="radio"]')).toBeNull();
   });
 
   test('updates direct and full-chain operating impacts and honors rounding', async () => {
     renderApp();
-    await replaceInput(screen.getByLabelText('Eco Workers population'), '251');
+    await replaceInput(input('eco-population-0'), '251');
 
-    const fish = screen.getByTestId('production-node-ecoFish');
-    expect(within(fish).getByTestId('direct-operating-impact'))
+    const fish = productionRow('ecoFish');
+    expect(fish.querySelector('[data-testid="direct-operating-impact"]'))
       .toHaveTextContent('maintenance credits per minute:-5.02power:-1ecobalance:0');
-    expect(within(fish).getByTestId('per-building-operating-impact'))
+    expect(fish.querySelector('[data-testid="per-building-operating-impact"]'))
       .toHaveTextContent('maintenance credits per minute:-5power:-1ecobalance:0');
-    expect(screen.getByTestId('variant-ecoCommunicators-ecoMicrochipsCommunicators'))
+    expect(byTestId('variant-ecoCommunicators-ecoMicrochipsCommunicators'))
       .toBeInTheDocument();
-    expect(screen.getByTestId('variant-ecoCommunicators-ecoElectronicsRecyclerCommunicators'))
+    expect(byTestId('variant-ecoCommunicators-ecoElectronicsRecyclerCommunicators'))
       .toBeInTheDocument();
-    expect(screen.getAllByText('Full chain (rounded buildings)').length).toBeGreaterThan(0);
+    expect([...document.querySelectorAll('.production-tree__variants')]
+      .some((variants) => variants.textContent?.includes('Full chain (rounded buildings)'))).toBe(true);
 
-    fireEvent.click(screen.getByLabelText('Round up to whole buildings'));
-    expect(within(fish).getByTestId('direct-operating-impact'))
+    fireEvent.click(productionCheckbox(0));
+    expect(fish.querySelector('[data-testid="direct-operating-impact"]'))
       .toHaveTextContent('maintenance credits per minute:-10');
 
-    await replaceInput(screen.getByLabelText('Eco Employees population'), '571');
-    expect(screen.getByTestId('variant-ecoCommunicators-ecoMicrochipsCommunicators'))
+    await replaceInput(input('eco-population-1'), '571');
+    expect(byTestId('variant-ecoCommunicators-ecoMicrochipsCommunicators'))
       .toHaveTextContent('maintenance credits per minute:-65power:-10ecobalance:-12');
-    expect(screen.getByTestId('variant-ecoCommunicators-ecoElectronicsRecyclerCommunicators'))
+    expect(byTestId('variant-ecoCommunicators-ecoElectronicsRecyclerCommunicators'))
       .toHaveTextContent('maintenance credits per minute:-180power:-39ecobalance:-4');
   });
 
   test('invalid alternate productivity suppresses only variants using that route', async () => {
     renderApp();
-    await replaceInput(screen.getByLabelText('Eco houses'), '100');
+    await replaceInput(input('eco-houses'), '100');
     await replaceInput(
-      screen.getByLabelText('Electronics recycler productivity (Eco, Electronics factory)'),
+      input('ecoElectronicsRecyclerCommunicators-productivity'),
       '',
     );
 
-    expect(screen.getByTestId('variant-ecoCommunicators-ecoMicrochipsCommunicators'))
+    expect(byTestId('variant-ecoCommunicators-ecoMicrochipsCommunicators'))
       .not.toHaveTextContent('—');
-    expect(screen.getByTestId('variant-ecoCommunicators-ecoElectronicsRecyclerCommunicators'))
+    expect(byTestId('variant-ecoCommunicators-ecoElectronicsRecyclerCommunicators'))
       .toHaveTextContent('—');
   });
 });

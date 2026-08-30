@@ -1,32 +1,31 @@
-import { screen } from '@testing-library/react';
 import { beforeEach, describe, expect, test } from 'vitest';
 
-import { renderApp, replaceInput } from './test/app-test-utils';
+import { input, renderApp, replaceInput, requiredBuildings } from './test/app-test-utils';
 
 beforeEach(() => localStorage.clear());
 
 describe('invalid production inputs', () => {
   test('invalid productivity suppresses only its dependent production chain', async () => {
     renderApp();
-    await replaceInput(screen.getByLabelText('Eco houses'), '100');
-    await replaceInput(screen.getByLabelText('Tycoon houses'), '100');
-    const productivity = screen.getByLabelText('Fishery productivity (Eco)');
+    await replaceInput(input('eco-houses'), '100');
+    await replaceInput(input('tycoon-houses'), '100');
+    const productivity = input('ecoFish-productivity');
 
     await replaceInput(productivity, '');
 
     expect(productivity).toHaveAttribute('aria-invalid', 'true');
-    expect(screen.getByLabelText('Fishery required buildings (Eco)')).toHaveTextContent('—');
-    expect(screen.getByLabelText('Tea plantation required buildings (Eco)')).toHaveTextContent('4.17');
-    expect(screen.getByLabelText('Fishery required buildings (Tycoon)')).toHaveTextContent('4.18');
+    expect(requiredBuildings('ecoFish')).toHaveTextContent('—');
+    expect(requiredBuildings('ecoTea')).toHaveTextContent('4.17');
+    expect(requiredBuildings('tycoonFish')).toHaveTextContent('4.18');
   });
 
   test('invalid population suppresses only that faction', async () => {
     renderApp();
-    await replaceInput(screen.getByLabelText('Tycoon houses'), '100');
+    await replaceInput(input('tycoon-houses'), '100');
 
-    await replaceInput(screen.getByLabelText('Eco houses'), 'invalid');
+    await replaceInput(input('eco-houses'), 'invalid');
 
-    expect(screen.getByLabelText('Fishery required buildings (Eco)')).toHaveTextContent('—');
-    expect(screen.getByLabelText('Fishery required buildings (Tycoon)')).toHaveTextContent('4.18');
+    expect(requiredBuildings('ecoFish')).toHaveTextContent('—');
+    expect(requiredBuildings('tycoonFish')).toHaveTextContent('4.18');
   });
 });
