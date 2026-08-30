@@ -6,43 +6,58 @@ import { calculateOperatingImpacts } from './calculations/operating-impact';
 import { PRODUCTION_NODES } from './calculations/production-data';
 import { PopulationSection } from './components/PopulationSection';
 import { ProductionSection } from './components/ProductionSection';
+import { createInitialAppState, sumIslandHouses, type AppState } from './island';
 import {
-  createInitialState,
   effectivePopulation,
   parsePositiveNumber,
+  type CalculatorState,
   type EditableNumber,
   type FactionState,
 } from './model';
-import { loadCalculatorState, saveCalculatorState } from './storage';
+import { loadAppState, saveAppState } from './storage';
 
 export function App() {
-  const [state, setState] = useState(loadCalculatorState);
-  useEffect(() => saveCalculatorState(state), [state]);
+  const [initial] = useState(loadAppState);
+  const [state, setState] = useState(initial.state);
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => {
+    // A payload that failed to load stays untouched until a real user change.
+    if (initial.storable || dirty) saveAppState(state);
+  }, [state, initial.storable, dirty]);
+
+  const update = (updater: (current: AppState) => AppState) => {
+    setDirty(true);
+    setState(updater);
+  };
+  const updatePlan = (updater: (current: CalculatorState) => CalculatorState) =>
+    update((current) => ({ ...current, plan: updater(current.plan) }));
+
+  const islandHouses = sumIslandHouses(state.islands);
   const population = {
-    eco: effectivePopulation('eco', state.factions.eco),
-    tycoon: effectivePopulation('tycoon', state.factions.tycoon),
-    tech: effectivePopulation('tech', state.factions.tech),
+    eco: effectivePopulation('eco', state.plan.factions.eco, islandHouses.eco),
+    tycoon: effectivePopulation('tycoon', state.plan.factions.tycoon, islandHouses.tycoon),
+    tech: effectivePopulation('tech', state.plan.factions.tech, islandHouses.tech),
   };
   const productivity = Object.fromEntries(
-    Object.entries(state.productivity).map(([id, entry]) => [id, entry.value]),
+    Object.entries(state.plan.productivity).map(([id, entry]) => [id, entry.value]),
   );
   const production = calculateAvailableProduction({
     population,
     productivity,
-    recycling: state.recycling,
-    wholeBuildings: state.wholeBuildings,
+    recycling: state.plan.recycling,
+    wholeBuildings: state.plan.wholeBuildings,
   });
   const operatingImpacts = calculateOperatingImpacts(production);
 
   const updateFaction = (
     faction: Faction,
-    update: (current: FactionState) => FactionState,
+    updateFactionState: (current: FactionState) => FactionState,
   ) => {
-    setState((current) => ({
+    updatePlan((current) => ({
       ...current,
       factions: {
         ...current.factions,
-        [faction]: update(current.factions[faction]),
+        [faction]: updateFactionState(current.factions[faction]),
       },
     }));
   };
@@ -54,22 +69,22 @@ export function App() {
           <h1>Anno 2070 Deep Ocean</h1>
           <p>Supply &amp; demand calculator</p>
         </div>
-        <button type="button" onClick={() => setState(createInitialState())}>Reset all</button>
+        <button type="button" onClick={() => update(createInitialAppState)}>Reset all</button>
       </header>
 
-      <PopulationSection state={state} onFactionChange={updateFaction} />
+      <PopulationSection state={state.plan} islandHouses={islandHouses} onFactionChange={updateFaction} />
       <ProductionSection
-        state={state}
+        state={state.plan}
         results={production}
         operatingImpacts={operatingImpacts}
-        onProductivityChange={(id: string, value: EditableNumber) => setState((current) => ({
+        onProductivityChange={(id: string, value: EditableNumber) => updatePlan((current) => ({
           ...current,
           productivity: {
             ...current.productivity,
             [id]: { raw: value.raw, value: parsePositiveNumber(value.raw) },
           },
         }))}
-        onFactionProductivityChange={(faction, delta) => setState((current) => ({
+        onFactionProductivityChange={(faction, delta) => updatePlan((current) => ({
           ...current,
           productivity: Object.fromEntries(Object.entries(current.productivity).map(([id, entry]) => {
             const node = PRODUCTION_NODES.find((candidate) => candidate.id === id)!;
@@ -80,8 +95,8 @@ export function App() {
             return [id, { raw: String(value), value }];
           })),
         }))}
-        onRecyclingChange={(recycling) => setState((current) => ({ ...current, recycling }))}
-        onWholeBuildingsChange={(wholeBuildings) => setState((current) => ({ ...current, wholeBuildings }))}
+        onRecyclingChange={(recycling) => updatePlan((current) => ({ ...current, recycling }))}
+        onWholeBuildingsChange={(wholeBuildings) => updatePlan((current) => ({ ...current, wholeBuildings }))}
       />
 
       <aside className="calculator-section page-notes" aria-label="Calculator guidance">

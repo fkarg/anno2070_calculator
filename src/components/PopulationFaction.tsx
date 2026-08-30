@@ -12,7 +12,7 @@ import { NumericInput } from './NumericInput';
 type PopulationFactionProps = {
   config: FactionConfig;
   state: FactionState;
-  islandHouses: number;
+  islandHouses: number | null;
   onHousesChange: (value: EditableNumber) => void;
   onHousesClear: () => void;
   onMaxTierChange: (tier: number) => void;
