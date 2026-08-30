@@ -241,9 +241,19 @@ input[aria-invalid="true"] { border-color: #ef665f; background: #321d1f; }
   font-size: .72rem;
 }
 .production-tree__variants > div { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-.production-node__impact { display: grid; justify-items: end; gap: .08rem; font-size: .7rem; }
+.production-faction__nodes { overflow: hidden; }
+.production-node__impact { display: grid; min-width: 0; justify-items: end; gap: .08rem; font-size: .7rem; }
 .production-node__impact > div { color: #f0d38d; }
-.production-node__impact small { color: var(--muted); font-size: .62rem; white-space: nowrap; }
+.production-node__impact small {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  column-gap: .25rem;
+  color: var(--muted);
+  font-size: .62rem;
+}
 .operating-impact-values { display: inline-flex; align-items: center; gap: .42rem; white-space: nowrap; }
 .operating-impact-values__metric { display: inline-flex; align-items: center; gap: .12rem; font-variant-numeric: tabular-nums; }
 .operating-impact-values__metric::before {
