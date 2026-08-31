@@ -5,6 +5,7 @@ import { BUILDINGS } from './calculations/building-data';
 import { PRODUCTION_NODES } from './calculations/production-data';
 import {
   buttonWithLabel,
+  addIsland,
   byTestId,
   input,
   productionCheckbox,
@@ -22,15 +23,16 @@ describe('production structure and impacts', () => {
     renderApp();
     // Chains dim on zero requirement: population capped at Workers demands
     // no health food, whether the cap comes from the plan or from islands.
-    fireEvent.click(buttonWithLabel('Set Eco Growth target manually'));
-    await replaceInput(input('eco-houses'), '100');
-    fireEvent.click(buttonWithLabel('Eco Workers'));
+    addIsland();
+    await setIslandHouses(0, 'eco', '100');
+    fireEvent.click(buttonWithLabel('Configure island Island 1'));
+    fireEvent.click(buttonWithLabel('Eco Workers', byTestId('island-0')));
 
     const healthFoodTree = productionRow('ecoHealthFood').closest('.production-tree')!;
     expect(healthFoodTree).toHaveClass('production-tree--inactive');
     expect(input('ecoHealthFood-productivity')).toBeDisabled();
 
-    fireEvent.click(buttonWithLabel('Eco Employees'));
+    fireEvent.click(buttonWithLabel('Eco Employees', byTestId('island-0')));
 
     expect(healthFoodTree).not.toHaveClass('production-tree--inactive');
     expect(input('ecoHealthFood-productivity')).not.toBeDisabled();
@@ -58,7 +60,8 @@ describe('production structure and impacts', () => {
 
   test('renders intrinsic connector prefixes and every alternative at full demand', async () => {
     renderApp();
-    await replaceInput(input('eco-houses'), '100');
+    addIsland();
+    await setIslandHouses(0, 'eco', '100');
 
     const connector = (id: string) => productionRow(id)
       .querySelector<HTMLElement>('[data-testid="tree-connector"]')!.textContent;
@@ -79,8 +82,11 @@ describe('production structure and impacts', () => {
 
   test('updates direct and full-chain operating impacts and honors rounding', async () => {
     renderApp();
-    fireEvent.click(buttonWithLabel('Set Eco Growth target manually'));
-    await replaceInput(input('eco-population-0'), '251');
+    addIsland();
+    await setIslandHouses(0, 'eco', '100');
+    fireEvent.click(buttonWithLabel('Configure island Island 1'));
+    fireEvent.click(buttonWithLabel('Eco Workers', byTestId('island-0')));
+    await replaceInput(input('island-0-eco-population-0'), '251');
 
     const fish = productionRow('ecoFish');
     expect(fish.querySelector('[data-testid="direct-operating-impact"]'))
@@ -99,7 +105,8 @@ describe('production structure and impacts', () => {
     expect(fish.querySelector('[data-testid="direct-operating-impact"]'))
       .toHaveTextContent('maintenance credits per minute:-10');
 
-    await replaceInput(input('eco-population-1'), '571');
+    fireEvent.click(buttonWithLabel('Eco Employees', byTestId('island-0')));
+    await replaceInput(input('island-0-eco-population-1'), '571');
     expect(byTestId('variant-ecoCommunicators-ecoMicrochipsCommunicators'))
       .toHaveTextContent('maintenance credits per minute:-65power:-10ecobalance:-12');
     expect(byTestId('variant-ecoCommunicators-ecoElectronicsRecyclerCommunicators'))
@@ -108,7 +115,8 @@ describe('production structure and impacts', () => {
 
   test('invalid alternate productivity suppresses only variants using that route', async () => {
     renderApp();
-    await replaceInput(input('eco-houses'), '100');
+    addIsland();
+    await setIslandHouses(0, 'eco', '100');
     await replaceInput(
       input('ecoElectronicsRecyclerCommunicators-productivity'),
       '',

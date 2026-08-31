@@ -8,6 +8,8 @@ import {
   renderApp,
   replaceInput,
   setIslandHouses,
+  setGrowthResidenceTarget,
+  selectWorkspace,
 } from './test/app-test-utils';
 
 beforeEach(() => localStorage.clear());
@@ -139,11 +141,11 @@ describe('islands section', () => {
     renderApp();
     addIsland();
     await setIslandHouses(0, 'eco', '10');
-    expect(input('eco-houses')).toHaveValue('10');
+    expect(byTestId('overview-eco-target')).toHaveTextContent('10');
 
     openConfiguration('Island 1');
     fireEvent.click(flagCheckbox(0, 'settled'));
-    expect(input('eco-houses')).toHaveValue('0');
+    expect(byTestId('overview-eco-target')).toHaveTextContent('0');
   });
 
   test('island population limits propagate into the plan stats view', async () => {
@@ -155,21 +157,20 @@ describe('islands section', () => {
     // actual distribution, not the plan's own ascension model.
     fireEvent.click(buttonWithLabel('Eco Workers', byTestId('island-0')));
     // Reveal-edit: the Auto values are visible and directly editable.
-    expect(input('eco-population-0')).toHaveValue('800');
-    expect(input('eco-population-3')).toHaveValue('0');
+    expect(byTestId('overview-eco-target-tier-0')).toHaveTextContent('800');
+    expect(byTestId('overview-eco-target-tier-3')).toHaveTextContent('0');
   });
 
   test('manual plan houses ignore islands until returned to Auto', async () => {
     renderApp();
     addIsland();
     await setIslandHouses(0, 'eco', '10');
-    await replaceInput(input('eco-houses'), '25');
-    expect(input('eco-houses')).toHaveValue('25');
-    // Manual mode restores the full planning controls.
-    expect(document.getElementById('eco-population-0')).not.toBeNull();
+    await setGrowthResidenceTarget('eco', '25');
+    expect(byTestId('overview-eco-target')).toHaveTextContent('25');
 
-    fireEvent.click(buttonWithLabel('Use island Eco houses'));
-    expect(input('eco-houses')).toHaveValue('10');
+    selectWorkspace('Growth');
+    fireEvent.click(buttonWithLabel('Target Eco by following islands'));
+    expect(byTestId('overview-eco-target')).toHaveTextContent('10');
   });
 
   test('the add list shows the empire balance of goods with activity', async () => {

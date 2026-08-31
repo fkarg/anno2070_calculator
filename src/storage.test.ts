@@ -20,16 +20,12 @@ function createV1State() {
 }
 
 function validV2() {
-  const state = createInitialAppState();
-  state.plan.factions.eco.houses = { raw: '9', value: 9 };
   const island = createIsland('Home');
   island.owned = { fishery: { raw: '2', value: 2 } };
   island.fertilities = ['tea'];
-  state.islands = [island];
-  saveAppState(state);
-  const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
-  localStorage.clear();
-  return stored;
+  const plan = createV1State();
+  plan.factions.eco.houses = { raw: '9', value: 9 };
+  return { version: 2, plan, islands: [island] };
 }
 
 describe('loadAppState', () => {
@@ -45,14 +41,17 @@ describe('loadAppState', () => {
     const result = loadAppState();
     expect(result.storable).toBe(true);
     saveAppState(result.state);
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual(stored);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).version).toBe(3);
+    expect(loadAppState()).toEqual(result);
   });
 
   test('valid v1 payloads migrate losslessly with houses kept manual', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, state: createV1State() }));
     const result = loadAppState();
     expect(result.storable).toBe(true);
-    expect(result.state.plan.factions.eco.houses).toEqual({ raw: '12', value: 12 });
+    expect(result.state.plan.factions.eco.intent).toEqual({
+      kind: 'residences', houses: { raw: '12', value: 12 }, maxTier: 4,
+    });
     expect(result.state.plan.factions.tech.overrides[1]).toEqual({ raw: '55', value: 55 });
     expect(result.state.plan.recycling).toBe(true);
     expect(result.state.islands).toEqual([]);
@@ -110,14 +109,45 @@ describe('loadAppState', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
     const result = loadAppState();
     expect(result.storable).toBe(false);
-    expect(result.state.plan.factions.eco.houses).toBeNull();
+    expect(result.state.plan.factions.eco.intent).toEqual({ kind: 'follow' });
+  });
+
+  test('migrates v2 follow and manual houses into target intents', () => {
+    const stored = validV2();
+    (stored.plan.factions.eco as { houses: unknown }).houses = null;
+    stored.plan.factions.tech.houses = { raw: '120', value: 120 };
+    stored.plan.factions.tech.maxTier = 2;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+
+    const loaded = loadAppState();
+
+    expect(loaded.storable).toBe(true);
+    expect(loaded.state.plan.factions.eco.intent).toEqual({ kind: 'follow' });
+    expect(loaded.state.plan.factions.tech.intent).toEqual({
+      kind: 'residences', houses: { raw: '120', value: 120 }, maxTier: 2,
+    });
+  });
+
+  test('round-trips a v3 population target without derived fields', () => {
+    const state = createInitialAppState();
+    state.plan.factions.tech.intent = {
+      kind: 'population', tier: 3, count: { raw: '2500', value: 2500 },
+    };
+
+    saveAppState(state);
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
+    expect(stored.version).toBe(3);
+    expect(stored.plan.factions.tech.intent).toEqual(state.plan.factions.tech.intent);
+    expect(JSON.stringify(stored)).not.toMatch(/normalPopulations|effectivePopulations|achieved/);
+    expect(loadAppState()).toEqual({ state, storable: true });
   });
 });
 
 describe('legacy fertility records', () => {
   test('tri-state records migrate to the present list', () => {
     const stored = validV2();
-    stored.islands[0].fertilities = { tea: 'present', grapes: 'absent', bogus: 'present' };
+    (stored.islands[0] as { fertilities: unknown }).fertilities = { tea: 'present', grapes: 'absent', bogus: 'present' };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
     const result = loadAppState();
     expect(result.state.islands[0].fertilities).toEqual(['tea']);

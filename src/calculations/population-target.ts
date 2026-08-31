@@ -63,11 +63,8 @@ export function resolvePopulationTarget(
   islandHouses: number | null,
   islandPopulations: readonly number[] | null,
 ): ResolvedPopulationTarget | null {
-  if (state.overrides.some((entry) => entry !== null && entry.value === null)) return null;
-
   if (state.intent.kind === 'follow') {
     if (islandHouses === null || islandPopulations === null) return null;
-    const effective = islandPopulations.map((value, tier) => state.overrides[tier]?.value ?? value);
     const maxTier = Math.max(
       1,
       islandPopulations.reduce((top, value, tier) => value > 0 ? tier + 1 : top, 1),
@@ -77,13 +74,15 @@ export function resolvePopulationTarget(
       houses: islandHouses,
       maxTier,
       normalPopulations: islandPopulations,
-      effectivePopulations: effective,
+      effectivePopulations: islandPopulations,
       requested: null,
-      achieved: effective[maxTier - 1],
+      achieved: islandPopulations[maxTier - 1],
       overshoot: 0,
       targetMetAfterOverrides: true,
     };
   }
+
+  if (state.overrides.some((entry) => entry !== null && entry.value === null)) return null;
 
   const maxTier = state.intent.kind === 'residences' ? state.intent.maxTier : state.intent.tier;
   const houses = state.intent.kind === 'residences'

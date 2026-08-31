@@ -4,7 +4,7 @@ A local rebuild of the Anno 2070 Deep Ocean supply-and-demand calculator, based 
 
 The goal is to preserve the original population and production formulas while providing automatic recalculation, clearer controls, and thoroughly tested calculation modules.
 
-User-entered residences, manual population overrides, productivity percentages, and calculation options are saved in the browser automatically and restored on reload.
+Island actuals, Growth targets, manual population overrides, productivity percentages, and calculation options are saved in the browser automatically and restored on reload.
 
 ## Current functionality
 
@@ -16,10 +16,13 @@ User-entered residences, manual population overrides, productivity percentages, 
 - Per-building and directly required operating impacts, plus buildable complete-chain totals that round every production stage up to a whole building.
 - Per-island actuals: residences, owned production buildings with per-island productivity, present-fertility and open-slot annotations, land/underwater island types with placement-filtered buildings, and settled/unsettled placeholders.
 - Game-style island cards: a name-and-fertilities plaque, inline house counts with live populations, a gap-sorted building ledger with count steppers and build-next suggestion shortcuts, per-island operating load, and a local balance table. Rarely-changed configuration (name, flags, fertilities, population distribution) sits behind a Configure toggle.
-- The global residences section acts as a read-only stats view while following island actuals, per faction, with a manual planning mode holding the full tier/bonus/override controls; island tier limits propagate into global demand.
+- A permanent residences overview compares Actual and Growth Target values per faction and shows current full-demand headroom or its limiting good.
+- Islands, Production, and Growth workspaces separate actual-state editing, current full-demand analysis, and future target planning. Island cards remain two-up on desktop.
+- Growth accepts Follow islands, residence-driven, or minimum-population targets, including bonuses and advanced population overrides. Population targets derive the minimum whole residence count and report any overshoot.
+- Cumulative tier-and-faction milestones turn Growth targets into ordered full-supply capacity gaps. Producer-specific `+1 BUILDING on ISLAND` actions update actual owned counts and immediately advance the live plan.
 - Derived per-good island balances (capacity, demand, balance) and a transfer-needs view that reveals cross-island imbalances even when the empire-wide net is fine.
-- Labeled plan/actual lines on every canonical production row: planned and actual operating costs, owned counts, capacity, and the remaining build gap toward the plan; per-building impact values behind an accessible info toggle.
-- Versioned local browser storage for user-owned inputs and a complete reset control. Unreadable or future-version payloads are preserved untouched instead of overwritten, and catalog changes no longer invalidate saved state.
+- Labeled demand/actual lines on every canonical production row: current full-demand operating costs, actual costs, owned counts, and capacity; per-building impact values sit behind an accessible info toggle.
+- Versioned local browser storage with v1/v2 migration to the v3 target-intent model and a complete reset control. Unreadable or future-version payloads are preserved untouched instead of overwritten, and catalog changes no longer invalidate saved state.
 - Pure calculation modules covered by example-based and property-based tests, including a derived goods-and-rates layer with load-time cross-chain consistency validation.
 
 ## Reference snapshot
@@ -51,21 +54,17 @@ pnpm lint
 
 ## Roadmap and further ideas
 
-### Next: supported population and bottlenecks
-
-- Show the population supported by the current actual capacity, the limiting production chain, and the population threshold at which the next building is needed.
-
 ### Later simulation layers
 
-- Step-wise ascension and expansion plans: the ordered build list from current actuals to a target population, including settle proposals from fertility annotations of unsettled islands.
+- Add settle proposals from fertility annotations of unsettled islands.
 - Include taxation levels for fully satisfied populations.
-- Model freshly ascended populations and partially or unfulfilled demands.
+- Model need unlock thresholds, exact retention/ascension minimums, and partially fulfilled satisfaction categories.
 - Deepen island constraints: power, ecobalance, and surface/underwater simulation per island.
 - Add fleet information and trade or shipping costs when the ownership model can support them.
 - Revisit storage (Dexie/IndexedDB) once state becomes multi-document — named save slots or stored expansion plans.
 - Model available power-generation options and mixes under faction, scenario, or game-progress restrictions.
 - Add market-sale income, power/ecobalance-to-credit comparison ratios, and full production-chain gain/loss simulation.
-- Simulate stepwise progression toward population, balance, monument, or other scenario targets.
+- Extend milestones beyond population targets to balance, monuments, or other scenario goals.
 - Investigate support for other Anno games after the Anno 2070 model is complete.
 
 ## Necessary incompleteness

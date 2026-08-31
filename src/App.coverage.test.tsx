@@ -29,8 +29,6 @@ describe('coverage and bottlenecks', () => {
     renderApp();
     addIsland();
     await setIslandHouses(0, 'eco', '10');
-    await replaceInput(input('eco-houses'), '20');
-
     expect(document.body).not.toHaveTextContent('Toward plan');
   });
   test('outgrown production leads the cards; unbuilt chains collapse to a list', async () => {

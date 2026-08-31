@@ -24,6 +24,7 @@ import {
   canBuildOn,
   createIsland,
   islandPopulation,
+  stepOwnedBuilding,
   type IslandFactionState,
   type IslandState,
 } from '../island';
@@ -314,8 +315,7 @@ function BuildingLedger({
     owned: { ...current.owned, [buildingId]: entry },
   }));
   const step = (buildingId: BuildingId, delta: number) => {
-    const value = Math.max(0, (island.owned[buildingId]?.value ?? 0) + delta);
-    setOwned(buildingId, { raw: String(value), value });
+    onChange((current) => stepOwnedBuilding(current, buildingId, delta));
   };
 
   const suggestions = buildSuggestions(island, balances, empire);

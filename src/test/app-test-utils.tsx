@@ -58,6 +58,19 @@ export function selectWorkspace(name: 'Islands' | 'Production' | 'Growth'): void
   fireEvent.click(requiredElement(tab, `${name} workspace tab`));
 }
 
+export function addIsland(): void {
+  selectWorkspace('Islands');
+  const button = [...document.querySelectorAll<HTMLButtonElement>('.islands-section button')]
+    .find((candidate) => candidate.textContent === 'Add island');
+  fireEvent.click(requiredElement(button, 'Add island button'));
+}
+
+export async function setGrowthResidenceTarget(faction: string, value: string): Promise<void> {
+  selectWorkspace('Growth');
+  fireEvent.click(buttonWithLabel(`Target ${faction[0].toUpperCase() + faction.slice(1)} by residences`));
+  await replaceInput(input(`growth-${faction}-houses`), value);
+}
+
 export async function replaceInput(input: HTMLElement, value: string): Promise<void> {
   fireEvent.change(input, { target: { value } });
 }

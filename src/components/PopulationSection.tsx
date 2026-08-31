@@ -1,61 +1,36 @@
+import { BUILDINGS } from '../calculations/building-data';
+import { tierHeadroom } from '../calculations/coverage';
 import type { Faction } from '../calculations/population';
-import {
-  FACTIONS,
-  FACTION_CONFIGS,
-  NO_ISLAND_HOUSES,
-  type CalculatorState,
-  type FactionHouses,
-  type FactionState,
-} from '../model';
-import { PopulationFaction } from './PopulationFaction';
+import type { ResolvedPopulationTarget } from '../calculations/population-target';
+import type { IslandState } from '../island';
+import { FACTIONS, FACTION_CONFIGS, type FactionHouses, type TargetIntent } from '../model';
 
-type PopulationSectionProps = {
-  state: CalculatorState;
-  islandHouses?: FactionHouses;
-  islandPopulations?: Record<Faction, number[] | null>;
-  onFactionChange: (faction: Faction, update: (current: FactionState) => FactionState) => void;
-  // Bonuses are global per faction: the app mirrors them onto every island.
-  onBonusChange: (faction: Faction, bonus: 'livingSpace' | 'senate', checked: boolean) => void;
+type Props = {
+  actualHouses: FactionHouses;
+  actualPopulations: Record<Faction, readonly number[] | null>;
+  targets: Record<Faction, ResolvedPopulationTarget | null>;
+  targetKinds: Record<Faction, TargetIntent['kind']>;
+  islands: readonly IslandState[];
 };
 
-export function PopulationSection({
-  state,
-  islandHouses = NO_ISLAND_HOUSES,
-  islandPopulations,
-  onFactionChange,
-  onBonusChange,
-}: PopulationSectionProps) {
-  return (
-    <section className="calculator-section population-section">
-      <div className="calculator-section__heading">
-        <h2>Residences &amp; inhabitants</h2>
-        <p>Results update automatically</p>
-      </div>
-
-      <div className="population-section__factions">
-        {FACTIONS.map((faction) => (
-          <PopulationFaction
-            key={faction}
-            config={FACTION_CONFIGS[faction]}
-            state={state.factions[faction]}
-            islandHouses={islandHouses[faction]}
-            islandPopulation={islandPopulations?.[faction]}
-            onHousesChange={(houses) => onFactionChange(faction, (current) => ({ ...current, houses }))}
-            onHousesClear={() => onFactionChange(faction, (current) => ({ ...current, houses: null }))}
-            onMaxTierChange={(maxTier) => onFactionChange(faction, (current) => ({ ...current, maxTier }))}
-            onLivingSpaceChange={(checked) => onBonusChange(faction, 'livingSpace', checked)}
-            onSenateChange={(checked) => onBonusChange(faction, 'senate', checked)}
-            onOverrideChange={(tierIndex, value) => onFactionChange(faction, (current) => ({
-              ...current,
-              overrides: current.overrides.map((override, index) => index === tierIndex ? value : override),
-            }))}
-            onOverrideClear={(tierIndex) => onFactionChange(faction, (current) => ({
-              ...current,
-              overrides: current.overrides.map((override, index) => index === tierIndex ? null : override),
-            }))}
-          />
-        ))}
-      </div>
-    </section>
-  );
+export function PopulationSection({ actualHouses, actualPopulations, targets, targetKinds, islands }: Props) {
+  return <section className="calculator-section population-section">
+    <div className="calculator-section__heading"><h2>Residences &amp; inhabitants</h2><p>Actual, Growth target, and current full-demand headroom</p></div>
+    <div className="population-section__factions">{FACTIONS.map((faction) => {
+      const config = FACTION_CONFIGS[faction];
+      const actual = actualPopulations[faction];
+      const target = targets[faction];
+      return <section key={faction} className={`population-faction population-faction--${faction}`}>
+        <header className="population-faction__identity"><img src={config.houseImage} alt="" width="38" height="38" /><h3>{config.label}</h3><span className="population-faction__mode">{targetKinds[faction] === 'follow' ? 'Following islands' : 'Growth target'}</span></header>
+        <div className="population-overview-columns" aria-hidden="true"><span /><span>Actual</span><span>Headroom / limit</span><span>Target</span></div>
+        <ul className="pop-rows pop-rows--overview">
+          <li className="pop-row"><img src={config.houseImage} alt="" width="28" height="28" /><div className="pop-row__label"><span>Houses</span></div><output aria-label={`${config.label} actual residences`}>{actualHouses[faction] ?? '—'}</output><span className="population-overview__not-applicable">—</span><output aria-label={`${config.label} target residences`} data-testid={`overview-${faction}-target`}>{target?.houses ?? '—'}</output></li>
+          {config.tierLabels.map((label, tier) => {
+            const headroom = tierHeadroom(islands, faction, tier);
+            return <li className="pop-row" key={label}><img src={config.tierImages[tier]} alt="" width="28" height="28" /><div className="pop-row__label"><span>{label}</span></div><output aria-label={`${config.label} actual ${label}`} data-testid={`overview-${faction}-actual-tier-${tier}`}>{actual?.[tier] ?? '—'}</output><output aria-label={`${config.label} ${label} headroom and limit`} data-testid={`overview-${faction}-headroom-tier-${tier}`}>{headroom === null ? '—' : `+${Math.floor(headroom.additional + 1e-9)} · ${BUILDINGS[headroom.limitingGood].label}`}</output><output aria-label={`${config.label} target ${label}`} data-testid={`overview-${faction}-target-tier-${tier}`}>{target?.effectivePopulations[tier] ?? '—'}</output></li>;
+          })}
+        </ul>
+      </section>;
+    })}</div>
+  </section>;
 }

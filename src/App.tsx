@@ -1,21 +1,24 @@
 import { useEffect, useState, type KeyboardEvent } from 'react';
 
 import type { Faction } from './calculations/population';
+import { resolvePopulationTarget } from './calculations/population-target';
 import { calculateAvailableProduction } from './calculations/calculate-production';
+import { calculateGrowthPlanning } from './calculations/planning';
+import type { BuildingId } from './calculations/building-data';
 import { aggregateBalances, transferNeeds } from './calculations/island-balance';
 import { calculateOperatingImpacts, calculateOwnedImpact } from './calculations/operating-impact';
 import { PRODUCTION_NODES } from './calculations/production-data';
 import { CoverageSection } from './components/CoverageSection';
+import { GrowthSection } from './components/GrowthSection';
 import { IslandsSection } from './components/IslandsSection';
 import { PopulationSection } from './components/PopulationSection';
 import { ProductionSection } from './components/ProductionSection';
-import { createInitialAppState, sumIslandHouses, sumIslandPopulations, type AppState } from './island';
+import { createInitialAppState, stepOwnedBuilding, sumIslandHouses, sumIslandPopulations, type AppState } from './island';
 import {
-  effectivePopulation,
   parsePositiveNumber,
   type CalculatorState,
   type EditableNumber,
-  type FactionState,
+  type PlanFactionState,
 } from './model';
 import { loadAppState, saveAppState } from './storage';
 
@@ -38,16 +41,17 @@ export function App() {
 
   const islandHouses = sumIslandHouses(state.islands);
   const islandPopulations = sumIslandPopulations(state.islands);
-  const population = {
-    eco: effectivePopulation('eco', state.plan.factions.eco, islandHouses.eco, islandPopulations.eco),
-    tycoon: effectivePopulation('tycoon', state.plan.factions.tycoon, islandHouses.tycoon, islandPopulations.tycoon),
-    tech: effectivePopulation('tech', state.plan.factions.tech, islandHouses.tech, islandPopulations.tech),
+  const targets = {
+    eco: resolvePopulationTarget('eco', state.plan.factions.eco, islandHouses.eco, islandPopulations.eco),
+    tycoon: resolvePopulationTarget('tycoon', state.plan.factions.tycoon, islandHouses.tycoon, islandPopulations.tycoon),
+    tech: resolvePopulationTarget('tech', state.plan.factions.tech, islandHouses.tech, islandPopulations.tech),
   };
+  const planning = calculateGrowthPlanning(state.plan, state.islands);
   const productivity = Object.fromEntries(
     Object.entries(state.plan.productivity).map(([id, entry]) => [id, entry.value]),
   );
   const production = calculateAvailableProduction({
-    population,
+    population: islandPopulations,
     productivity,
     recycling: state.plan.recycling,
     wholeBuildings: state.plan.wholeBuildings,
@@ -57,18 +61,26 @@ export function App() {
   const needs = transferNeeds(state.islands);
   const ownedImpact = calculateOwnedImpact(state.islands);
 
-  const updateFaction = (
-    faction: Faction,
-    updateFactionState: (current: FactionState) => FactionState,
-  ) => {
+  const updateFaction = (faction: Faction, next: PlanFactionState) => {
     updatePlan((current) => ({
       ...current,
       factions: {
         ...current.factions,
-        [faction]: updateFactionState(current.factions[faction]),
+        [faction]: next,
       },
     }));
   };
+  const updateBonus = (faction: Faction, bonus: 'livingSpace' | 'senate', checked: boolean) => update((current) => ({
+    ...current,
+    plan: { ...current.plan, factions: { ...current.plan.factions, [faction]: { ...current.plan.factions[faction], [bonus]: checked } } },
+    islands: current.islands.map((island) => ({ ...island, factions: { ...island.factions, [faction]: { ...island.factions[faction], [bonus]: checked } } })),
+  }));
+  const applyBuilding = (islandId: string, buildingId: BuildingId) => update((current) => ({
+    ...current,
+    islands: current.islands.map((island) => island.id === islandId
+      ? stepOwnedBuilding(island, buildingId, 1)
+      : island),
+  }));
 
   const workspaces = ['islands', 'production', 'growth'] as const;
   const onWorkspaceKeyDown = (
@@ -99,27 +111,11 @@ export function App() {
       </header>
 
       <PopulationSection
-        state={state.plan}
-        islandHouses={islandHouses}
-        islandPopulations={islandPopulations}
-        onFactionChange={updateFaction}
-        onBonusChange={(faction, bonus, checked) => update((current) => ({
-          ...current,
-          plan: {
-            ...current.plan,
-            factions: {
-              ...current.plan.factions,
-              [faction]: { ...current.plan.factions[faction], [bonus]: checked },
-            },
-          },
-          islands: current.islands.map((island) => ({
-            ...island,
-            factions: {
-              ...island.factions,
-              [faction]: { ...island.factions[faction], [bonus]: checked },
-            },
-          })),
-        }))}
+        actualHouses={islandHouses}
+        actualPopulations={islandPopulations}
+        targets={targets}
+        targetKinds={{ eco: state.plan.factions.eco.intent.kind, tycoon: state.plan.factions.tycoon.intent.kind, tech: state.plan.factions.tech.intent.kind }}
+        islands={state.islands}
       />
       <nav className="workspace-tabs" role="tablist" aria-label="Calculator workspace">
         {workspaces.map((item) => (
@@ -185,21 +181,16 @@ export function App() {
         />
       </div>
       <div id="workspace-growth" className="workspace-panel" role="tabpanel" aria-labelledby="tab-growth" hidden={workspace !== 'growth'}>
-        <section className="calculator-section growth-section">
-          <div className="calculator-section__heading">
-            <div><h2>Growth</h2></div>
-            <p>Population targets and cumulative supply milestones</p>
-          </div>
-        </section>
+        <GrowthSection state={state.plan} targets={targets} planning={planning} islands={state.islands} onFactionChange={updateFaction} onBonusChange={updateBonus} onApplyBuilding={applyBuilding} />
       </div>
 
       <aside className="calculator-section page-notes" aria-label="Calculator guidance">
         <details open>
           <summary>How to use it</summary>
           <ul>
-            <li>Enter residences and select the highest occupied population tier. Population and production update immediately.</li>
-            <li>Edit any population field to hold it as a highlighted manual value; select Auto beside it to resume calculation.</li>
-            <li>Set each building's productivity to match your island. Grey rows show alternate production sources, not additional requirements.</li>
+            <li>Record residences and owned buildings on Islands; the overview and current full demand update immediately.</li>
+            <li>Use Production to inspect current supply chains, productivity, actual capacity, bottlenecks, and transfers.</li>
+            <li>Use Growth to set residence or population targets, then apply its cumulative full-supply building steps to eligible islands.</li>
           </ul>
         </details>
         <section>

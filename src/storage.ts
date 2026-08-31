@@ -9,6 +9,7 @@ import {
 import {
   createFactionState,
   createInitialState,
+  createPlanFactionState,
   FACTIONS,
   FACTION_CONFIGS,
   parseNonNegativeInteger,
@@ -16,6 +17,8 @@ import {
   type CalculatorState,
   type EditableNumber,
   type FactionState,
+  type PlanFactionState,
+  type TargetIntent,
 } from './model';
 
 export const STORAGE_KEY = 'anno2070-calculator-state';
@@ -50,7 +53,7 @@ function sanitizeEntry(value: unknown, parse: Parser, loss: Loss): EditableNumbe
   return loss.markUnless(clean) ? (value as EditableNumber) : null;
 }
 
-function sanitizeFactionState(value: unknown, faction: typeof FACTIONS[number], loss: Loss): FactionState {
+function sanitizeLegacyFactionState(value: unknown, faction: typeof FACTIONS[number], loss: Loss): FactionState {
   const fallback = { ...createFactionState(faction), houses: null };
   if (!loss.markUnless(isRecord(value))) return fallback;
   const record = value as Record<string, unknown>;
@@ -72,6 +75,71 @@ function sanitizeFactionState(value: unknown, faction: typeof FACTIONS[number], 
     : sanitizeEntry(override, parseNonNegativeInteger, loss));
 
   return { houses, maxTier, livingSpace, senate, overrides };
+}
+
+function migrateLegacyPlanFaction(
+  value: unknown,
+  faction: typeof FACTIONS[number],
+  loss: Loss,
+): PlanFactionState {
+  const legacy = sanitizeLegacyFactionState(value, faction, loss);
+  return {
+    intent: legacy.houses === null
+      ? { kind: 'follow' }
+      : { kind: 'residences', houses: legacy.houses, maxTier: legacy.maxTier },
+    livingSpace: legacy.livingSpace,
+    senate: legacy.senate,
+    overrides: legacy.overrides,
+  };
+}
+
+function sanitizeTargetIntent(
+  value: unknown,
+  faction: typeof FACTIONS[number],
+  loss: Loss,
+): TargetIntent {
+  if (!isRecord(value) || !['follow', 'residences', 'population'].includes(String(value.kind))) {
+    loss.markUnless(false);
+    return { kind: 'follow' };
+  }
+  if (value.kind === 'follow') return { kind: 'follow' };
+
+  const tierCount = FACTION_CONFIGS[faction].tierLabels.length;
+  const tierKey = value.kind === 'residences' ? 'maxTier' : 'tier';
+  const storedTier = value[tierKey];
+  const tier = loss.markUnless(
+    Number.isInteger(storedTier) && Number(storedTier) >= 1 && Number(storedTier) <= tierCount,
+  ) ? Number(storedTier) : tierCount;
+  const entryKey = value.kind === 'residences' ? 'houses' : 'count';
+  const entry = sanitizeEntry(value[entryKey], parseNonNegativeInteger, loss);
+  if (entry === null) return { kind: 'follow' };
+  return value.kind === 'residences'
+    ? { kind: 'residences', houses: entry, maxTier: tier }
+    : { kind: 'population', count: entry, tier };
+}
+
+function sanitizePlanFaction(
+  value: unknown,
+  faction: typeof FACTIONS[number],
+  loss: Loss,
+): PlanFactionState {
+  const fallback = createPlanFactionState(faction);
+  if (!isRecord(value)) {
+    loss.markUnless(false);
+    return fallback;
+  }
+  const tierCount = FACTION_CONFIGS[faction].tierLabels.length;
+  const storedOverrides = loss.markUnless(Array.isArray(value.overrides) && value.overrides.length === tierCount)
+    ? value.overrides as unknown[]
+    : Array.from({ length: tierCount }, () => null);
+  return {
+    intent: sanitizeTargetIntent(value.intent, faction, loss),
+    livingSpace: loss.markUnless(typeof value.livingSpace === 'boolean') ? value.livingSpace === true : false,
+    senate: loss.markUnless(typeof value.senate === 'boolean') ? value.senate === true : false,
+    overrides: storedOverrides.map((entry) => entry === null
+      ? null
+      : sanitizeEntry(entry, parseNonNegativeInteger, loss)),
+  };
 }
 
 function sanitizeKnownMap(
@@ -105,15 +173,15 @@ function sanitizeSparseMap(value: unknown, knownIds: ReadonlySet<string>, parse:
   return Object.fromEntries(entries);
 }
 
-function sanitizePlan(value: unknown, loss: Loss): CalculatorState {
+function sanitizePlan(value: unknown, loss: Loss, legacy: boolean): CalculatorState {
   if (!loss.markUnless(isRecord(value))) return createInitialState();
   const record = value as Record<string, unknown>;
   const factions = isRecord(record.factions) ? record.factions : {};
   return {
     factions: {
-      eco: sanitizeFactionState(factions.eco, 'eco', loss),
-      tycoon: sanitizeFactionState(factions.tycoon, 'tycoon', loss),
-      tech: sanitizeFactionState(factions.tech, 'tech', loss),
+      eco: legacy ? migrateLegacyPlanFaction(factions.eco, 'eco', loss) : sanitizePlanFaction(factions.eco, 'eco', loss),
+      tycoon: legacy ? migrateLegacyPlanFaction(factions.tycoon, 'tycoon', loss) : sanitizePlanFaction(factions.tycoon, 'tycoon', loss),
+      tech: legacy ? migrateLegacyPlanFaction(factions.tech, 'tech', loss) : sanitizePlanFaction(factions.tech, 'tech', loss),
     },
     productivity: sanitizeKnownMap(
       record.productivity,
@@ -140,7 +208,7 @@ function sanitizeIsland(value: unknown, loss: Loss): IslandState | null {
   }
   const factions = value.factions;
   const islandFaction = (faction: typeof FACTIONS[number]): IslandFactionState => {
-    const base = sanitizeFactionState(factions[faction], faction, loss);
+    const base = sanitizeLegacyFactionState(factions[faction], faction, loss);
     const stored = factions[faction];
     const hasCoverage = isRecord(stored) && typeof stored.recyclingCoverage === 'boolean';
     const recyclingCoverage = loss.markUnless(hasCoverage) && isRecord(stored)
@@ -204,11 +272,18 @@ export function loadAppState(): LoadResult {
 
   const loss = new Loss();
   if (saved.version === 1) {
-    const plan = sanitizePlan(saved.state, loss);
+    const plan = sanitizePlan(saved.state, loss, true);
     return { state: { plan, islands: [] }, storable: !loss.lossy };
   }
   if (saved.version === 2) {
-    const plan = sanitizePlan(saved.plan, loss);
+    const plan = sanitizePlan(saved.plan, loss, true);
+    const islands = Array.isArray(saved.islands)
+      ? saved.islands.map((island) => sanitizeIsland(island, loss)).filter((island): island is IslandState => island !== null)
+      : (loss.markUnless(false), []);
+    return { state: { plan, islands }, storable: !loss.lossy };
+  }
+  if (saved.version === 3) {
+    const plan = sanitizePlan(saved.plan, loss, false);
     const islands = Array.isArray(saved.islands)
       ? saved.islands.map((island) => sanitizeIsland(island, loss)).filter((island): island is IslandState => island !== null)
       : (loss.markUnless(false), []);
@@ -219,7 +294,7 @@ export function loadAppState(): LoadResult {
 
 export function saveAppState(state: AppState): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 2, plan: state.plan, islands: state.islands }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 3, plan: state.plan, islands: state.islands }));
   } catch {
     // Storage can be disabled or full; the calculator remains usable in memory.
   }

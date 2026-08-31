@@ -60,6 +60,18 @@ describe('resolvePopulationTarget', () => {
     expect(result?.effectivePopulations).toEqual([16, 75, 25, 0]);
   });
 
+  test('ignores retained target overrides while following island actuals', () => {
+    const state = {
+      ...createPlanFactionState('eco'),
+      overrides: [null, null, null, editable(999)],
+    };
+
+    const result = resolvePopulationTarget('eco', state, 20, [96, 60, 75, 40]);
+
+    expect(result?.normalPopulations).toEqual([96, 60, 75, 40]);
+    expect(result?.effectivePopulations).toEqual([96, 60, 75, 40]);
+  });
+
   test('advanced overrides take precedence and can leave the normal goal unmet', () => {
     const state = {
       ...createPlanFactionState('tech'),

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { OPEN_FERTILITY_SLOT } from './calculations/building-data';
-import { canBuildOn, createIsland, islandPopulation, islandProductivity, ownedCount } from './island';
+import { canBuildOn, createIsland, islandPopulation, islandProductivity, ownedCount, stepOwnedBuilding } from './island';
 
 describe('island model', () => {
   test('creates a settled land island with empty sparse records', () => {
@@ -62,6 +62,14 @@ describe('island model', () => {
     };
     expect(ownedCount(island, 'chipFactory')).toBeNull();
     expect(islandProductivity(island, 'fishery')).toBeNull();
+  });
+
+  test('steps an owned building count with the same zero-clamped editable value', () => {
+    const island = createIsland('A');
+    const one = stepOwnedBuilding(island, 'fishery', 1);
+    expect(one.owned.fishery).toEqual({ raw: '1', value: 1 });
+    expect(stepOwnedBuilding(one, 'fishery', -2).owned.fishery)
+      .toEqual({ raw: '0', value: 0 });
   });
 
   test('island population uses the shared ascension model per faction', () => {

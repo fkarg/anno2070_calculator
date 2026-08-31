@@ -1,14 +1,15 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 
-import { input, renderApp, replaceInput, requiredBuildings } from './test/app-test-utils';
+import { addIsland, input, renderApp, replaceInput, requiredBuildings, setIslandHouses } from './test/app-test-utils';
 
 beforeEach(() => localStorage.clear());
 
 describe('invalid production inputs', () => {
   test('invalid productivity suppresses only its dependent production chain', async () => {
     renderApp();
-    await replaceInput(input('eco-houses'), '100');
-    await replaceInput(input('tycoon-houses'), '100');
+    addIsland();
+    await setIslandHouses(0, 'eco', '100');
+    await setIslandHouses(0, 'tycoon', '100');
     const productivity = input('ecoFish-productivity');
 
     await replaceInput(productivity, '');
@@ -21,9 +22,10 @@ describe('invalid production inputs', () => {
 
   test('invalid population suppresses only that faction', async () => {
     renderApp();
-    await replaceInput(input('tycoon-houses'), '100');
+    addIsland();
+    await setIslandHouses(0, 'tycoon', '100');
 
-    await replaceInput(input('eco-houses'), 'invalid');
+    await setIslandHouses(0, 'eco', 'invalid');
 
     expect(requiredBuildings('ecoFish')).toHaveTextContent('—');
     expect(requiredBuildings('tycoonFish')).toHaveTextContent('4.18');

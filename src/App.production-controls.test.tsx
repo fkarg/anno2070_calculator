@@ -3,11 +3,14 @@ import { beforeEach, describe, expect, test } from 'vitest';
 
 import {
   buttonWithLabel,
+  addIsland,
   input,
   productionCheckbox,
   renderApp,
   replaceInput,
   requiredBuildings,
+  setGrowthResidenceTarget,
+  setIslandHouses,
 } from './test/app-test-utils';
 
 beforeEach(() => localStorage.clear());
@@ -15,7 +18,8 @@ beforeEach(() => localStorage.clear());
 describe('production controls', () => {
   test('propagates a productivity edit immediately through a supply chain', async () => {
     renderApp();
-    await replaceInput(input('eco-houses'), '100');
+    addIsland();
+    await setIslandHouses(0, 'eco', '100');
 
     expect(requiredBuildings('ecoHealthFood')).toHaveTextContent('2.33');
     expect(requiredBuildings('ecoVegetablesHealthFood')).toHaveTextContent('4.66');
@@ -24,6 +28,15 @@ describe('production controls', () => {
 
     expect(requiredBuildings('ecoHealthFood')).toHaveTextContent('1.17');
     expect(requiredBuildings('ecoVegetablesHealthFood')).toHaveTextContent('2.33');
+  });
+
+  test('keeps current Production demand separate from a larger Growth target', async () => {
+    renderApp();
+    addIsland();
+    await setIslandHouses(0, 'eco', '10');
+    await setGrowthResidenceTarget('eco', '100');
+
+    expect(requiredBuildings('ecoFish')).toHaveTextContent('0.42');
   });
 
   test('preserves decimal productivity while applying faction-wide adjustments', async () => {
@@ -39,7 +52,8 @@ describe('production controls', () => {
 
   test('applies recycling and whole-building rounding automatically', async () => {
     renderApp();
-    await replaceInput(input('eco-houses'), '100');
+    addIsland();
+    await setIslandHouses(0, 'eco', '100');
 
     const serviceBots = requiredBuildings('ecoServiceBots');
     expect(serviceBots).toHaveTextContent('1.15');

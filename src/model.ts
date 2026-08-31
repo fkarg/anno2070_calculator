@@ -46,7 +46,7 @@ export function resolveHouses(state: FactionState, settledIslandHouses: number |
 }
 
 export type CalculatorState = {
-  factions: Record<Faction, FactionState>;
+  factions: Record<Faction, PlanFactionState>;
   productivity: Record<string, EditableNumber>;
   recycling: boolean;
   wholeBuildings: boolean;
@@ -119,9 +119,9 @@ export function parsePositiveNumber(raw: string): number | null {
 export function createInitialState(): CalculatorState {
   return {
     factions: {
-      eco: { ...createFactionState('eco'), houses: null },
-      tycoon: { ...createFactionState('tycoon'), houses: null },
-      tech: { ...createFactionState('tech'), houses: null },
+      eco: createPlanFactionState('eco'),
+      tycoon: createPlanFactionState('tycoon'),
+      tech: createPlanFactionState('tech'),
     },
     productivity: Object.fromEntries(
       PRODUCTION_NODES.map((node) => [node.id, { raw: '100', value: 100 }]),
@@ -178,15 +178,4 @@ export function effectivePopulation(
     livingSpace: state.livingSpace,
     senate: state.senate,
   }, state.overrides.map((override) => override === null ? null : override.value));
-}
-
-export function effectivePopulations(
-  state: CalculatorState,
-  islandHouses: FactionHouses = NO_ISLAND_HOUSES,
-): Record<Faction, readonly number[]> | null {
-  const eco = effectivePopulation('eco', state.factions.eco, islandHouses.eco);
-  const tycoon = effectivePopulation('tycoon', state.factions.tycoon, islandHouses.tycoon);
-  const tech = effectivePopulation('tech', state.factions.tech, islandHouses.tech);
-
-  return eco && tycoon && tech ? { eco, tycoon, tech } : null;
 }

@@ -21,9 +21,9 @@ describe('resolveHouses', () => {
 
   test('a fresh plan follows islands automatically', () => {
     const state = createInitialState();
-    expect(state.factions.eco.houses).toBeNull();
-    expect(state.factions.tycoon.houses).toBeNull();
-    expect(state.factions.tech.houses).toBeNull();
+    expect(state.factions.eco.intent).toEqual({ kind: 'follow' });
+    expect(state.factions.tycoon.intent).toEqual({ kind: 'follow' });
+    expect(state.factions.tech.intent).toEqual({ kind: 'follow' });
   });
 });
 

@@ -74,6 +74,18 @@ export function ownedCount(island: IslandState, buildingId: BuildingId): number 
   return entry === undefined ? 0 : entry.value;
 }
 
+export function stepOwnedBuilding(
+  island: IslandState,
+  buildingId: BuildingId,
+  delta: number,
+): IslandState {
+  const value = Math.max(0, (island.owned[buildingId]?.value ?? 0) + delta);
+  return {
+    ...island,
+    owned: { ...island.owned, [buildingId]: { raw: String(value), value } },
+  };
+}
+
 export function islandProductivity(island: IslandState, buildingId: BuildingId): number | null {
   const entry = island.productivity[buildingId];
   return entry === undefined ? 100 : entry.value;
