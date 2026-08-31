@@ -1,5 +1,6 @@
 import type { IslandState } from '../island';
 import type { BuildingId } from './building-data';
+import { maskSatisfaction, type IgnoredDemandSource } from './demand-policy';
 import { tierCapacities, type Faction } from './population';
 import { GOODS, producedGood, type GoodId } from './goods';
 import { aggregateGoodLoads } from './island-balance';
@@ -20,9 +21,12 @@ export type GoodCoverage = Readonly<{
 
 type Surplus = Partial<Record<GoodId, number | null>>;
 
-function surpluses(islands: readonly IslandState[]): Surplus {
-  const loads = aggregateGoodLoads(islands);
-  const capacities = effectiveCapacities(islands);
+function surpluses(
+  islands: readonly IslandState[],
+  ignoredDemands: readonly IgnoredDemandSource[],
+): Surplus {
+  const loads = aggregateGoodLoads(islands, ignoredDemands);
+  const capacities = effectiveCapacities(islands, ignoredDemands);
   const result: Surplus = {};
   for (const [goodId, load] of Object.entries(loads) as [GoodId, NonNullable<typeof loads[GoodId]>][]) {
     const capacity = goodId in capacities ? capacities[goodId]! : 0;
@@ -35,9 +39,10 @@ function surpluses(islands: readonly IslandState[]): Surplus {
 
 export function calculateCoverage(
   islands: readonly IslandState[],
+  ignoredDemands: readonly IgnoredDemandSource[],
 ): Partial<Record<GoodId, GoodCoverage | null>> {
-  const loads = aggregateGoodLoads(islands);
-  const capacities = effectiveCapacities(islands);
+  const loads = aggregateGoodLoads(islands, ignoredDemands);
+  const capacities = effectiveCapacities(islands, ignoredDemands);
   const result: Partial<Record<GoodId, GoodCoverage | null>> = {};
   for (const [goodId, load] of Object.entries(loads) as [GoodId, NonNullable<typeof loads[GoodId]>][]) {
     if (load.finalDemand === 0) continue;
@@ -54,12 +59,22 @@ export function calculateCoverage(
 }
 
 // Marginal demand of one inhabitant of the tier, per good, in good units.
-function perInhabitantDemands(faction: Faction, tier: number): Map<GoodId, number> {
+function perInhabitantDemands(
+  faction: Faction,
+  tier: number,
+  ignoredDemands: readonly IgnoredDemandSource[],
+): Map<GoodId, number> {
   const demands = new Map<GoodId, number>();
   for (const good of GOODS.values()) {
     for (const finalDemand of good.finalDemands) {
       if (finalDemand.faction !== faction) continue;
-      const satisfied = finalDemand.satisfaction[tier];
+      const satisfaction = maskSatisfaction(
+        good.id,
+        finalDemand.faction,
+        finalDemand.satisfaction,
+        ignoredDemands,
+      );
+      const satisfied = satisfaction[tier];
       if (satisfied !== undefined && satisfied > 0) demands.set(good.id, 1 / satisfied);
     }
   }
@@ -87,10 +102,11 @@ export function tierHeadroom(
   islands: readonly IslandState[],
   faction: Faction,
   tier: number,
+  ignoredDemands: readonly IgnoredDemandSource[],
 ): TierHeadroom | null {
-  const demands = perInhabitantDemands(faction, tier);
+  const demands = perInhabitantDemands(faction, tier, ignoredDemands);
   if (demands.size === 0) return null;
-  const surplus = surpluses(islands);
+  const surplus = surpluses(islands, ignoredDemands);
   const built = builtGoods(islands);
 
   let additional = Infinity;
@@ -120,11 +136,12 @@ export function supportedAscensions(
   islands: readonly IslandState[],
   faction: Faction,
   fromTier: number,
+  ignoredDemands: readonly IgnoredDemandSource[],
 ): AscensionSupport | null {
   const capacities = tierCapacities(faction, globalLivingSpace(islands, faction));
   if (fromTier + 1 >= capacities.length) return null;
-  const from = perInhabitantDemands(faction, fromTier);
-  const to = perInhabitantDemands(faction, fromTier + 1);
+  const from = perInhabitantDemands(faction, fromTier, ignoredDemands);
+  const to = perInhabitantDemands(faction, fromTier + 1, ignoredDemands);
 
   // Net demand change per ascending house, per good.
   const deltas = new Map<GoodId, number>();
@@ -135,7 +152,7 @@ export function supportedAscensions(
     deltas.set(goodId, (deltas.get(goodId) ?? 0) - perInhabitant * capacities[fromTier]);
   }
 
-  const surplus = surpluses(islands);
+  const surplus = surpluses(islands, ignoredDemands);
   let ascensions = Infinity;
   let limitingGood: GoodId | null = null;
   for (const [goodId, delta] of deltas) {

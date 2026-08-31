@@ -63,8 +63,8 @@ export function App() {
     wholeBuildings: false,
   });
   const operatingImpacts = calculateOperatingImpacts(fractionalProduction);
-  const empireBalances = aggregateBalances(state.islands);
-  const needs = transferNeeds(state.islands);
+  const empireBalances = aggregateBalances(state.islands, state.plan.ignoredDemands);
+  const needs = transferNeeds(state.islands, state.plan.ignoredDemands);
   const ownedImpact = calculateOwnedImpact(state.islands);
 
   const updateFaction = (faction: Faction, next: PlanFactionState) => {
@@ -121,6 +121,7 @@ export function App() {
         actualPopulations={islandPopulations}
         targets={targets}
         factionStates={state.plan.factions}
+        ignoredDemands={state.plan.ignoredDemands}
         islands={state.islands}
         onBonusChange={updateBonus}
       />
@@ -143,6 +144,7 @@ export function App() {
       <div id="workspace-islands" className="workspace-panel" role="tabpanel" aria-labelledby="tab-islands" hidden={workspace !== 'islands'}>
         <IslandsSection
             islands={state.islands}
+            ignoredDemands={state.plan.ignoredDemands}
             onIslandsChange={(updater) => update((current) => ({
               ...current,
               // New or edited islands inherit the global per-faction bonuses.
@@ -161,6 +163,7 @@ export function App() {
         <CoverageSection
           islands={state.islands}
           planning={planning}
+          ignoredDemands={state.plan.ignoredDemands}
           onApplyBuilding={applyBuilding}
         />
         <ProductionSection

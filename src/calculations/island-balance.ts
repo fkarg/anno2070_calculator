@@ -1,5 +1,6 @@
 import { islandPopulation, islandProductivity, type IslandState } from '../island';
 import type { BuildingId } from './building-data';
+import { maskSatisfaction, type IgnoredDemandSource } from './demand-policy';
 import { CONSUMPTION, FUEL_CONSUMPTION, GOODS, producedGood, type GoodId } from './goods';
 
 export const BALANCE_EPSILON = 1e-9;
@@ -30,7 +31,10 @@ export type GoodLoad = {
 };
 export type GoodLoads = Partial<Record<GoodId, GoodLoad>>;
 
-export function islandGoodLoads(island: IslandState): GoodLoads {
+export function islandGoodLoads(
+  island: IslandState,
+  ignoredDemands: readonly IgnoredDemandSource[],
+): GoodLoads {
   const capacity: Partial<Record<GoodId, number | null>> = {};
   const intermediate: Partial<Record<GoodId, number | null>> = {};
   const final: Partial<Record<GoodId, number | null>> = {};
@@ -62,9 +66,15 @@ export function islandGoodLoads(island: IslandState): GoodLoads {
 
   for (const good of GOODS.values()) {
     for (const finalDemand of good.finalDemands) {
-      if (finalDemand.satisfaction.every((value) => value === 0)) continue;
+      const satisfaction = maskSatisfaction(
+        good.id,
+        finalDemand.faction,
+        finalDemand.satisfaction,
+        ignoredDemands,
+      );
+      if (satisfaction.every((value) => value === 0)) continue;
       const population = islandPopulation(island, finalDemand.faction);
-      const amount = population === null ? null : finalDemand.satisfaction.reduce((total, satisfied, tier) => {
+      const amount = population === null ? null : satisfaction.reduce((total, satisfied, tier) => {
         if (satisfied === 0) return total;
         const coverage = island.factions[finalDemand.faction].recyclingCoverage;
         const recyclingMultiplier = coverage && finalDemand.recyclable && tier > 0 ? 0.85 : 1;
@@ -86,11 +96,14 @@ export function islandGoodLoads(island: IslandState): GoodLoads {
   return loads;
 }
 
-export function aggregateGoodLoads(islands: readonly IslandState[]): GoodLoads {
+export function aggregateGoodLoads(
+  islands: readonly IslandState[],
+  ignoredDemands: readonly IgnoredDemandSource[],
+): GoodLoads {
   const empire: GoodLoads = {};
   for (const island of islands) {
     if (!island.settled) continue;
-    for (const [goodId, load] of Object.entries(islandGoodLoads(island)) as [GoodId, GoodLoad][]) {
+    for (const [goodId, load] of Object.entries(islandGoodLoads(island, ignoredDemands)) as [GoodId, GoodLoad][]) {
       const current = empire[goodId] ?? { capacity: 0, intermediateDemand: 0, finalDemand: 0 };
       empire[goodId] = {
         capacity: add(current.capacity, load.capacity),
@@ -102,9 +115,12 @@ export function aggregateGoodLoads(islands: readonly IslandState[]): GoodLoads {
   return empire;
 }
 
-export function calculateIslandBalance(island: IslandState): IslandBalances {
+export function calculateIslandBalance(
+  island: IslandState,
+  ignoredDemands: readonly IgnoredDemandSource[],
+): IslandBalances {
   const balances: IslandBalances = {};
-  for (const [goodId, load] of Object.entries(islandGoodLoads(island)) as [GoodId, GoodLoad][]) {
+  for (const [goodId, load] of Object.entries(islandGoodLoads(island, ignoredDemands)) as [GoodId, GoodLoad][]) {
     const demand = add(load.intermediateDemand, load.finalDemand);
     balances[goodId] = {
       capacity: load.capacity,
@@ -115,11 +131,14 @@ export function calculateIslandBalance(island: IslandState): IslandBalances {
   return balances;
 }
 
-export function aggregateBalances(islands: readonly IslandState[]): IslandBalances {
+export function aggregateBalances(
+  islands: readonly IslandState[],
+  ignoredDemands: readonly IgnoredDemandSource[],
+): IslandBalances {
   const empire: IslandBalances = {};
   for (const island of islands) {
     if (!island.settled) continue;
-    for (const [goodId, balance] of Object.entries(calculateIslandBalance(island)) as [GoodId, GoodBalance][]) {
+    for (const [goodId, balance] of Object.entries(calculateIslandBalance(island, ignoredDemands)) as [GoodId, GoodBalance][]) {
       const current = empire[goodId] ?? { capacity: 0, demand: 0, balance: 0 };
       empire[goodId] = {
         capacity: add(current.capacity, balance.capacity),
@@ -131,10 +150,13 @@ export function aggregateBalances(islands: readonly IslandState[]): IslandBalanc
   return empire;
 }
 
-export function transferNeeds(islands: readonly IslandState[]): readonly TransferNeed[] {
+export function transferNeeds(
+  islands: readonly IslandState[],
+  ignoredDemands: readonly IgnoredDemandSource[],
+): readonly TransferNeed[] {
   const perIsland = islands
     .filter((island) => island.settled)
-    .map((island) => ({ island, balances: calculateIslandBalance(island) }));
+    .map((island) => ({ island, balances: calculateIslandBalance(island, ignoredDemands) }));
   const goodIds = new Set(perIsland.flatMap(({ balances }) => Object.keys(balances)) as GoodId[]);
 
   const needs: TransferNeed[] = [];

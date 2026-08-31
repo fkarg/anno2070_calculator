@@ -228,7 +228,7 @@ export function calculateGrowthPlanning(
   if (resolved.some(([, target]) => target === null)) return null;
   const targets = Object.fromEntries(resolved) as Record<Faction, ResolvedPopulationTarget>;
   const actual = islandPopulations as Record<Faction, readonly number[]>;
-  const capacities = effectiveCapacities(islands);
+  const capacities = effectiveCapacities(islands, state.ignoredDemands);
   if (Object.values(capacities).some((capacity) => capacity === null)) return null;
 
   const baselineRequirements = calculateGrowthRequirements(actual, state.recycling);

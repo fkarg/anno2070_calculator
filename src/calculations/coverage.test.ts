@@ -4,6 +4,9 @@ import { createIsland } from '../island';
 import { calculateCoverage, supportedAscensions, tierHeadroom } from './coverage';
 
 const editable = (value: number) => ({ raw: String(value), value });
+const ignoredWorkerFish = [
+  { faction: 'eco' as const, tier: 0, goodId: 'fishery' as const },
+];
 
 function island(owned: Record<string, number>, ecoHouses = 0, maxTier = 4) {
   const result = createIsland('A');
@@ -16,7 +19,7 @@ function island(owned: Record<string, number>, ecoHouses = 0, maxTier = 4) {
 describe('calculateCoverage', () => {
   test('reports capped coverage and uncapped ratio per demanded good', () => {
     // Workers only: fish demand 800/250 = 3.2, tea demand 800/375.
-    const coverage = calculateCoverage([island({ fishery: 2, teaPlantation: 4 }, 100, 1)]);
+    const coverage = calculateCoverage([island({ fishery: 2, teaPlantation: 4 }, 100, 1)], []);
     expect(coverage.fishery?.coverage).toBeCloseTo(2 / 3.2, 9);
     expect(coverage.fishery?.ratio).toBeCloseTo(2 / 3.2, 9);
     expect(coverage.teaPlantation?.coverage).toBe(1);
@@ -27,7 +30,7 @@ describe('calculateCoverage', () => {
     // 2 chip factories eat 1 copper unit; the population never eats copper,
     // so copper carries no coverage entry, but chips capacity is throttled
     // by the copper shortage when computing effective capacity elsewhere.
-    const coverage = calculateCoverage([island({ fishery: 4, chipFactory: 2 }, 100, 1)]);
+    const coverage = calculateCoverage([island({ fishery: 4, chipFactory: 2 }, 100, 1)], []);
     expect(coverage.copperMine).toBeUndefined();
     expect(coverage.fishery?.coverage).toBe(1);
   });
@@ -35,9 +38,19 @@ describe('calculateCoverage', () => {
   test('invalid inputs null the affected good only', () => {
     const subject = island({ fishery: 2 }, 100, 1);
     subject.owned.teaPlantation = { raw: 'x', value: null };
-    const coverage = calculateCoverage([subject]);
+    const coverage = calculateCoverage([subject], []);
     expect(coverage.teaPlantation).toBeNull();
     expect(coverage.fishery?.coverage).toBeCloseTo(2 / 3.2, 9);
+  });
+
+  test('uses the same ignored source in current coverage and headroom', () => {
+    const subject = island({ fishery: 4, teaPlantation: 4 }, 100, 1);
+    const coverage = calculateCoverage([subject], ignoredWorkerFish);
+    const headroom = tierHeadroom([subject], 'eco', 0, ignoredWorkerFish);
+
+    expect(coverage.teaPlantation?.finalDemand).toBeCloseTo(800 / 375, 9);
+    expect(headroom?.limitingGood).toBe('teaPlantation');
+    expect(headroom?.additional).toBeCloseTo(700, 6);
   });
 });
 
@@ -45,7 +58,7 @@ describe('tierHeadroom', () => {
   test('surplus capacity converts into additional inhabitants of the tier', () => {
     // Workers: fish surplus 4 − 3.2 = 0.8 buildings × 250 = 200 workers;
     // tea surplus 4 − 2.1333 = 1.8667 × 375 = 700 workers. Fish limits.
-    const headroom = tierHeadroom([island({ fishery: 4, teaPlantation: 4 }, 100, 1)], 'eco', 0);
+    const headroom = tierHeadroom([island({ fishery: 4, teaPlantation: 4 }, 100, 1)], 'eco', 0, []);
     expect(headroom?.additional).toBeCloseTo(200, 6);
     expect(headroom?.limitingGood).toBe('fishery');
   });
@@ -53,11 +66,11 @@ describe('tierHeadroom', () => {
   test('unbuilt chains do not zero the headroom; built goods limit it', () => {
     // Tea is unbuilt — known future work, listed separately. Fish alone
     // limits: surplus 4 − 3.2 = 0.8 buildings × 250 = 200 workers.
-    const headroom = tierHeadroom([island({ fishery: 4 }, 100, 1)], 'eco', 0);
+    const headroom = tierHeadroom([island({ fishery: 4 }, 100, 1)], 'eco', 0, []);
     expect(headroom?.additional).toBeCloseTo(200, 6);
     expect(headroom?.limitingGood).toBe('fishery');
     // Nothing built at all: there is no headroom statement to make.
-    expect(tierHeadroom([island({}, 100, 1)], 'eco', 0)).toBeNull();
+    expect(tierHeadroom([island({}, 100, 1)], 'eco', 0, [])).toBeNull();
   });
 });
 
@@ -77,20 +90,21 @@ describe('supportedAscensions', () => {
       })],
       'eco',
       0,
+      [],
     );
     expect(result?.ascensions).toBe(38);
     expect(result?.limitingGood).toBe('electronicsFactory');
   });
 
   test('zero surplus supports zero ascensions', () => {
-    const result = supportedAscensions([island({}, 100, 1)], 'eco', 0);
+    const result = supportedAscensions([island({}, 100, 1)], 'eco', 0, []);
     expect(result?.ascensions).toBe(0);
   });
 
   test('invalid inputs make the result unavailable', () => {
     const subject = island({ fishery: 2 }, 100, 1);
     subject.owned.electronicsFactory = { raw: 'x', value: null };
-    expect(supportedAscensions([subject], 'eco', 0)).toBeNull();
+    expect(supportedAscensions([subject], 'eco', 0, [])).toBeNull();
   });
 });
 
@@ -111,7 +125,7 @@ describe('living space and ascension support', () => {
         eco: { ...base.factions.eco, livingSpace: true },
       },
     };
-    expect(supportedAscensions([base], 'eco', 0)?.ascensions).toBe(38);
-    expect(supportedAscensions([boosted], 'eco', 0)?.ascensions).toBe(35);
+    expect(supportedAscensions([base], 'eco', 0, [])?.ascensions).toBe(38);
+    expect(supportedAscensions([boosted], 'eco', 0, [])?.ascensions).toBe(35);
   });
 });

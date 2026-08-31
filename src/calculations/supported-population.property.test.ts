@@ -32,7 +32,7 @@ describe('supported population properties', () => {
         Object.entries(owned).map(([id, value]) => [id, { raw: String(value), value }]),
       );
 
-      const result = calculateSupportedPopulation([island]);
+      const result = calculateSupportedPopulation([island], []);
       expect(result.scale).not.toBeNull();
       expect(result.scale!).toBeCloseTo(1, 6);
       for (const constraint of result.constraints) {
@@ -59,7 +59,7 @@ describe('supported population properties', () => {
           fishery: { raw: String(fisheries), value: fisheries },
           teaPlantation: { raw: String(teaPlantations), value: teaPlantations },
         };
-        const before = calculateSupportedPopulation([island]);
+        const before = calculateSupportedPopulation([island], []);
         expect(before.scaleAfterNextBuilding!).toBeGreaterThanOrEqual(before.scale!);
 
         const limiting = before.limitingGood!;
@@ -74,7 +74,7 @@ describe('supported population properties', () => {
           raw: String(grown.owned[limiting].value),
           value: grown.owned[limiting].value,
         };
-        const after = calculateSupportedPopulation([grown]);
+        const after = calculateSupportedPopulation([grown], []);
         expect(after.scale!).toBeGreaterThanOrEqual(before.scale! - 1e-9);
         expect(after.scale!).toBeCloseTo(before.scaleAfterNextBuilding!, 9);
       },

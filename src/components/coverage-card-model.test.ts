@@ -14,7 +14,7 @@ describe('Coverage card models', () => {
     island.factions.eco.maxTier = 2;
     island.owned.healthFoodFactory = editable(2);
 
-    const card = currentCoverageView([island], null).cards
+    const card = currentCoverageView([island], null, []).cards
       .find((candidate) => candidate.goodId === 'healthFoodFactory')!;
 
     expect(card.actionGoodId).not.toBe(card.goodId);

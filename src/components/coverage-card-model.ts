@@ -1,4 +1,5 @@
 import { BUILDINGS } from '../calculations/building-data';
+import type { IgnoredDemandSource } from '../calculations/demand-policy';
 import type { GoodId } from '../calculations/goods';
 import type {
   GrowthGap,
@@ -73,8 +74,9 @@ function milestoneEndpoint(milestone: GrowthMilestone, gap: GrowthGap, chain: Gr
 export function currentCoverageView(
   islands: readonly IslandState[],
   planning: GrowthPlanningResult | null,
+  ignoredDemands: readonly IgnoredDemandSource[],
 ): { cards: CoverageCardModel[]; unbuilt: readonly GoodConstraint[] } {
-  const support = calculateSupportedPopulation(islands);
+  const support = calculateSupportedPopulation(islands, ignoredDemands);
   const acute = support.constraints.filter((constraint) => constraint.nominalCapacity > 0);
   const unbuilt = support.constraints.filter((constraint) => constraint.nominalCapacity === 0);
   const baselineByGood = new Map(
@@ -84,7 +86,7 @@ export function currentCoverageView(
     const available = Math.max(0, constraint.effectiveCapacity - constraint.intermediateDemand);
     const successor = acute[index + 1];
     const starved = constraint.effectiveCapacity < constraint.nominalCapacity - EPSILON
-      ? throttleCause(islands, constraint.goodId)
+      ? throttleCause(islands, constraint.goodId, ignoredDemands)
       : null;
     const baselineGap = baselineByGood.get(constraint.goodId);
     const chain = baselineGap ? breadcrumbChain(baselineGap) : null;

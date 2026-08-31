@@ -33,7 +33,7 @@ describe('island balance properties', () => {
       island.owned = Object.fromEntries(
         Object.entries(owned).map(([id, value]) => [id, { raw: String(value), value }]),
       );
-      for (const [goodId, balance] of Object.entries(calculateIslandBalance(island))) {
+      for (const [goodId, balance] of Object.entries(calculateIslandBalance(island, []))) {
         expect(Math.abs(balance.balance ?? 0), goodId).toBeLessThan(1e-6);
       }
     }), { numRuns: 25 });
@@ -46,7 +46,7 @@ describe('island balance properties', () => {
         const island = createIsland('A');
         island.owned = { fishery: { raw: String(count), value: count } };
         island.productivity = { fishery: { raw: String(productivity), value: productivity } };
-        const capacity = calculateIslandBalance(island).fishery?.capacity ?? 0;
+        const capacity = calculateIslandBalance(island, []).fishery?.capacity ?? 0;
         expect(capacity).toBeCloseTo(count * productivity / 100, 9);
       },
     ));
@@ -65,7 +65,7 @@ describe('island balance properties', () => {
           island.factions.eco.houses = { raw: String(config.houses), value: config.houses };
           return island;
         });
-        for (const need of transferNeeds(islands)) {
+        for (const need of transferNeeds(islands, [])) {
           expect(need.deficits.length).toBeGreaterThan(0);
           for (const entry of [...need.surpluses, ...need.deficits]) {
             expect(entry.amount).toBeGreaterThan(BALANCE_EPSILON);

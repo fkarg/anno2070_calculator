@@ -1,5 +1,6 @@
 import { islandProductivity, sumIslandPopulations, type IslandState } from '../island';
 import type { BuildingId } from './building-data';
+import type { IgnoredDemandSource } from './demand-policy';
 import type { Faction } from './population';
 import { CONSUMPTION, GOODS, producedGood, type GoodId } from './goods';
 import { aggregateGoodLoads, BALANCE_EPSILON } from './island-balance';
@@ -50,9 +51,12 @@ function capacityByBuilding(islands: readonly IslandState[]): Map<BuildingId, nu
   return capacities;
 }
 
-export function effectiveCapacities(islands: readonly IslandState[]): Partial<Record<GoodId, number | null>> {
+export function effectiveCapacities(
+  islands: readonly IslandState[],
+  ignoredDemands: readonly IgnoredDemandSource[],
+): Partial<Record<GoodId, number | null>> {
   const nominal = capacityByBuilding(islands);
-  const loads = aggregateGoodLoads(islands);
+  const loads = aggregateGoodLoads(islands, ignoredDemands);
   const memo = new Map<GoodId, number | null>();
 
   const effective = (goodId: GoodId): number | null => {
@@ -104,10 +108,11 @@ export type ThrottleCause = Readonly<{ goodId: GoodId; supply: number; demand: n
 export function throttleCause(
   islands: readonly IslandState[],
   goodId: GoodId,
+  ignoredDemands: readonly IgnoredDemandSource[],
 ): ThrottleCause | null {
   const nominal = capacityByBuilding(islands);
-  const loads = aggregateGoodLoads(islands);
-  const capacities = effectiveCapacities(islands);
+  const loads = aggregateGoodLoads(islands, ignoredDemands);
+  const capacities = effectiveCapacities(islands, ignoredDemands);
 
   const visit = (id: GoodId, seen: Set<GoodId>): ThrottleCause | null => {
     if (seen.has(id)) return null;
@@ -134,7 +139,10 @@ export function throttleCause(
   return visit(goodId, new Set());
 }
 
-export function calculateSupportedPopulation(islands: readonly IslandState[]): SupportedPopulation {
+export function calculateSupportedPopulation(
+  islands: readonly IslandState[],
+  ignoredDemands: readonly IgnoredDemandSource[],
+): SupportedPopulation {
   const populations = sumIslandPopulations(islands);
   const unavailable: SupportedPopulation = {
     scale: null,
@@ -144,8 +152,8 @@ export function calculateSupportedPopulation(islands: readonly IslandState[]): S
     constraints: [],
   };
 
-  const loads = aggregateGoodLoads(islands);
-  const capacities = effectiveCapacities(islands);
+  const loads = aggregateGoodLoads(islands, ignoredDemands);
+  const capacities = effectiveCapacities(islands, ignoredDemands);
 
   // A null building count on a constraint good makes its effective capacity
   // null and bails to unavailable below, so skipping nulls here is safe.

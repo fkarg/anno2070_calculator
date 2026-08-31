@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent } from 'react';
 
 import { BUILDINGS, type BuildingId } from '../calculations/building-data';
+import type { IgnoredDemandSource } from '../calculations/demand-policy';
 import { tierHeadroom } from '../calculations/coverage';
 import type { GoodId } from '../calculations/goods';
 import { tierCapacities, type Faction } from '../calculations/population';
@@ -15,6 +16,7 @@ import { currentCoverageView, milestoneCoverageCards } from './coverage-card-mod
 type CoverageSectionProps = {
   islands: readonly IslandState[];
   planning: GrowthPlanningResult | null;
+  ignoredDemands: readonly IgnoredDemandSource[];
   onApplyBuilding: (islandId: string, buildingId: BuildingId) => void;
 };
 
@@ -34,14 +36,17 @@ type HeadroomRow = Readonly<{
 // surpluses can feed, and the house equivalent (a fully ascended house of
 // that tier). Lower tiers keep eating too: the per-inhabitant demands of a
 // tier include every good its satisfaction table lists.
-function headroomRows(islands: readonly IslandState[]): HeadroomRow[] {
+function headroomRows(
+  islands: readonly IslandState[],
+  ignoredDemands: readonly IgnoredDemandSource[],
+): HeadroomRow[] {
   const populations = sumIslandPopulations(islands);
   return FACTIONS.flatMap((faction) => {
     const population = populations[faction];
     if (population === null) return [];
     const top = population.reduce((maxIndex, value, index) => (value > 0 ? index : maxIndex), -1);
     if (top === -1) return [];
-    const headroom = tierHeadroom(islands, faction, top);
+    const headroom = tierHeadroom(islands, faction, top, ignoredDemands);
     if (headroom === null) return [];
     const livingSpace = islands[0]?.factions[faction].livingSpace ?? false;
     const perHouse = tierCapacities(faction, livingSpace)[top];
@@ -75,7 +80,7 @@ function milestoneSummary(milestone: GrowthMilestone): string {
   return `Full-demand supply toward ${delta >= 0 ? '+' : ''}${delta} planned ${tier} · ${milestone.gaps.length} ${gapLabel}`;
 }
 
-export function CoverageSection({ islands, planning, onApplyBuilding }: CoverageSectionProps) {
+export function CoverageSection({ islands, planning, ignoredDemands, onApplyBuilding }: CoverageSectionProps) {
   const [selected, setSelected] = useState<'current' | Faction>('current');
   const activeMilestones = Object.fromEntries(FACTIONS.map((faction) => [
     faction,
@@ -110,8 +115,8 @@ export function CoverageSection({ islands, planning, onApplyBuilding }: Coverage
     document.getElementById(`coverage-context-${next}`)?.focus();
   };
 
-  const { cards, unbuilt } = currentCoverageView(islands, planning);
-  const headroom = headroomRows(islands);
+  const { cards, unbuilt } = currentCoverageView(islands, planning, ignoredDemands);
+  const headroom = headroomRows(islands, ignoredDemands);
   const milestoneCards = selectedMilestone ? milestoneCoverageCards(selectedMilestone) : [];
   const displayedCards = effectiveSelection === 'current' ? cards.slice(0, 4) : milestoneCards.slice(0, 4);
   const laterCards = effectiveSelection === 'current' ? [] : milestoneCards.slice(4);

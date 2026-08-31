@@ -16,6 +16,7 @@ import {
   type GoodBalance,
   type IslandBalances,
 } from '../calculations/island-balance';
+import type { IgnoredDemandSource } from '../calculations/demand-policy';
 import { GOODS, STOCKPILE_GOODS, producedGood, type GoodId } from '../calculations/goods';
 import { islandOperatingImpact } from '../calculations/operating-impact';
 import type { Faction } from '../calculations/population';
@@ -44,6 +45,7 @@ import { RevealEditValue } from './RevealEditValue';
 
 type IslandsSectionProps = {
   islands: readonly IslandState[];
+  ignoredDemands: readonly IgnoredDemandSource[];
   onIslandsChange: (updater: (current: readonly IslandState[]) => IslandState[]) => void;
 };
 
@@ -657,10 +659,10 @@ function IslandConfiguration({ island, index, idPrefix, onChange, onRemove }: {
   );
 }
 
-export function IslandsSection({ islands, onIslandsChange }: IslandsSectionProps) {
+export function IslandsSection({ islands, ignoredDemands, onIslandsChange }: IslandsSectionProps) {
   const [configuring, setConfiguring] = useState<ReadonlySet<string>>(new Set());
-  const empire = aggregateBalances(islands);
-  const transferredGoods = new Set(transferNeeds(islands).map((need) => need.goodId));
+  const empire = aggregateBalances(islands, ignoredDemands);
+  const transferredGoods = new Set(transferNeeds(islands, ignoredDemands).map((need) => need.goodId));
 
   const toggleConfigure = (islandId: string) => setConfiguring((current) => {
     const next = new Set(current);
@@ -687,7 +689,7 @@ export function IslandsSection({ islands, onIslandsChange }: IslandsSectionProps
       <div className="islands-section__cards">
         {islands.map((island, index) => {
           const idPrefix = `island-${index}-`;
-          const balances = calculateIslandBalance(island);
+          const balances = calculateIslandBalance(island, ignoredDemands);
           // The island's own operating load, settled or not.
           const operatingLoad = islandOperatingImpact(island);
           const onChange: IslandChange = (updater) => onIslandsChange((current) =>

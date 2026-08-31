@@ -19,7 +19,7 @@ describe('effectiveCapacities', () => {
     const island = withOwned({
       pastaProduction: 2, flourMill: 1, grainFarm: 1, farmhouse: 2,
     });
-    const capacities = effectiveCapacities([island]);
+    const capacities = effectiveCapacities([island], []);
     expect(capacities.grainFarm).toBeCloseTo(1, 9);
     expect(capacities.flourMill).toBeCloseTo(1 / 3, 9);
     expect(capacities.farmhouse).toBeCloseTo(2, 9);
@@ -27,14 +27,14 @@ describe('effectiveCapacities', () => {
   });
 
   test('producers without inputs run at full capacity', () => {
-    const capacities = effectiveCapacities([withOwned({ fishery: 4 })]);
+    const capacities = effectiveCapacities([withOwned({ fishery: 4 })], []);
     expect(capacities.fishery).toBeCloseTo(4, 9);
   });
 
   test('alternative producers without inputs are not throttled by the canonical route', () => {
     // Recyclers make chips from nothing; chip factories are limited by copper.
     const island = withOwned({ chipFactory: 2, electronicsRecycler: 2, sandExtractor: 1 });
-    const capacities = effectiveCapacities([island]);
+    const capacities = effectiveCapacities([island], []);
     // Chip factories: no copper at all -> factor 0; recyclers contribute 2 × 1.5.
     expect(capacities.chipFactory).toBeCloseTo(3, 9);
   });
@@ -45,10 +45,10 @@ describe('throttleCause', () => {
     // 2 plastic factories + 1 carbon factory both draw refined oil: demand 3
     // vs 2 refineries -> the plastics fleet runs at 2/3. The cause is oil.
     const island = withOwned({ plasticsFactory: 2, oilRefinery: 2, oilRig: 3, carbonFactory: 1 });
-    expect(throttleCause([island], 'plasticsFactory'))
+    expect(throttleCause([island], 'plasticsFactory', []))
       .toEqual({ goodId: 'oilRefinery', supply: 2, demand: 3 });
     // The refineries themselves are crude-fed adequately (3 rigs vs 2 needed).
-    expect(throttleCause([island], 'oilRefinery')).toBeNull();
+    expect(throttleCause([island], 'oilRefinery', [])).toBeNull();
   });
 });
 
@@ -58,7 +58,7 @@ describe('calculateSupportedPopulation', () => {
     island.factions.eco.houses = editable(100);
     island.factions.eco.maxTier = 1; // workers only: fish (250) and tea (375)
 
-    const result = calculateSupportedPopulation([island]);
+    const result = calculateSupportedPopulation([island], []);
     // Workers: 800. Fish demand 3.2 buildings, tea demand 2.133.
     expect(result.scale).toBeCloseTo(4 / 3.2, 9);
     expect(result.limitingGood).toBe('fishery');
@@ -77,7 +77,7 @@ describe('calculateSupportedPopulation', () => {
     island.factions.eco.houses = editable(100);
     island.factions.eco.maxTier = 1;
 
-    const result = calculateSupportedPopulation([island]);
+    const result = calculateSupportedPopulation([island], []);
     const fish = result.constraints.find((constraint) => constraint.goodId === 'fishery')!;
     const tea = result.constraints.find((constraint) => constraint.goodId === 'teaPlantation')!;
     expect(fish.nominalCapacity).toBeCloseTo(2, 9);
@@ -91,14 +91,14 @@ describe('calculateSupportedPopulation', () => {
     island.factions.eco.houses = editable(100);
     island.factions.eco.maxTier = 1;
 
-    const result = calculateSupportedPopulation([island]);
+    const result = calculateSupportedPopulation([island], []);
     // Copper has no final demand: it must not be a constraint entry itself.
     expect(result.constraints.some((constraint) => constraint.goodId === 'copperMine')).toBe(false);
     expect(result.scale).not.toBeNull();
   });
 
   test('no population means no constraints and no scale', () => {
-    const result = calculateSupportedPopulation([withOwned({ fishery: 3 })]);
+    const result = calculateSupportedPopulation([withOwned({ fishery: 3 })], []);
     expect(result.scale).toBeNull();
     expect(result.limitingGood).toBeNull();
     expect(result.constraints).toEqual([]);
@@ -109,6 +109,6 @@ describe('calculateSupportedPopulation', () => {
     island.factions.eco.houses = editable(100);
     island.factions.eco.maxTier = 1;
     island.owned.teaPlantation = { raw: 'x', value: null };
-    expect(calculateSupportedPopulation([island]).scale).toBeNull();
+    expect(calculateSupportedPopulation([island], []).scale).toBeNull();
   });
 });
