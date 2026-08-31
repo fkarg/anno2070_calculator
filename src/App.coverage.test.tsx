@@ -96,8 +96,12 @@ describe('coverage and bottlenecks', () => {
     selectWorkspace('Production');
     fireEvent.click(buttonWithLabel('Show Tech Lab Assistants coverage'));
 
+    expect(buttonWithLabel('Show Tech Lab Assistants coverage'))
+      .toHaveClass('coverage-context-tab--active');
     expect(byTestId('coverage-scenario-summary')).toHaveTextContent('Full-demand supply toward');
     expect(document.querySelector('.bottleneck-card__breadcrumb')).toHaveTextContent('→');
+    expect(document.querySelector('.bottleneck-card__outcome')).toBeInTheDocument();
+    expect(document.querySelector('.producer-actions--compact')).toBeInTheDocument();
     expect(document.querySelector('.bottleneck-card details summary')).toHaveTextContent('Why required?');
   });
 

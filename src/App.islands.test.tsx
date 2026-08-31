@@ -322,7 +322,8 @@ describe('islands section', () => {
     expect(balanceCell.classList.contains('balance--import')).toBe(true);
     expect(balanceCell.classList.contains('balance--shortfall')).toBe(false);
     // Imported goods leave Build next — they need a route, not a building.
-    expect(document.querySelector('[aria-label="Build one Fishery on Island 2"]')).toBeNull();
+    expect(byTestId('island-1')
+      .querySelector('[aria-label="Build one Fishery on Island 2"]')).toBeNull();
   });
 
   test('underwater islands show no ecobalance in the operating load', () => {
