@@ -87,6 +87,7 @@ describe('actuals in the production view', () => {
     const target = extras.querySelector('.production-node__mini--target')!;
     expect(actual).toHaveTextContent('actual build 0.42');
     expect(target).toHaveTextContent(/^target build /);
+    expect(target).toHaveClass('balance--shortfall');
     expect([...extras.children].indexOf(actual)).toBeLessThan([...extras.children].indexOf(target));
 
     // A faction-unrelated demand stays identical and does not get a duplicate target badge.
@@ -122,6 +123,8 @@ describe('actuals in the production view', () => {
       .toHaveTextContent('actual over 0.83');
     expect(extras.querySelector('.production-node__mini--target'))
       .toHaveTextContent('target over 4.59');
+    expect(extras.querySelector('.production-node__mini--target'))
+      .toHaveClass('balance--surplus');
   });
 
   test('shows an invalid explicit target only on affected production goods', async () => {

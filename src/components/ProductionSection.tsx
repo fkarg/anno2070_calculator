@@ -162,6 +162,7 @@ function ProductionFaction({
               let capacity: number | null = 0;
               let buildGap: number | null = null;
               let targetStatus: string | null = null;
+              let targetBalanceClass = '';
               if (canonical) {
                 const goodId = node.buildingId as GoodId;
                 for (const producer of GOODS.get(goodId)?.producers ?? []) {
@@ -193,10 +194,12 @@ function ProductionFaction({
                   if (targetGap === null) targetStatus = 'target —';
                   else if (targetGap > BALANCE_EPSILON) {
                     targetStatus = `target build ${formatRequirement(targetGap)}`;
+                    targetBalanceClass = ' balance--shortfall';
                   } else {
                     targetStatus = targetGap < -BALANCE_EPSILON
                       ? `target over ${formatRequirement(-targetGap)}`
                       : 'target ✓';
+                    if (targetGap < -BALANCE_EPSILON) targetBalanceClass = ' balance--surplus';
                   }
                 }
               }
@@ -289,7 +292,7 @@ function ProductionFaction({
                               </span>
                             )}
                         {targetStatus !== null && <span
-                          className="production-node__mini production-node__mini--target"
+                          className={`production-node__mini production-node__mini--target${targetBalanceClass}`}
                           aria-label={`${building.label} ${targetStatus}`}
                         >{targetStatus}</span>}
                       </div>

@@ -135,12 +135,14 @@ function buildSuggestions(
   return local.slice(0, 4);
 }
 
-function IslandPlaque({ island, index, editing, operatingLoad, onToggleEdit }: {
+function IslandPlaque({ island, index, editing, collapsed, operatingLoad, onToggleEdit, onToggleCollapse }: {
   island: IslandState;
   index: number;
   editing: boolean;
+  collapsed: boolean;
   operatingLoad: OperatingImpact | null;
   onToggleEdit: () => void;
+  onToggleCollapse: () => void;
 }) {
   return (
     <header className="island-card__plaque">
@@ -197,6 +199,13 @@ function IslandPlaque({ island, index, editing, operatingLoad, onToggleEdit }: {
         onClick={onToggleEdit}
       >
         {editing ? 'Done' : 'Configure'}
+      </button>
+      <button
+        type="button"
+        aria-label={`${collapsed ? 'Expand' : 'Collapse'} island ${island.name}`}
+        onClick={onToggleCollapse}
+      >
+        {collapsed ? 'Expand' : 'Collapse'}
       </button>
     </header>
   );
@@ -662,16 +671,40 @@ function IslandConfiguration({ island, index, idPrefix, onChange, onRemove }: {
 
 export function IslandsSection({ islands, ignoredDemands, onIslandsChange }: IslandsSectionProps) {
   const [configuring, setConfiguring] = useState<ReadonlySet<string>>(new Set());
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const empire = aggregateBalances(islands, ignoredDemands);
   const unlockPopulations = sumIslandPopulations(islands);
   const transferredGoods = new Set(transferNeeds(islands, ignoredDemands).map((need) => need.goodId));
 
-  const toggleConfigure = (islandId: string) => setConfiguring((current) => {
-    const next = new Set(current);
-    if (next.has(islandId)) next.delete(islandId);
-    else next.add(islandId);
-    return next;
-  });
+  const toggleConfigure = (islandId: string) => {
+    const opening = !configuring.has(islandId);
+    setConfiguring((current) => {
+      const next = new Set(current);
+      if (opening) next.add(islandId);
+      else next.delete(islandId);
+      return next;
+    });
+    if (opening) setCollapsed((current) => {
+      const next = new Set(current);
+      next.delete(islandId);
+      return next;
+    });
+  };
+
+  const toggleCollapsed = (islandId: string) => {
+    const collapsing = !collapsed.has(islandId);
+    setCollapsed((current) => {
+      const next = new Set(current);
+      if (collapsing) next.add(islandId);
+      else next.delete(islandId);
+      return next;
+    });
+    if (collapsing) setConfiguring((current) => {
+      const next = new Set(current);
+      next.delete(islandId);
+      return next;
+    });
+  };
 
   return (
     <section className="calculator-section islands-section">
@@ -696,21 +729,24 @@ export function IslandsSection({ islands, ignoredDemands, onIslandsChange }: Isl
           const operatingLoad = islandOperatingImpact(island);
           const onChange: IslandChange = (updater) => onIslandsChange((current) =>
             current.map((candidate) => candidate.id === island.id ? updater(candidate) : candidate));
+          const isCollapsed = collapsed.has(island.id);
           return (
             <section
               key={island.id}
-              className={`island-card${configuring.has(island.id) ? ' island-card--configuring' : ''}`}
+              className={`island-card${configuring.has(island.id) ? ' island-card--configuring' : ''}${isCollapsed ? ' island-card--collapsed' : ''}`}
               data-testid={`island-${index}`}
             >
               <IslandPlaque
                 island={island}
                 index={index}
                 editing={configuring.has(island.id)}
+                collapsed={isCollapsed}
                 operatingLoad={operatingLoad}
                 onToggleEdit={() => toggleConfigure(island.id)}
+                onToggleCollapse={() => toggleCollapsed(island.id)}
               />
 
-              {configuring.has(island.id) && (
+              {!isCollapsed && configuring.has(island.id) && (
                 <IslandConfiguration
                   island={island}
                   index={index}
@@ -721,7 +757,7 @@ export function IslandsSection({ islands, ignoredDemands, onIslandsChange }: Isl
                 />
               )}
 
-              {(() => {
+              {!isCollapsed && (() => {
                 // Zero-resident factions are hidden on the card; the Configure
                 // panel keeps all three for initial entry.
                 const populated = FACTIONS.filter((faction) => {
@@ -743,7 +779,7 @@ export function IslandsSection({ islands, ignoredDemands, onIslandsChange }: Isl
                 );
               })()}
 
-              <div className="island-card__operations">
+              {!isCollapsed && <div className="island-card__operations">
                 <BuildingLedger
                   island={island}
                   idPrefix={idPrefix}
@@ -761,7 +797,7 @@ export function IslandsSection({ islands, ignoredDemands, onIslandsChange }: Isl
                     transferredGoods={transferredGoods}
                   />
                 </details>
-              </div>
+              </div>}
             </section>
           );
         })}

@@ -43,6 +43,25 @@ function addableBuildings(islandIndex: number): string[] {
 }
 
 describe('islands section', () => {
+  test('collapses an island to its plaque and expands it again for configuration', () => {
+    renderApp();
+    addIsland();
+
+    const island = byTestId('island-0');
+    expect(island.querySelector('.island-card__operations')).not.toBeNull();
+    fireEvent.click(buttonWithLabel('Collapse island Island 1'));
+
+    expect(island).toHaveClass('island-card--collapsed');
+    expect(island.querySelector('.island-card__operations')).toBeNull();
+    expect(island.querySelector('.island-card__faction-rows')).toBeNull();
+    expect(byTestId('island-0-operating-load')).toBeInTheDocument();
+
+    fireEvent.click(buttonWithLabel('Configure island Island 1'));
+    expect(island).not.toHaveClass('island-card--collapsed');
+    expect(document.querySelector('[aria-label="Island 1 name"]')).not.toBeNull();
+    expect(island.querySelector('.island-card__operations')).not.toBeNull();
+  });
+
   test('cards edit houses directly; rarely-changed config sits behind Configure', async () => {
     renderApp();
     addIsland();

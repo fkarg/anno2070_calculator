@@ -1404,3 +1404,5 @@ main > footer a { color: #8fc9f6; }
   color: var(--select);
   font-weight: 650;
 }
+.production-node__mini--target.balance--shortfall { color: var(--deficit); }
+.production-node__mini--target.balance--surplus { color: var(--success); }
