@@ -13,11 +13,12 @@ describe('Growth requirement provenance', () => {
     const population = emptyPopulation();
     population.tech[1] = 444;
 
-    const algae = calculateGrowthRequirements(population, false).get('aquafarm')!;
+    const algae = calculateGrowthRequirements(population, false, []).get('aquafarm')!;
 
     expect(algae.required).toBeCloseTo(1);
     expect(algae.chains).toEqual([expect.objectContaining({
       faction: 'tech',
+      source: { faction: 'tech', tier: 1, goodId: 'functionalFoodFactory' },
       rootNodeId: 'techFunctionalFood',
       pathNodeIds: ['techFunctionalFood', 'techAlgaeFunctionalFood'],
       required: 1,
@@ -30,7 +31,7 @@ describe('Growth requirement provenance', () => {
     population.tycoon[0] = 250;
     population.tech[0] = 800;
 
-    const fish = calculateGrowthRequirements(population, false).get('fishery')!;
+    const fish = calculateGrowthRequirements(population, false, []).get('fishery')!;
 
     expect(fish.required).toBeCloseTo(3);
     expect(fish.chains.map((chain) => chain.faction)).toEqual(['eco', 'tycoon', 'tech']);
@@ -42,11 +43,26 @@ describe('Growth requirement provenance', () => {
     const population = emptyPopulation();
     population.tech[1] = 667;
 
-    const chips = calculateGrowthRequirements(population, false).get('chipFactory')!;
+    const chips = calculateGrowthRequirements(population, false, []).get('chipFactory')!;
 
     expect(chips.chains).toHaveLength(1);
     expect(chips.chains[0].pathNodeIds).toEqual([
       'techNeuroimplants', 'techMicrochips',
     ]);
+  });
+
+  test('attributes one canonical gap to exact faction-tier demand sources', () => {
+    const population = emptyPopulation();
+    population.tech[1] = 667;
+    population.tech[2] = 667;
+
+    const chips = calculateGrowthRequirements(population, false, []).get('chipFactory')!;
+
+    expect(chips.chains.map((chain) => chain.source)).toEqual([
+      { faction: 'tech', tier: 1, goodId: 'cyberneticFactory' },
+      { faction: 'tech', tier: 2, goodId: 'cyberneticFactory' },
+    ]);
+    expect(chips.chains.reduce((sum, chain) => sum + chain.required, 0))
+      .toBeCloseTo(chips.required);
   });
 });

@@ -102,6 +102,7 @@ describe('Coverage card models', () => {
         checkpointRequired: 2,
         addedHere: 2,
         chains: [{
+          source: { faction: 'eco' as const, tier: 3, goodId: 'robotFactory' as const },
           faction: 'eco' as const,
           rootNodeId: 'ecoServiceBots',
           pathNodeIds: ['ecoServiceBots', 'ecoBiopolymers', 'ecoAlgae'],
@@ -110,6 +111,7 @@ describe('Coverage card models', () => {
           previousRequired: 0,
           addedHere: 1,
         }, {
+          source: { faction: 'tech' as const, tier: 1, goodId: 'functionalFoodFactory' as const },
           faction: 'tech' as const,
           rootNodeId: 'techFunctionalFood',
           pathNodeIds: ['techFunctionalFood', 'techAlgaeFunctionalFood'],

@@ -167,7 +167,7 @@ function compareGaps(left: GrowthGap, right: GrowthGap): number {
 type Requirements = ReturnType<typeof calculateGrowthRequirements>;
 
 function demandChainKey(chain: GrowthDemandChain): string {
-  return `${chain.faction}:${chain.rootNodeId}:${chain.pathNodeIds.join('>')}`;
+  return `${chain.source.faction}:${chain.source.tier}:${chain.source.goodId}:${chain.rootNodeId}:${chain.pathNodeIds.join('>')}`;
 }
 
 function buildGaps(
@@ -231,7 +231,7 @@ export function calculateGrowthPlanning(
   const capacities = effectiveCapacities(islands, state.ignoredDemands);
   if (Object.values(capacities).some((capacity) => capacity === null)) return null;
 
-  const baselineRequirements = calculateGrowthRequirements(actual, state.recycling);
+  const baselineRequirements = calculateGrowthRequirements(actual, state.recycling, state.ignoredDemands);
   const baselineGaps = buildGaps(
     baselineRequirements,
     new Map(),
@@ -257,7 +257,7 @@ export function calculateGrowthPlanning(
         ...clonePopulations(actual),
         [faction]: [...descriptor.population],
       };
-      const requirements = calculateGrowthRequirements(populationAfter, state.recycling);
+      const requirements = calculateGrowthRequirements(populationAfter, state.recycling, state.ignoredDemands);
       const gaps = buildGaps(requirements, previousRequirements, baselineRequirements, capacities);
       previousPopulation = populationAfter;
       previousRequirements = requirements;

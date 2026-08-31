@@ -37,6 +37,21 @@ describe('Growth planning', () => {
     expect(planning.sequences.tech).toEqual([]);
   });
 
+  test('filters the same source from Growth baseline and future checkpoints', () => {
+    const state = createInitialAppState();
+    const actual = createIsland('Geniuses');
+    actual.factions.tech.houses = editable(100);
+    actual.factions.tech.maxTier = 3;
+    state.plan.ignoredDemands = [
+      { faction: 'tech', tier: 2, goodId: 'bionicsFactory' },
+    ];
+
+    const planning = calculateGrowthPlanning(state.plan, [actual])!;
+    expect(planning.baseline.gaps.every((gap) => gap.chains.every((chain) => (
+      chain.source.goodId !== 'bionicsFactory'
+    )))).toBe(true);
+  });
+
   test('plans unrestricted ascension from mirrored island houses', () => {
     const state = createInitialAppState();
     const island = createIsland('Restricted');

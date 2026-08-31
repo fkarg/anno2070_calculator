@@ -18,6 +18,7 @@ describe('island balance properties', () => {
       };
       const required = calculateProduction({
         population, productivity: createDefaultProductivity(), recycling: false, wholeBuildings: false,
+        ignoredDemands: [],
       });
       const island = createIsland('Mirror');
       for (const faction of ['eco', 'tycoon', 'tech'] as const) {

@@ -55,12 +55,14 @@ export function App() {
     productivity,
     recycling: state.plan.recycling,
     wholeBuildings: state.plan.wholeBuildings,
+    ignoredDemands: state.plan.ignoredDemands,
   });
   const fractionalProduction = calculateAvailableProduction({
     population: islandPopulations,
     productivity,
     recycling: state.plan.recycling,
     wholeBuildings: false,
+    ignoredDemands: state.plan.ignoredDemands,
   });
   const operatingImpacts = calculateOperatingImpacts(fractionalProduction);
   const empireBalances = aggregateBalances(state.islands, state.plan.ignoredDemands);

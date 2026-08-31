@@ -1,4 +1,6 @@
 import type { Faction } from './population';
+import { maskSatisfaction, type IgnoredDemandSource } from './demand-policy';
+import { producedGood } from './goods';
 import { calculateMaterial, calculatePrimary } from './production';
 import { PRODUCTION_NODES } from './production-data';
 
@@ -7,6 +9,7 @@ export type ProductionInput = {
   productivity: Record<string, number>;
   recycling: boolean;
   wholeBuildings: boolean;
+  ignoredDemands: readonly IgnoredDemandSource[];
 };
 
 export type AvailableProductionInput = {
@@ -14,6 +17,7 @@ export type AvailableProductionInput = {
   productivity: Record<string, number | null>;
   recycling: boolean;
   wholeBuildings: boolean;
+  ignoredDemands: readonly IgnoredDemandSource[];
 };
 
 export function createDefaultProductivity(): Record<string, number> {
@@ -26,8 +30,14 @@ export function calculateProduction(input: ProductionInput): Record<string, numb
   for (const node of PRODUCTION_NODES) {
     const productivity = input.productivity[node.id];
     if (node.calculation.kind === 'primary') {
-      result[node.id] = calculatePrimary(
+      const satisfaction = maskSatisfaction(
+        producedGood(node.buildingId)!,
+        node.faction,
         node.calculation.satisfaction,
+        input.ignoredDemands,
+      );
+      result[node.id] = calculatePrimary(
+        satisfaction,
         input.population[node.faction],
         productivity,
         Boolean(node.calculation.recyclable && input.recycling),
@@ -57,8 +67,14 @@ export function calculateAvailableProduction(
       result[node.id] = null;
     } else if (node.calculation.kind === 'primary') {
       const population = input.population[node.faction];
-      result[node.id] = population === null ? null : calculatePrimary(
+      const satisfaction = maskSatisfaction(
+        producedGood(node.buildingId)!,
+        node.faction,
         node.calculation.satisfaction,
+        input.ignoredDemands,
+      );
+      result[node.id] = population === null ? null : calculatePrimary(
+        satisfaction,
         population,
         productivity,
         Boolean(node.calculation.recyclable && input.recycling),

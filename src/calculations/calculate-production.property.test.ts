@@ -40,7 +40,7 @@ const recyclableSubtrees = new Set(
 test.prop({ population, productivity, recycling: fc.boolean() })(
   'returns a finite non-negative result for every production node',
   ({ population, productivity, recycling }) => {
-    const result = calculateProduction({ population, productivity, recycling, wholeBuildings: false });
+    const result = calculateProduction({ population, productivity, recycling, wholeBuildings: false, ignoredDemands: [] });
 
     expect(Object.keys(result)).toEqual(PRODUCTION_NODES.map((node) => node.id));
     expect(Object.values(result).every(Number.isFinite)).toBe(true);
@@ -56,6 +56,7 @@ test.prop({ productivity, recycling: fc.boolean(), wholeBuildings: fc.boolean() 
       productivity,
       recycling,
       wholeBuildings,
+      ignoredDemands: [],
     });
 
     expect(Object.values(result).every((value) => value === 0)).toBe(true);
@@ -65,7 +66,7 @@ test.prop({ productivity, recycling: fc.boolean(), wholeBuildings: fc.boolean() 
 test.prop({ population, productivity, recycling: fc.boolean() })(
   'fractional production is linear in effective population',
   ({ population, productivity, recycling }) => {
-    const baseline = calculateProduction({ population, productivity, recycling, wholeBuildings: false });
+    const baseline = calculateProduction({ population, productivity, recycling, wholeBuildings: false, ignoredDemands: [] });
     const doubledPopulation = {
       eco: population.eco.map((value) => value * 2),
       tycoon: population.tycoon.map((value) => value * 2),
@@ -76,6 +77,7 @@ test.prop({ population, productivity, recycling: fc.boolean() })(
       productivity,
       recycling,
       wholeBuildings: false,
+      ignoredDemands: [],
     });
 
     for (const node of PRODUCTION_NODES) {
@@ -87,8 +89,8 @@ test.prop({ population, productivity, recycling: fc.boolean() })(
 test.prop({ population, productivity, recycling: fc.boolean() })(
   'whole-building mode rounds every stage upward',
   ({ population, productivity, recycling }) => {
-    const fractional = calculateProduction({ population, productivity, recycling, wholeBuildings: false });
-    const whole = calculateProduction({ population, productivity, recycling, wholeBuildings: true });
+    const fractional = calculateProduction({ population, productivity, recycling, wholeBuildings: false, ignoredDemands: [] });
+    const whole = calculateProduction({ population, productivity, recycling, wholeBuildings: true, ignoredDemands: [] });
 
     for (const node of PRODUCTION_NODES) {
       expect(Number.isSafeInteger(whole[node.id])).toBe(true);
@@ -100,8 +102,8 @@ test.prop({ population, productivity, recycling: fc.boolean() })(
 test.prop({ population, productivity })(
   'recycling changes only its three product subtrees and never increases them',
   ({ population, productivity }) => {
-    const baseline = calculateProduction({ population, productivity, recycling: false, wholeBuildings: false });
-    const recycled = calculateProduction({ population, productivity, recycling: true, wholeBuildings: false });
+    const baseline = calculateProduction({ population, productivity, recycling: false, wholeBuildings: false, ignoredDemands: [] });
+    const recycled = calculateProduction({ population, productivity, recycling: true, wholeBuildings: false, ignoredDemands: [] });
 
     for (const node of PRODUCTION_NODES) {
       if (recyclableSubtrees.has(node.id)) {
@@ -128,12 +130,14 @@ test.prop({
       productivity: baselineProductivity,
       recycling: false,
       wholeBuildings: false,
+      ignoredDemands: [],
     });
     const improved = calculateProduction({
       population,
       productivity: improvedProductivity,
       recycling: false,
       wholeBuildings: false,
+      ignoredDemands: [],
     });
     const affected = descendantsOf(node.id);
 
@@ -163,12 +167,14 @@ test.prop({
     productivity,
     recycling: false,
     wholeBuildings: false,
+    ignoredDemands: [],
   });
   const partial = calculateAvailableProduction({
     population,
     productivity: { ...productivity, [invalidNode.id]: null },
     recycling: false,
     wholeBuildings: false,
+    ignoredDemands: [],
   });
 
   for (const node of PRODUCTION_NODES) {

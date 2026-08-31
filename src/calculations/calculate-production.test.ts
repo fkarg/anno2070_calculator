@@ -181,6 +181,7 @@ describe('calculateProduction', () => {
       productivity: createDefaultProductivity(),
       recycling: false,
       wholeBuildings: false,
+      ignoredDemands: [],
     });
 
     expect(Object.keys(result)).toEqual(PRODUCTION_NODES.map((node) => node.id));
@@ -196,11 +197,35 @@ describe('calculateProduction', () => {
       productivity: createDefaultProductivity(),
       recycling: false,
       wholeBuildings: true,
+      ignoredDemands: [],
     });
 
     expect(result.ecoServiceBots).toBe(2);
     expect(result.ecoMicrochipsServiceBots).toBe(1);
     expect(result.ecoSandServiceBots).toBe(1);
+  });
+
+  test('removes ignored Bionics demand and its upstream production chain', () => {
+    const population = { eco: [0, 0, 0, 0], tycoon: [0, 0, 0, 0], tech: [0, 0, 1481] };
+    const baseline = calculateProduction({
+      population,
+      productivity: createDefaultProductivity(),
+      recycling: false,
+      wholeBuildings: false,
+      ignoredDemands: [],
+    });
+    const ignored = calculateProduction({
+      population,
+      productivity: createDefaultProductivity(),
+      recycling: false,
+      wholeBuildings: false,
+      ignoredDemands: [{ faction: 'tech', tier: 2, goodId: 'bionicsFactory' }],
+    });
+
+    expect(baseline.techBionicSuits).toBeCloseTo(1);
+    expect(ignored.techBionicSuits).toBe(0);
+    expect(ignored.techBiopolymers).toBe(0);
+    expect(ignored.techExoskeletons).toBe(0);
   });
 });
 
@@ -217,6 +242,7 @@ describe('calculateAvailableProduction', () => {
       productivity,
       recycling: false,
       wholeBuildings: false,
+      ignoredDemands: [],
     });
 
     expect(result.ecoHealthFood).toBeNull();
