@@ -1,5 +1,8 @@
 import { BUILDINGS, ISLAND_REQUIREMENTS, OPEN_FERTILITY_SLOT } from './calculations/building-data';
 import { PRODUCTION_NODES } from './calculations/production-data';
+import { GOODS, type GoodId } from './calculations/goods';
+import type { IgnoredDemandSource } from './calculations/demand-policy';
+import type { Faction } from './calculations/population';
 import {
   createInitialAppState,
   type AppState,
@@ -186,6 +189,7 @@ function sanitizePlan(value: unknown, loss: Loss, legacy: boolean): CalculatorSt
       tycoon: legacy ? migrateLegacyPlanFaction(factions.tycoon, 'tycoon', loss) : sanitizePlanFaction(factions.tycoon, 'tycoon', loss),
       tech: legacy ? migrateLegacyPlanFaction(factions.tech, 'tech', loss) : sanitizePlanFaction(factions.tech, 'tech', loss),
     },
+    ignoredDemands: sanitizeIgnoredDemands(record.ignoredDemands, loss),
     productivity: sanitizeKnownMap(
       record.productivity,
       PRODUCTION_NODES.map((node) => node.id),
@@ -196,6 +200,39 @@ function sanitizePlan(value: unknown, loss: Loss, legacy: boolean): CalculatorSt
     recycling: loss.markUnless(typeof record.recycling === 'boolean') ? Boolean(record.recycling) : false,
     wholeBuildings: loss.markUnless(typeof record.wholeBuildings === 'boolean') ? Boolean(record.wholeBuildings) : false,
   };
+}
+
+function sanitizeIgnoredDemands(value: unknown, loss: Loss): readonly IgnoredDemandSource[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    loss.markUnless(false);
+    return [];
+  }
+  const result: IgnoredDemandSource[] = [];
+  for (const entry of value) {
+    if (!isRecord(entry)
+      || !FACTIONS.includes(entry.faction as Faction)
+      || !Number.isInteger(entry.tier)
+      || typeof entry.goodId !== 'string') {
+      loss.markUnless(false);
+      continue;
+    }
+    const faction = entry.faction as Faction;
+    const tier = Number(entry.tier);
+    const goodId = entry.goodId as GoodId;
+    const known = GOODS.get(goodId)?.finalDemands.some((demand) => (
+      demand.faction === faction && demand.satisfaction[tier] > 0
+    )) === true;
+    if (!known) {
+      loss.markUnless(false);
+      continue;
+    }
+    const source: IgnoredDemandSource = { faction, tier, goodId };
+    if (!result.some((candidate) => candidate.faction === source.faction
+      && candidate.tier === source.tier
+      && candidate.goodId === source.goodId)) result.push(source);
+  }
+  return result;
 }
 
 const BUILDING_IDS = new Set(Object.keys(BUILDINGS));

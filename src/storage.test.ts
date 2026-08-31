@@ -150,6 +150,32 @@ describe('loadAppState', () => {
     expect(loadAppState()).toEqual({ state, storable: true });
   });
 
+  test('round-trips and deduplicates known ignored demand sources', () => {
+    const state = createInitialAppState();
+    state.plan.ignoredDemands = [
+      { faction: 'tech', tier: 2, goodId: 'bionicsFactory' },
+      { faction: 'tech', tier: 2, goodId: 'bionicsFactory' },
+    ];
+
+    saveAppState(state);
+
+    expect(loadAppState().state.plan.ignoredDemands).toEqual([
+      { faction: 'tech', tier: 2, goodId: 'bionicsFactory' },
+    ]);
+  });
+
+  test('defaults missing v4 ignored demand state without data loss', () => {
+    const state = createInitialAppState();
+    const plan = { ...state.plan } as Record<string, unknown>;
+    delete plan.ignoredDemands;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 4, plan, islands: [] }));
+
+    expect(loadAppState()).toMatchObject({
+      storable: true,
+      state: { plan: { ignoredDemands: [] } },
+    });
+  });
+
   test('round-trips a v4 population target without derived fields', () => {
     const state = createInitialAppState();
     state.plan.factions.tech.intent = {

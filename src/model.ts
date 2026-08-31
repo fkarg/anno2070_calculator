@@ -1,4 +1,5 @@
 import { applyPopulationOverrides, type Faction } from './calculations/population';
+import type { IgnoredDemandSource } from './calculations/demand-policy';
 import { PRODUCTION_NODES } from './calculations/production-data';
 
 export type EditableNumber = {
@@ -49,6 +50,7 @@ export function resolveHouses(state: FactionState, settledIslandHouses: number |
 
 export type CalculatorState = {
   factions: Record<Faction, PlanFactionState>;
+  ignoredDemands: readonly IgnoredDemandSource[];
   productivity: Record<string, EditableNumber>;
   recycling: boolean;
   wholeBuildings: boolean;
@@ -125,6 +127,7 @@ export function createInitialState(): CalculatorState {
       tycoon: createPlanFactionState('tycoon'),
       tech: createPlanFactionState('tech'),
     },
+    ignoredDemands: [],
     productivity: Object.fromEntries(
       PRODUCTION_NODES.map((node) => [node.id, { raw: '100', value: 100 }]),
     ),
