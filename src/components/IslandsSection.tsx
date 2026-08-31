@@ -5,6 +5,7 @@ import {
   ISLAND_REQUIREMENTS,
   OPEN_FERTILITY_SLOT,
   type BuildingId,
+  type OperatingImpact,
 } from '../calculations/building-data';
 import {
   aggregateBalances,
@@ -171,10 +172,11 @@ function buildSuggestions(
   return suggestions;
 }
 
-function IslandPlaque({ island, index, editing, onToggleEdit }: {
+function IslandPlaque({ island, index, editing, operatingLoad, onToggleEdit }: {
   island: IslandState;
   index: number;
   editing: boolean;
+  operatingLoad: OperatingImpact | null;
   onToggleEdit: () => void;
 }) {
   return (
@@ -214,6 +216,17 @@ function IslandPlaque({ island, index, editing, onToggleEdit }: {
             </span>
           );
         })}
+      </div>
+      <div className="island-card__plaque-load" data-testid={`island-${index}-operating-load`}>
+        {operatingLoad === null
+          ? <span>—</span>
+          : (
+            <OperatingImpactValues
+              impact={operatingLoad}
+              ecoUnavailable={island.underwater}
+              highlightDeficits
+            />
+          )}
       </div>
       <button
         type="button"
@@ -338,6 +351,7 @@ function BuildingLedger({
   };
 
   const suggestions = buildSuggestions(island, balances, planByBuilding, ownedTotals, empire);
+  const mixedCategories = new Set(rows.map((buildingId) => BUILDINGS[buildingId].category)).size > 1;
 
   return (
     <div className="island-card__ledger">
@@ -411,15 +425,24 @@ function BuildingLedger({
           </tr>
         </thead>
         <tbody>
-          {rows.map((buildingId) => {
+          {rows.map((buildingId, index) => {
             const building = BUILDINGS[buildingId];
             const entry = island.owned[buildingId];
             const goodId = producedGood(buildingId);
             const canonical = goodId === buildingId;
             const balance = canonical && goodId !== null ? balances[goodId] : undefined;
             const productivity = island.productivity[buildingId];
+            // Category divider rows keep supply-chain buildings visually
+            // separate from power/eco/material support once both appear.
+            const startsGroup = mixedCategories
+              && (index === 0 || BUILDINGS[rows[index - 1]].category !== building.category);
             return (
               <Fragment key={buildingId}>
+                {startsGroup && (
+                  <tr className="island-card__ledger-group" aria-hidden="true">
+                    <th colSpan={7}>{CATEGORY_LABELS[building.category]}</th>
+                  </tr>
+                )}
                 <tr data-testid={`${idPrefix}ledger-${buildingId}`}>
                   <th scope="row">
                     <span className="island-card__building-cell" title={building.note}>
@@ -709,6 +732,7 @@ export function IslandsSection({ islands, planRequirements, onIslandsChange }: I
                 island={island}
                 index={index}
                 editing={configuring.has(island.id)}
+                operatingLoad={operatingLoad}
                 onToggleEdit={() => toggleConfigure(island.id)}
               />
 
@@ -754,19 +778,6 @@ export function IslandsSection({ islands, planRequirements, onIslandsChange }: I
                 empire={empire}
                 onChange={onChange}
               />
-
-              <div className="island-card__load" data-testid={`${idPrefix}operating-load`}>
-                <span>Operating load (owned buildings): </span>
-                {operatingLoad === null
-                  ? <span>—</span>
-                  : (
-                    <OperatingImpactValues
-                      impact={operatingLoad}
-                      ecoUnavailable={island.underwater}
-                      highlightDeficits
-                    />
-                  )}
-              </div>
 
               <details className="island-card__balances" open>
                 <summary>Local balance</summary>

@@ -209,6 +209,9 @@ describe('islands section', () => {
     // Impact-only rows show no plan requirement or productivity input.
     expect(document.getElementById('island-0-productivity-windPark')).toBeNull();
     expect(document.getElementById('island-0-productivity-fishery')).not.toBeNull();
+    // Mixed categories get divider rows; a lone category (see other tests) none.
+    const groups = [...byTestId('island-0').querySelectorAll('.island-card__ledger-group')];
+    expect(groups.map((group) => group.textContent)).toEqual(['Production', 'Power']);
   });
 
   test('deposit-gated material buildings appear only with the deposit configured', () => {

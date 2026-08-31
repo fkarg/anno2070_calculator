@@ -713,7 +713,19 @@ main > footer a { color: #8fc9f6; }
 
 .island-card__slot { color: #ffd9a0; font-weight: 700; font-size: 1rem; }
 
-.island-card__plaque > button { margin-left: auto; }
+.island-card__plaque-load { margin-left: auto; font-size: .82rem; white-space: nowrap; }
+
+.island-card__plaque > button { flex-shrink: 0; }
+
+.island-card__ledger-group th {
+  padding: .5rem 0 .1rem;
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  text-align: left;
+  color: #8fa1b5;
+}
 
 .island-card__faction-rows {
   list-style: none;
