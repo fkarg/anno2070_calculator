@@ -37,6 +37,21 @@ describe('Growth planning', () => {
     expect(planning.sequences.tech).toEqual([]);
   });
 
+  test('plans unrestricted ascension from mirrored island houses', () => {
+    const state = createInitialAppState();
+    const island = createIsland('Restricted');
+    island.factions.tech.houses = editable(100);
+    island.factions.tech.maxTier = 2;
+    state.plan.factions.tech.intent = { kind: 'follow', tierMode: 'unrestricted' };
+
+    const milestones = calculateGrowthPlanning(state.plan, [island])!.sequences.tech;
+
+    expect(milestones.map(({ kind, tier }) => ({ kind, tier }))).toEqual([
+      { kind: 'ascend', tier: 3 },
+    ]);
+    expect(milestones[0].populationAfter.tech).toEqual([200, 1260, 900]);
+  });
+
   test('keeps faction target branches independent', () => {
     const state = createInitialAppState();
     state.plan.factions.eco.intent = { kind: 'residences', houses: editable(10), maxTier: 1 };

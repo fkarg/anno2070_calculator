@@ -3,7 +3,7 @@ import { FACTIONS, type CalculatorState } from '../model';
 import { CONSUMPTION, producedGood, type GoodId } from './goods';
 import { calculateGrowthRequirements, type GrowthDemandChain } from './growth-requirements';
 import { resolvePopulationTarget, type ResolvedPopulationTarget } from './population-target';
-import { applyPopulationOverrides, type Faction } from './population';
+import { applyPopulationOverrides, calculatePopulation, type Faction } from './population';
 import { PRODUCTION_NODES } from './production-data';
 import { effectiveCapacities } from './supported-population';
 
@@ -81,6 +81,15 @@ function targetAtTier(
   target: ResolvedPopulationTarget,
   tier: number,
 ): readonly number[] {
+  if (state.intent.kind === 'follow' && state.intent.tierMode === 'unrestricted') {
+    return calculatePopulation({
+      faction,
+      houses: target.houses,
+      maxTier: tier,
+      livingSpace: state.livingSpace,
+      senate: state.senate,
+    });
+  }
   return applyPopulationOverrides({
     faction,
     houses: target.houses,
@@ -98,7 +107,8 @@ function buildFactionDescriptors(
 ): Descriptor[] {
   const result: Descriptor[] = [];
   const actualTop = topOccupiedTier(actual[faction]);
-  if (state.factions[faction].intent.kind === 'follow'
+  if ((state.factions[faction].intent.kind === 'follow'
+      && state.factions[faction].intent.tierMode === 'mirror')
     || targets[faction].maxTier < actualTop
     || targets[faction].effectivePopulations.reduce((sum, value) => sum + value, 0)
       <= actual[faction].reduce((sum, value) => sum + value, 0)) return result;
