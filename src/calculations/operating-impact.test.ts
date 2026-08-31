@@ -55,12 +55,13 @@ describe('islandOperatingImpact', () => {
     expect(islandOperatingImpact(island)!.ecoBalance).toBeCloseTo(-2, 9);
   });
 
-  test('underwater islands have no ecobalance', () => {
+  test('underwater islands use the underwater warehouse base and have no ecobalance', () => {
     const island = createIsland('A');
     island.underwater = true;
     island.owned = { electronicsRecycler: editable(1), marineCurrentPowerPlant: editable(1) };
+    // Underwater warehouse -40/-3 + recycler -160/-35 + marine current -40/+25.
     expect(islandOperatingImpact(island))
-      .toEqual({ maintenanceCredits: -210, power: -4, ecoBalance: 0 });
+      .toEqual({ maintenanceCredits: -240, power: -13, ecoBalance: 0 });
   });
 });
 

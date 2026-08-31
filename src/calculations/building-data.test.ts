@@ -45,13 +45,26 @@ const expectedOperatingImpacts = {
   treeNursery: [-10, -2, 0], sawmill: [-5, -2, -3], limestoneQuarry: [-20, -2, -2],
   glassworks: [-60, -3, -6], concreteFactory: [-10, -4, -4], steelworks: [-20, -6, -6],
   carbonFactory: [-40, -6, -6], uraniumMine: [-50, -4, -6], fuelElementFactory: [-60, -4, -6],
+  ecoCityCenter: [-10, -1, 0], tycoonCityCenter: [-10, -1, 0], techCityCenter: [-5, -1, 0],
+  fireStation: [-25, -2, -2], policeStation: [-60, -15, -6], hospital: [-40, -7, -4],
+  concertHall: [-5, -5, -2], casino: [-5, -5, -3], laboratory: [-40, -10, -8],
+  informationCenter: [-15, -10, 0], ministryOfTruth: [-30, -7, -6],
+  educationNetwork: [-30, -7, -5], financialCenter: [-50, -10, -9],
+  congressCenter: [-50, -10, -8], academy: [-100, -7, -12],
+  missileLaunchPad: [-500, -50, -50], leisureCenter: [-1000, -300, -40],
+  corporateHq: [-1000, -300, -60], scienceForum: [-2500, -750, -50],
+  depot1: [-5, -1, 0], depot2: [-10, -1, 0], depot3: [-15, -1, 0],
+  harborDepot: [-20, -2, -4], portAuthority: [-40, -10, -2], clearanceTerminal: [-60, -10, -2],
+  deepSeaWarehouse: [-60, 8, 0], underwaterReceivingDock: [-60, -5, 0],
+  repairDock: [-25, -10, -2], ecoShipyard: [-20, -10, -4], tycoonShipyard: [-10, -10, -6],
+  submarineBase: [-15, -7, -3], airport: [-60, -10, -10],
 } as const;
 
 describe('BUILDINGS', () => {
   test('covers every occurrence with one canonical operating configuration', () => {
     const ids = new Set(Object.keys(BUILDINGS));
 
-    expect(ids.size).toBe(96);
+    expect(ids.size).toBe(128);
     expect(PRODUCTION_NODES).toHaveLength(88);
     for (const node of PRODUCTION_NODES) {
       expect(ids.has(node.buildingId), node.id).toBe(true);
@@ -106,6 +119,8 @@ describe('BUILDINGS', () => {
     expect(byCategory('power')).toHaveLength(10);
     expect(byCategory('eco')).toHaveLength(8);
     expect(byCategory('material')).toHaveLength(14);
+    expect(byCategory('civic')).toHaveLength(19);
+    expect(byCategory('logistics')).toHaveLength(13);
     expect(byCategory('production')).toHaveLength(64);
 
     for (const [id, building] of Object.entries(BUILDINGS)) {

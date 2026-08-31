@@ -4,7 +4,7 @@ export type OperatingImpact = Readonly<{
   ecoBalance: number;
 }>;
 
-export type BuildingCategory = 'production' | 'power' | 'eco' | 'material';
+export type BuildingCategory = 'production' | 'power' | 'eco' | 'material' | 'civic' | 'logistics';
 
 export type BuildingDefinition = Readonly<{
   label: string;
@@ -40,6 +40,8 @@ const building = catalogEntry('production');
 const powerPlant = catalogEntry('power');
 const ecoBuilding = catalogEntry('eco');
 const materialBuilding = catalogEntry('material');
+const civicBuilding = catalogEntry('civic');
+const logisticsBuilding = catalogEntry('logistics');
 
 export const BUILDINGS = {
   fishery: building('Fishery', 'Fish_Qoor.png', -5, -1, 0, 'Fishery'),
@@ -146,6 +148,44 @@ export const BUILDINGS = {
   carbonFactory: materialBuilding('Carbon factory', 'Carbon.png', -40, -6, -6, 'Carbon_Producing_Factory'),
   uraniumMine: materialBuilding('Uranium mine', 'Uranium.png', -50, -4, -6, 'Uranium_Mine'),
   fuelElementFactory: materialBuilding('Fuel element factory', 'Fuel.png', -60, -4, -6, 'Fuel_Element_Factory'),
+
+  // City & civic buildings (wiki infoboxes, researched 2026-08-31). Broadcast
+  // buildings show base upkeep: active channels cost extra.
+  ecoCityCenter: civicBuilding('Eco city center', 'Eco-ctr-icon.png', -10, -1, 0, 'City_Center'),
+  tycoonCityCenter: civicBuilding('Tycoon city center', 'Tyco-ctr-icon.png', -10, -1, 0, 'City_Center'),
+  techCityCenter: civicBuilding('Tech city center', 'Tech-ctr-icon.png', -5, -1, 0, 'City_Center'),
+  fireStation: civicBuilding('Fire station', 'Fire-stn-icon.png', -25, -2, -2, 'Fire_Station'),
+  policeStation: civicBuilding('Police station', 'Police-stn-icon.png', -60, -15, -6, 'Police_Station'),
+  hospital: civicBuilding('Hospital', 'Hospital-icon.png', -40, -7, -4, 'Hospital'),
+  concertHall: civicBuilding('Concert hall', 'Concert-hall-icon.png', -5, -5, -2, 'Concert_Hall'),
+  casino: civicBuilding('Casino', 'Casino-icon.png', -5, -5, -3, 'Casino'),
+  laboratory: civicBuilding('Laboratory', 'Lab-icon.png', -40, -10, -8, 'Laboratory'),
+  informationCenter: civicBuilding('Information center', 'Info-ctr-icon.png', -15, -10, 0, 'Information_Center', 'Base upkeep; each active broadcast channel adds energy and credits.'),
+  ministryOfTruth: civicBuilding('Ministry of truth', 'Ministry-truth-icon.png', -30, -7, -6, 'Ministry_of_Truth', 'Base upkeep; each active broadcast channel adds energy and credits.'),
+  educationNetwork: civicBuilding('Education network', 'Education-net-icon.png', -30, -7, -5, 'Education_Network', 'Base upkeep; each active broadcast channel adds energy and credits.'),
+  financialCenter: civicBuilding('Financial center', 'Financial-ctr-icon.png', -50, -10, -9, 'Financial_Center'),
+  congressCenter: civicBuilding('Congress center', 'Congress-ctr-icon.png', -50, -10, -8, 'Congress_Center'),
+  academy: civicBuilding('Academy', 'Academy-icon.png', -100, -7, -12, 'Academy'),
+  missileLaunchPad: civicBuilding('Missile launch pad', 'Missile-pad-icon.png', -500, -50, -50, 'Missile_Launch_Pad'),
+  leisureCenter: civicBuilding('Leisure center (monument)', 'Eco_logo.png', -1000, -300, -40, 'Leisure_Center', 'Completed-stage upkeep; construction stages run -500 to -750 credits.'),
+  corporateHq: civicBuilding('Corporate headquarters (monument)', 'Tycoon_logo.png', -1000, -300, -60, 'Corporate_Headquarters', 'Completed-stage upkeep; construction stages run -500 to -750 credits.'),
+  scienceForum: civicBuilding('Science forum (monument)', 'SAAT_logo.png', -2500, -750, -50, 'Science_Forum', 'Completed-stage upkeep; construction stages run -1000 to -2000 credits.'),
+
+  // Harbor & logistics. The island's own warehouse is the settled base load,
+  // not a catalog entry.
+  depot1: logisticsBuilding('Depot (level 1)', 'Depot_icon.png', -5, -1, 0, 'Depot'),
+  depot2: logisticsBuilding('Depot (level 2)', 'Depot_icon.png', -10, -1, 0, 'Depot'),
+  depot3: logisticsBuilding('Depot (level 3)', 'Depot_icon.png', -15, -1, 0, 'Depot'),
+  harborDepot: logisticsBuilding('Harbor depot', 'Harbor-depot-icon.png', -20, -2, -4, 'Harbor_Depot'),
+  portAuthority: logisticsBuilding('Port authority', 'Port-auth-icon.png', -40, -10, -2, 'Port_Authority'),
+  clearanceTerminal: logisticsBuilding('Clearance terminal', 'Clearance-term-icon.png', -60, -10, -2, 'Clearance_Terminal'),
+  deepSeaWarehouse: logisticsBuilding('Deep sea warehouse', 'Underwater-ware-icon.png', -60, 8, 0, 'Deep_Sea_Warehouse'),
+  underwaterReceivingDock: logisticsBuilding('Underwater receiving dock', 'Underwater_Receiving_Dock_icon.png', -60, -5, 0, 'Underwater_Receiving_Dock'),
+  repairDock: logisticsBuilding('Repair dock', 'Repair-dock-icon.png', -25, -10, -2, 'Repair_Dock'),
+  ecoShipyard: logisticsBuilding('Eco shipyard', 'Eco-shipyard-icon.png', -20, -10, -4, 'Eco_Shipyard', 'Upkeep doubles while a vehicle is under construction.'),
+  tycoonShipyard: logisticsBuilding('Tycoon shipyard', 'Tycoon-shipyard-icon.png', -10, -10, -6, 'Tycoon_Shipyard', 'Upkeep doubles while a vehicle is under construction.'),
+  submarineBase: logisticsBuilding('Submarine base', 'Sub-pen-icon.png', -15, -7, -3, 'Submarine_Base', 'Upkeep doubles while a vehicle is under construction.'),
+  airport: logisticsBuilding('Airport', 'Airport-icon.png', -60, -10, -10, 'Airport'),
 } as const;
 
 // Wiki rule: Tycoon eco buildings only fill an island's ecobalance up to 0.
@@ -314,6 +354,39 @@ export const BUILDING_PLACEMENTS: Record<BuildingId, Placement> = {
   carbonFactory: 'land',
   uraniumMine: 'land',
   fuelElementFactory: 'land',
+  // Tech civic buildings serve both land and underwater cities.
+  ecoCityCenter: 'land',
+  tycoonCityCenter: 'land',
+  techCityCenter: 'any',
+  fireStation: 'land',
+  policeStation: 'land',
+  hospital: 'land',
+  concertHall: 'land',
+  casino: 'land',
+  laboratory: 'any',
+  informationCenter: 'any',
+  ministryOfTruth: 'land',
+  educationNetwork: 'land',
+  financialCenter: 'land',
+  congressCenter: 'land',
+  academy: 'any',
+  missileLaunchPad: 'land',
+  leisureCenter: 'land',
+  corporateHq: 'land',
+  scienceForum: 'land',
+  depot1: 'land',
+  depot2: 'land',
+  depot3: 'land',
+  harborDepot: 'coastal',
+  portAuthority: 'coastal',
+  clearanceTerminal: 'coastal',
+  deepSeaWarehouse: 'any',
+  underwaterReceivingDock: 'underwater',
+  repairDock: 'coastal',
+  ecoShipyard: 'coastal',
+  tycoonShipyard: 'coastal',
+  submarineBase: 'coastal',
+  airport: 'land',
 } as const;
 
 export const BUILDING_REQUIREMENTS: Partial<Record<BuildingId, string>> = {

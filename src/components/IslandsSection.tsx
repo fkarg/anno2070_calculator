@@ -68,8 +68,15 @@ const BUILDING_TIER: ReadonlyMap<BuildingId, number> = (() => {
   return tiers;
 })();
 
-const CATEGORY_ORDER = { production: 0, power: 1, eco: 2, material: 3 } as const;
-const CATEGORY_LABELS = { production: 'Production', power: 'Power', eco: 'Ecobalance', material: 'Materials' } as const;
+const CATEGORY_ORDER = { production: 0, power: 1, eco: 2, material: 3, civic: 4, logistics: 5 } as const;
+const CATEGORY_LABELS = {
+  production: 'Production',
+  power: 'Power',
+  eco: 'Ecobalance',
+  material: 'Materials',
+  civic: 'City & civic',
+  logistics: 'Harbor & logistics',
+} as const;
 
 function compareByChainTier(left: BuildingId, right: BuildingId): number {
   const categoryDifference = CATEGORY_ORDER[BUILDINGS[left].category] - CATEGORY_ORDER[BUILDINGS[right].category];

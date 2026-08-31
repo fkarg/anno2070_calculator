@@ -10,14 +10,15 @@ describe('GOODS derivation', () => {
       [...GOODS.values()].flatMap((good) => good.producers.map((producer) => producer.buildingId)),
     );
     for (const buildingId of Object.keys(BUILDINGS) as BuildingId[]) {
-      if (BUILDINGS[buildingId].category === 'power' || BUILDINGS[buildingId].category === 'eco') {
-        // Power/eco buildings are impact-only: invisible to the goods graph,
-        // counted only in operating impacts (and fuel consumption).
-        expect(producedGood(buildingId), buildingId).toBeNull();
-        expect(producerIds.has(buildingId), buildingId).toBe(false);
-      } else {
+      const category = BUILDINGS[buildingId].category;
+      if (category === 'production' || category === 'material') {
         expect(producedGood(buildingId), buildingId).not.toBeNull();
         expect(producerIds.has(buildingId), buildingId).toBe(true);
+      } else {
+        // Power/eco/civic/logistics buildings are impact-only: invisible to
+        // the goods graph, counted in operating impacts (and fuel) only.
+        expect(producedGood(buildingId), buildingId).toBeNull();
+        expect(producerIds.has(buildingId), buildingId).toBe(false);
       }
     }
   });

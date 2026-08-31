@@ -127,6 +127,9 @@ describe('islands section', () => {
     expect(byTestId('island-0')).toHaveTextContent('underwater');
     expect(addableBuildings(0)).toContain('electronicsRecycler');
     expect(addableBuildings(0)).not.toContain('fishery');
+    // 'any'-placement civic buildings serve underwater cities; land ones not.
+    expect(addableBuildings(0)).toContain('techCityCenter');
+    expect(addableBuildings(0)).not.toContain('ecoCityCenter');
   });
 
   test('settled islands feed the plan houses Auto mode', async () => {
@@ -263,7 +266,8 @@ describe('islands section', () => {
     openConfiguration('Island 1');
     fireEvent.click(flagCheckbox(0, 'underwater'));
     addBuilding(0, 'electronicsRecycler');
+    // Underwater warehouse base -40/-3 plus the recycler.
     expect(byTestId('island-0-operating-load'))
-      .toHaveTextContent('maintenance credits per minute:-170power:-29ecobalance:—');
+      .toHaveTextContent('maintenance credits per minute:-200power:-38ecobalance:—');
   });
 });

@@ -41,14 +41,18 @@ export type ProductionOperatingImpacts = Readonly<{
   byRoot: Readonly<Record<string, readonly VariantOperatingImpact[]>>;
 }>;
 
-// Every settled island starts with its warehouse: -10 credits, +6 power.
+// Every settled island starts with its warehouse: -10 credits, +6 power on
+// land; the underwater warehouse costs -40 credits and -3 power (wiki).
 export const WAREHOUSE_IMPACT: OperatingImpact = { maintenanceCredits: -10, power: 6, ecoBalance: 0 };
+export const UNDERWATER_WAREHOUSE_IMPACT: OperatingImpact = { maintenanceCredits: -40, power: -3, ecoBalance: 0 };
 
 // One island's summed impact, with the wiki eco rules applied: Tycoon eco
 // buildings only fill the balance up to 0, and underwater islands have no
 // ecobalance at all (their eco reads 0; the display shows a dash).
 export function islandOperatingImpact(island: IslandState): OperatingImpact | null {
-  let total = island.settled ? WAREHOUSE_IMPACT : ZERO_OPERATING_IMPACT;
+  let total = island.settled
+    ? (island.underwater ? UNDERWATER_WAREHOUSE_IMPACT : WAREHOUSE_IMPACT)
+    : ZERO_OPERATING_IMPACT;
   let tycoonEcoOutput = 0;
   for (const [buildingId, entry] of Object.entries(island.owned)) {
     if (entry.value === null) return null;
