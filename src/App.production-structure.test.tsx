@@ -108,14 +108,21 @@ describe('production structure and impacts', () => {
     expect(byTestId('variant-ecoFish-full')).toHaveTextContent('Fishery ×2');
 
     fireEvent.click(productionCheckbox(0));
+    expect(impactLines[0])
+      .toHaveTextContent('maintenance credits per minute:-10power:-2ecobalance:0');
     expect(fish.querySelector('[data-testid="direct-operating-impact"]'))
       .toHaveTextContent('maintenance credits per minute:-5.02');
     expect(requiredBuildings('ecoFish')).toHaveTextContent('2');
 
     fireEvent.click(buttonWithLabel('Eco Employees', byTestId('island-0')));
     await replaceInput(input('island-0-eco-population-1'), '571');
-    expect(byTestId('variant-ecoCommunicators-ecoMicrochipsCommunicators'))
+    const conventional = byTestId('variant-ecoCommunicators-ecoMicrochipsCommunicators');
+    expect(conventional)
       .toHaveTextContent('maintenance credits per minute:-65power:-10ecobalance:-12');
+    expect(conventional).toHaveTextContent('Electronics factory ×1');
+    expect(conventional).toHaveTextContent('Chip factory ×1');
+    expect(conventional).toHaveTextContent('Copper mine ×1');
+    expect(conventional).toHaveTextContent('Sand extractor ×1');
     expect(byTestId('variant-ecoCommunicators-ecoElectronicsRecyclerCommunicators'))
       .toHaveTextContent('maintenance credits per minute:-180power:-39ecobalance:-4');
   });
