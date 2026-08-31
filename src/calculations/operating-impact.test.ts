@@ -106,10 +106,36 @@ describe('calculateOperatingImpacts', () => {
       power: -0.4,
       ecoBalance: -0.4,
     });
+    expect(result.roundedDirect.ecoCommunicators).toEqual({
+      maintenanceCredits: -20,
+      power: -4,
+      ecoBalance: -4,
+    });
     expect(result.byRoot.ecoCommunicators.map(({ impact }) => impact)).toEqual([
       { maintenanceCredits: -65, power: -10, ecoBalance: -12 },
       { maintenanceCredits: -180, power: -39, ecoBalance: -4 },
     ]);
+  });
+
+  test('keeps rounded variant counts scoped to their root chain', () => {
+    const requirements: Record<string, number | null> = Object.fromEntries(
+      PRODUCTION_NODES.map(({ id }) => [id, 0]),
+    );
+    requirements.ecoCommunicators = 1.1;
+    requirements.ecoMicrochipsCommunicators = 1.1;
+    requirements.ecoMicrochipsServiceBots = 9.1;
+
+    const full = calculateOperatingImpacts(requirements)
+      .byRoot.ecoCommunicators.find((variant) => variant.id === 'ecoMicrochipsCommunicators')!;
+
+    expect(full.roundedBuildings).toContainEqual({
+      nodeId: 'ecoMicrochipsCommunicators',
+      count: 2,
+    });
+    expect(full.roundedBuildings).not.toContainEqual({
+      nodeId: 'ecoMicrochipsServiceBots',
+      count: 10,
+    });
   });
 
   test('pins one-choice, mandatory-plus-choice, and two-choice totals', () => {

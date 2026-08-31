@@ -56,7 +56,13 @@ export function App() {
     recycling: state.plan.recycling,
     wholeBuildings: state.plan.wholeBuildings,
   });
-  const operatingImpacts = calculateOperatingImpacts(production);
+  const fractionalProduction = calculateAvailableProduction({
+    population: islandPopulations,
+    productivity,
+    recycling: state.plan.recycling,
+    wholeBuildings: false,
+  });
+  const operatingImpacts = calculateOperatingImpacts(fractionalProduction);
   const empireBalances = aggregateBalances(state.islands);
   const needs = transferNeeds(state.islands);
   const ownedImpact = calculateOwnedImpact(state.islands);

@@ -33,11 +33,18 @@ export function scaleOperatingImpact(impact: OperatingImpact, count: number): Op
 export type VariantOperatingImpact = Readonly<{
   id: string;
   label: string;
+  roundedBuildings: readonly RoundedBuildingRequirement[] | null;
   impact: OperatingImpact | null;
+}>;
+
+export type RoundedBuildingRequirement = Readonly<{
+  nodeId: string;
+  count: number;
 }>;
 
 export type ProductionOperatingImpacts = Readonly<{
   direct: Readonly<Record<string, OperatingImpact | null>>;
+  roundedDirect: Readonly<Record<string, OperatingImpact | null>>;
   byRoot: Readonly<Record<string, readonly VariantOperatingImpact[]>>;
 }>;
 
@@ -97,32 +104,40 @@ export function calculateOperatingImpacts(
   requirements: Readonly<Record<string, number | null>>,
 ): ProductionOperatingImpacts {
   const direct: Record<string, OperatingImpact | null> = {};
+  const roundedDirect: Record<string, OperatingImpact | null> = {};
   for (const node of PRODUCTION_NODES) {
     const count = requirements[node.id];
     direct[node.id] = count === null
       ? null
       : scaleOperatingImpact(BUILDINGS[node.buildingId].operatingImpact, count);
+    roundedDirect[node.id] = count === null
+      ? null
+      : scaleOperatingImpact(BUILDINGS[node.buildingId].operatingImpact, Math.ceil(count));
   }
 
   const byRoot: Record<string, readonly VariantOperatingImpact[]> = {};
   for (const tree of (['eco', 'tycoon', 'tech'] as const).flatMap(buildProductionTrees)) {
     byRoot[tree.rootId] = tree.variants.map((variant) => {
       let impact: OperatingImpact | null = ZERO_OPERATING_IMPACT;
+      let roundedBuildings: RoundedBuildingRequirement[] | null = [];
       for (const nodeId of variant.nodeIds) {
         const count = requirements[nodeId];
         if (count === null) {
           impact = null;
+          roundedBuildings = null;
           break;
         }
         const node = nodeById.get(nodeId)!;
+        const roundedCount = Math.ceil(count);
+        if (roundedCount > 0) roundedBuildings.push({ nodeId, count: roundedCount });
         impact = addOperatingImpacts(
           impact,
-          scaleOperatingImpact(BUILDINGS[node.buildingId].operatingImpact, Math.ceil(count)),
+          scaleOperatingImpact(BUILDINGS[node.buildingId].operatingImpact, roundedCount),
         );
       }
-      return { id: variant.id, label: variant.label, impact };
+      return { id: variant.id, label: variant.label, roundedBuildings, impact };
     });
   }
 
-  return { direct, byRoot };
+  return { direct, roundedDirect, byRoot };
 }
