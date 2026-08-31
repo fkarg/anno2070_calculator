@@ -46,6 +46,24 @@ test('defines and consumes semantic color tokens', () => {
   expect(css).toMatch(/\.balance--surplus \{[^}]*var\(--success\)/);
 });
 
+test('uses the approved Steel HUD palette and semantic selection colors', () => {
+  const css = readFileSync('src/styles.css', 'utf8');
+
+  expect(css).toContain('--surface-page: #111820;');
+  expect(css).toContain('--surface-panel: #1a2530;');
+  expect(css).toContain('--surface-raised: #223140;');
+  expect(css).toContain('--select: #5c9dc1;');
+  expect(css).toContain('--value-gold: #f0d38d;');
+  expect(css).toContain('--eco: #4c6329;');
+  expect(css).toContain('--tycoon: #4a413b;');
+  expect(css).toContain('--tech: #35566a;');
+
+  expect(css).toMatch(/\.tier-selector__option\[aria-pressed="true"\] \{[^}]*var\(--select\)/);
+  expect(css).toMatch(/\.growth-target__modes button\[aria-pressed="true"\] \{[^}]*var\(--select\)/);
+  expect(css).toMatch(/\.growth-milestone--current \{[^}]*var\(--select\)/);
+  expect(css).toMatch(/\.coverage-context-tab--active \{[^}]*var\(--select\)/);
+});
+
 test('keeps island cards two-up on desktop', () => {
   const css = readFileSync('src/styles.css', 'utf8');
 
