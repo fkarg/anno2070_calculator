@@ -1,6 +1,12 @@
 import { describe, expect, test } from 'vitest';
 
-import { createFactionState, createInitialState, resolveHouses } from './model';
+import {
+  createFactionState,
+  createInitialState,
+  createPlanFactionState,
+  createResidenceFactionState,
+  resolveHouses,
+} from './model';
 
 describe('resolveHouses', () => {
   test('null houses resolve to the settled-island sum', () => {
@@ -18,5 +24,15 @@ describe('resolveHouses', () => {
     expect(state.factions.eco.houses).toBeNull();
     expect(state.factions.tycoon.houses).toBeNull();
     expect(state.factions.tech.houses).toBeNull();
+  });
+});
+
+describe('separate residence and plan state', () => {
+  test('new growth targets follow settled islands', () => {
+    expect(createPlanFactionState('eco').intent).toEqual({ kind: 'follow' });
+  });
+
+  test('residence state always starts with concrete houses', () => {
+    expect(createResidenceFactionState('tech').houses).toEqual({ raw: '0', value: 0 });
   });
 });

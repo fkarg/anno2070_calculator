@@ -103,7 +103,7 @@ describe('resolvePopulationTarget', () => {
     expect(resolvePopulationTarget('tech', state, 0, [0, 0, 0])).toMatchObject({
       achieved: 2500,
       targetMetAfterOverrides: false,
-      effectivePopulations: [560, 3510, 2000],
+      effectivePopulations: [560, 3810, 2000],
     });
   });
 

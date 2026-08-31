@@ -8,6 +8,24 @@ export type EditableNumber = {
 
 export type PopulationOverride = EditableNumber | null;
 
+export type PopulationSettings = {
+  livingSpace: boolean;
+  senate: boolean;
+  overrides: PopulationOverride[];
+};
+
+export type ResidenceFactionState = PopulationSettings & {
+  houses: EditableNumber;
+  maxTier: number;
+};
+
+export type TargetIntent =
+  | Readonly<{ kind: 'follow' }>
+  | Readonly<{ kind: 'residences'; houses: EditableNumber; maxTier: number }>
+  | Readonly<{ kind: 'population'; tier: number; count: EditableNumber }>;
+
+export type PlanFactionState = PopulationSettings & { intent: TargetIntent };
+
 export type FactionState = {
   houses: EditableNumber | null; // null = Auto: follow settled-island actuals
   maxTier: number;
@@ -122,6 +140,16 @@ export function createFactionState(faction: Faction): FactionState {
     senate: false,
     overrides: Array.from({ length: tierCount }, () => null),
   };
+}
+
+export function createResidenceFactionState(faction: Faction): ResidenceFactionState {
+  const state = createFactionState(faction);
+  return { ...state, houses: state.houses! };
+}
+
+export function createPlanFactionState(faction: Faction): PlanFactionState {
+  const { livingSpace, senate, overrides } = createFactionState(faction);
+  return { intent: { kind: 'follow' }, livingSpace, senate, overrides };
 }
 
 export function effectivePopulation(
