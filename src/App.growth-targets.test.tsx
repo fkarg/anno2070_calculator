@@ -1,7 +1,7 @@
 import { fireEvent } from '@testing-library/react';
 import { beforeEach, expect, test } from 'vitest';
 
-import { buttonWithLabel, byTestId, input, renderApp, replaceInput, selectWorkspace } from './test/app-test-utils';
+import { addIsland, buttonWithLabel, byTestId, input, renderApp, replaceInput, selectWorkspace, setIslandHouses } from './test/app-test-utils';
 
 beforeEach(() => localStorage.clear());
 
@@ -18,11 +18,40 @@ test('sets a population-driven target in Growth and projects it into the residen
   expect(document.querySelector('.population-section')).toHaveTextContent('Headroom / limit');
 });
 
-test('keeps target controls out of the permanent residence overview', () => {
+test('owns faction-global population bonuses in the permanent overview', async () => {
   renderApp();
+  addIsland();
+  fireEvent.click(buttonWithLabel('Configure island Island 1'));
+  fireEvent.click(buttonWithLabel('Tech Geniuses', byTestId('island-0')));
+  await replaceInput(input('island-0-config-tech-houses'), '100');
+  fireEvent.click(buttonWithLabel('Finish configuring island Island 1'));
+  const tech = document.querySelector('.population-faction--tech')!;
+  expect(byTestId('overview-tech-actual-tier-2')).toHaveTextContent('900');
 
-  expect(document.querySelector('.population-section input')).toBeNull();
-  expect(document.querySelector('.population-section button')).toBeNull();
+  fireEvent.click(input('overview-tech-living-space'));
+  fireEvent.click(input('overview-tech-senate'));
+
+  expect(input('overview-tech-living-space')).toBeChecked();
+  expect(input('overview-tech-senate')).toBeChecked();
+  expect(byTestId('overview-tech-actual-tier-2')).toHaveTextContent('1176');
+  expect(tech).toBeVisible();
+});
+
+test('switches Follow islands from mirrored actuals to unrestricted ascension', async () => {
+  renderApp();
+  addIsland();
+  await setIslandHouses(0, 'tech', '100');
+
+  const tech = document.querySelector('.population-faction--tech')!;
+  expect(tech).toHaveAttribute('data-target-layout', 'mirror');
+  expect(tech).toHaveTextContent('Following actual tiers');
+
+  selectWorkspace('Growth');
+  fireEvent.click(buttonWithLabel('Project Tech through unrestricted ascension'));
+
+  expect(tech).toHaveAttribute('data-target-layout', 'target');
+  expect(tech).toHaveTextContent('Following houses · unrestricted ascension');
+  expect(byTestId('overview-tech-target-tier-2')).toHaveTextContent('900');
 });
 
 test('steps residence targets by ten without going below zero', async () => {

@@ -327,9 +327,23 @@ main > footer a { color: #8fc9f6; }
 .pop-rows--overview .pop-row {
   grid-template-columns: 32px minmax(0, 1fr) minmax(4rem, .65fr) minmax(8rem, 1fr) minmax(7rem, 1fr);
 }
+.population-faction[data-target-layout='mirror'] .population-overview-columns,
+.population-faction[data-target-layout='mirror'] .pop-rows--overview .pop-row {
+  grid-template-columns: 32px minmax(0, 1fr) minmax(4rem, .65fr) minmax(8rem, 1fr);
+}
 .pop-rows--overview output { text-align: right; font-size: .82rem; font-variant-numeric: tabular-nums; }
 .pop-rows--overview output:nth-last-child(2) { color: #f2d4a4; }
 .population-overview__not-applicable { color: var(--muted); text-align: right; }
+.population-faction__bonuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem .8rem;
+  margin: .5rem .85rem;
+  padding: 0;
+  border: 0;
+}
+.population-faction__bonuses legend { width: 100%; color: var(--muted); font-size: .68rem; }
+.population-faction__bonuses label { display: flex; align-items: center; gap: .25rem; color: var(--muted); font-size: .68rem; }
 
 /* Growth target editor and cumulative full-supply milestones */
 
@@ -359,6 +373,9 @@ main > footer a { color: #8fc9f6; }
 .growth-target__modes { display: flex; gap: .3rem; padding: .55rem; }
 .growth-target__modes button { flex: 1; padding: .3rem; font-size: .7rem; }
 .growth-target__modes button[aria-pressed="true"] { border-color: var(--accent); background: #483323; }
+.growth-target__follow-modes { display: flex; gap: .35rem; padding: 0 .55rem .55rem; }
+.growth-target__follow-modes button { flex: 1; padding: .3rem; font-size: .68rem; }
+.growth-target__follow-modes button[aria-pressed="true"] { border-color: var(--accent); background: #263c4a; }
 .growth-target > label,
 .growth-target__residences > label { display: grid; grid-template-columns: minmax(0, 1fr) 6rem; align-items: center; gap: .5rem; padding: .55rem; font-size: .78rem; }
 .growth-target__residences { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
@@ -374,7 +391,6 @@ main > footer a { color: #8fc9f6; }
 .growth-target__derived p { margin: 0 0 .2rem; }
 .growth-target__derived p:last-child { margin-bottom: 0; }
 .growth-target__warning { color: #ff9d7a; font-weight: 650; }
-.growth-target__bonus-note { flex-basis: 100%; color: #f2d4a4; font-size: .66rem; }
 
 .growth-milestones { padding: .8rem; }
 .growth-milestones > header { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }

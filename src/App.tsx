@@ -120,8 +120,9 @@ export function App() {
         actualHouses={islandHouses}
         actualPopulations={islandPopulations}
         targets={targets}
-        targetKinds={{ eco: state.plan.factions.eco.intent.kind, tycoon: state.plan.factions.tycoon.intent.kind, tech: state.plan.factions.tech.intent.kind }}
+        factionStates={state.plan.factions}
         islands={state.islands}
+        onBonusChange={updateBonus}
       />
       <nav className="workspace-tabs" role="tablist" aria-label="Calculator workspace">
         {workspaces.map((item) => (
@@ -191,7 +192,7 @@ export function App() {
         />
       </div>
       <div id="workspace-growth" className="workspace-panel" role="tabpanel" aria-labelledby="tab-growth" hidden={workspace !== 'growth'}>
-        <GrowthSection state={state.plan} targets={targets} planning={planning} islands={state.islands} onFactionChange={updateFaction} onBonusChange={updateBonus} onApplyBuilding={applyBuilding} />
+        <GrowthSection state={state.plan} targets={targets} planning={planning} islands={state.islands} onFactionChange={updateFaction} onApplyBuilding={applyBuilding} />
       </div>
 
       <aside className="calculator-section page-notes" aria-label="Calculator guidance">

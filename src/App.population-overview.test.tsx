@@ -5,15 +5,15 @@ import { addIsland, buttonWithLabel, byTestId, input, renderApp, replaceInput, s
 
 beforeEach(() => localStorage.clear());
 
-test('keeps the established residences view above every workspace', () => {
+test('keeps the residence overview above every workspace without redundant mirrored targets', () => {
   renderApp();
   const residences = document.querySelector('.population-section')!;
 
   expect(residences).toHaveTextContent('Residences & inhabitants');
   expect(residences).toHaveTextContent('Actual');
-  expect(residences).toHaveTextContent('Target');
+  expect(residences).not.toHaveTextContent('Target');
   expect(residences).toHaveTextContent('Headroom / limit');
-  expect(residences.querySelector('input, button')).toBeNull();
+  expect(residences.querySelectorAll('input')).toHaveLength(6);
 
   selectWorkspace('Growth');
   expect(document.querySelector('.population-section')).toBe(residences);
@@ -21,17 +21,17 @@ test('keeps the established residences view above every workspace', () => {
   expect(document.querySelector('#workspace-growth .population-section')).toBeNull();
 });
 
-test('keeps follow-islands mode and Actual/Target names when actual inputs are invalid', async () => {
+test('keeps mirrored Follow mode when actual inputs are invalid', async () => {
   renderApp();
   addIsland();
   await setIslandHouses(0, 'eco', 'invalid');
 
   const eco = document.querySelector('.population-faction--eco')!;
-  expect(eco.querySelector('.population-faction__mode')).toHaveTextContent('Following islands');
+  expect(eco.querySelector('.population-faction__mode')).toHaveTextContent('Following actual tiers');
   expect(eco.querySelector('output[aria-label="Eco actual residences"]')).toHaveTextContent('—');
-  expect(eco.querySelector('output[aria-label="Eco target residences"]')).toHaveTextContent('—');
+  expect(eco.querySelector('output[aria-label="Eco target residences"]')).toBeNull();
   expect(eco.querySelector('output[aria-label="Eco actual Workers"]')).toHaveTextContent('—');
-  expect(eco.querySelector('output[aria-label="Eco target Workers"]')).toHaveTextContent('—');
+  expect(eco.querySelector('output[aria-label="Eco target Workers"]')).toBeNull();
 });
 
 test('shows headroom and its chain limit for every population tier', async () => {
