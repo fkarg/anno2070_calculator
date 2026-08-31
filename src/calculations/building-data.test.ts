@@ -55,7 +55,7 @@ const expectedOperatingImpacts = {
   corporateHq: [-1000, -300, -60], scienceForum: [-2500, -750, -50],
   depot1: [-5, -1, 0], depot2: [-10, -1, 0], depot3: [-15, -1, 0],
   harborDepot: [-20, -2, -4], portAuthority: [-40, -10, -2], clearanceTerminal: [-60, -10, -2],
-  deepSeaWarehouse: [-60, 8, 0], underwaterReceivingDock: [-60, -5, 0],
+  underwaterWarehouse: [-40, -3, 0], underwaterReceivingDock: [-60, -5, 0],
   repairDock: [-25, -10, -2], ecoShipyard: [-20, -10, -4], tycoonShipyard: [-10, -10, -6],
   submarineBase: [-15, -7, -3], airport: [-60, -10, -10],
 } as const;

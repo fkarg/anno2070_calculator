@@ -266,8 +266,8 @@ describe('islands section', () => {
     openConfiguration('Island 1');
     fireEvent.click(flagCheckbox(0, 'underwater'));
     addBuilding(0, 'electronicsRecycler');
-    // Underwater warehouse base -40/-3 plus the recycler.
+    // Deep sea warehouse base -60/+8 plus the recycler.
     expect(byTestId('island-0-operating-load'))
-      .toHaveTextContent('maintenance credits per minute:-200power:-38ecobalance:—');
+      .toHaveTextContent('maintenance credits per minute:-220power:-27ecobalance:—');
   });
 });
