@@ -17,8 +17,8 @@ Decisions settled with the user on 2026-08-31:
 
 Below it, an accessible tab list switches local UI state between:
 
-1. **Islands** — existing island configuration, residences, owned buildings, productivity, local balances, and build-next suggestions.
-2. **Production** — current-demand bottlenecks and headroom, transfer needs, operating totals, and production-chain detail. The old Coverage “Toward plan” frame disappears; plan work belongs in Growth.
+1. **Islands** — existing island configuration, residences, owned buildings, productivity, local balances, and build-next suggestions for current actual full-demand deficits. Future target gaps no longer appear here as generic `plan +N` suggestions.
+2. **Production** — current full-demand bottlenecks and headroom, transfer needs, operating totals, and production-chain detail. The old Coverage “Toward plan” frame disappears; plan work belongs in Growth.
 3. **Growth** — population-target editing followed by cumulative milestones and apply actions.
 
 Tabs do not change calculation or storage semantics and need not be persisted. Islands is the initial tab. A plan remains usable with no settled islands: Growth shows the required capacity but has no island apply actions.
@@ -61,6 +61,20 @@ For a population intent:
 
 The resolved target contains the intent, derived houses, normal populations, effective populations after overrides, achieved selected-tier count, and overshoot. Downstream production and milestone code consumes this resolved shape, never the raw intent fields independently.
 
+## Vocabulary and scope boundary
+
+The UI uses one vocabulary across the residences overview, island suggestions, coverage, production rows, transfers, and Growth:
+
+- **Actual** is recorded island state.
+- **Current full demand** is the goods required to fully satisfy the modeled actual population. It is not labeled a necessity or minimum retention supply.
+- **Target** is the population state selected in Growth; **target full demand** is its full-satisfaction goods demand.
+- **Headroom / limit** compares capacity with full demand and names the first exhausted good.
+- **Ascension-relevant** means a good contributes to satisfaction for the selected ascension. It does not claim that its full-demand quantity is the minimum required to ascend.
+- **Plan** refers only to the ordered Growth milestones and chosen route, never a generic production gap.
+- **Need / necessary** is reserved for genuine retention requirements once exact partial-satisfaction modeling exists.
+
+This distinction matters because Anno 2070 combines goods into satisfaction categories with percentage contributions and population-dependent maintenance and ascension thresholds. Functional Food, for example, can be partly required for ascension before it becomes partly retention-critical. The current calculator models full consumption only; it does not model satisfaction percentages, disabled desires, taxation, civic coverage, or exact ascension readiness. The supporting sources and later-model boundary are recorded in `docs/research/2026-08-31-needs-ascension-language.md`.
+
 ## Cumulative milestones (`src/calculations/planning.ts`)
 
 Milestones are ordered globally by tier and then faction (`eco`, `tycoon`, `tech`). They are cumulative checkpoints, not independent faction cards: a checkpoint includes every earlier checkpoint's target population, the active faction's target truncated to this checkpoint, and actual populations for factions not encountered yet. This prevents shared capacity such as fish from satisfying multiple faction milestones independently.
@@ -72,7 +86,7 @@ Two checkpoint kinds exist:
 
 Only checkpoints whose target population differs from the preceding cumulative state are emitted. Truncation masks overrides above the checkpoint tier; otherwise a high-tier override would leak into an earlier milestone. Each checkpoint records its population delta for labels such as “Expand Tech to 279 residences” or “Employees to Engineers · +575 Engineers.”
 
-For each cumulative population state:
+For each cumulative population state, Growth calculates a full-supply goods plan:
 
 1. calculate fractional production requirements with the plan's recycling choice, all production productivity normalized to 100%, and whole-building rounding disabled;
 2. normalize occurrence-level production-node results into a typed canonical-good requirement map, aggregating before rounding and propagating any null as unavailable;
@@ -81,11 +95,11 @@ For each cumulative population state:
 
 Canonical units deliberately describe required output, not a count of a particular producer. Actual island productivity and alternative producer rates already contribute to `effectiveCapacities`, so applying a building recomputes the remaining capacity honestly.
 
-A milestone with no remaining capacity gaps is complete. The first incomplete milestone is current and later milestones remain visible but muted. Complete milestones collapse to a single summary line. If every resolved target is already covered, Growth shows that no build steps remain. Invalid target or actual inputs make planning unavailable; it never displays a partial result or `NaN`.
+A milestone with no remaining full-demand capacity gaps is complete. The first incomplete milestone is current and later milestones remain visible but muted. Complete milestones collapse to a single summary line. If every resolved target is already covered, Growth shows that no full-supply build steps remain. Invalid target or actual inputs make planning unavailable; it never displays a partial result or `NaN`.
 
 ## Producer-specific apply actions
 
-Each remaining-good row shows the good icon, canonical capacity still required, and buttons for concrete buildable producers:
+Each remaining-good row shows the good icon, canonical capacity still required for target full demand, and buttons for concrete buildable producers:
 
 - consider every producer in `GOODS.get(goodId).producers`;
 - offer it on each settled island where `canBuildOn(island, producer.buildingId)` passes;
@@ -103,7 +117,8 @@ There is also no “built X of N” history. Applying a producer mutates actuals
 - `planning.test.ts`: explicit expansion and ascension checkpoints; two factions sharing a good prove cumulative ordering; overrides above a checkpoint are masked; canonical aggregation happens before gap rounding; alternative capacity and productivity reduce gaps in canonical units; inputs-first ordering is stable; adding owned production completes a milestone and advances current; covered targets yield no remaining steps; invalid inputs yield unavailable.
 - `island.test.ts`: the extracted owned-building step helper preserves sparse counts, increments existing values, clamps decrements at zero, and retains the ledger's behavior for invalid entries.
 - App population overview test: Actual, Target, and Headroom / limit columns reflect island actuals, a Growth target, and current capacity without exposing target controls in the overview.
-- App Growth test: set 120 Tycoon residences and assert the derived milestone; switch Tech to a 2,500-Geniuses population target and assert 279 derived residences without bonuses; click a producer-specific island action and assert the exact owned count increments and the canonical remaining gap decreases.
+- App Islands test: changing a Growth target never creates a `Build next` suggestion; changing actual population or owned-consumer demand still can, and suggestion copy says current demand rather than plan.
+- App Growth test: set 120 Tycoon residences and assert the derived milestone; switch Tech to a 2,500-Geniuses population target and assert 279 derived residences without bonuses; click a producer-specific island action and assert the exact owned count increments and the canonical remaining full-demand gap decreases.
 - App navigation test: Islands, Production, and Growth expose their respective content with an accessible tab list; the residence overview remains visible across all three.
 
 No storage-specific behavior is left implicit: storage tests cover v2 migration into each legacy-equivalent intent and v3 round-trips for population-driven intent.
@@ -114,6 +129,7 @@ No storage-specific behavior is left implicit: storage tests cover v2 migration 
 - automatic producer or island allocation;
 - historical planning sessions, completion state, or undo stacks;
 - partial satisfaction and freshly ascended demand simulation;
+- exact minimum retention or ascension supply, need/desire toggles, and population-threshold unlocks;
 - exact pixel fidelity to the brainstorming mockups;
 - “set plan from supported ascensions” shortcuts;
 - named save slots or multiple stored plans.
