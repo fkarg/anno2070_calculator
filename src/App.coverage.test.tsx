@@ -7,6 +7,8 @@ import {
   input,
   renderApp,
   replaceInput,
+  selectWorkspace,
+  setGrowthResidenceTarget,
   setIslandHouses,
 } from './test/app-test-utils';
 
@@ -74,5 +76,73 @@ describe('coverage and bottlenecks', () => {
 
     expect(document.querySelector('.bottleneck-card')).toBeNull();
     expect(byTestId('coverage-unbuilt')).toHaveTextContent('Fishery');
+  });
+
+  test('keeps Current as the default and exposes active faction milestones', async () => {
+    renderApp();
+    addIsland();
+    await setGrowthResidenceTarget('eco', '100');
+    selectWorkspace('Production');
+
+    expect(buttonWithLabel('Show Current coverage')).toHaveAttribute('aria-selected', 'true');
+    expect(buttonWithLabel('Show Eco Workers coverage')).toBeInTheDocument();
+    expect(document.querySelector('[aria-label^="Show Tycoon "]')).toBeNull();
+  });
+
+  test('renders the selected milestone with breadcrumbs and explanations', async () => {
+    renderApp();
+    addIsland();
+    await setGrowthResidenceTarget('tech', '100');
+    selectWorkspace('Production');
+    fireEvent.click(buttonWithLabel('Show Tech Lab Assistants coverage'));
+
+    expect(byTestId('coverage-scenario-summary')).toHaveTextContent('Full-demand supply toward');
+    expect(document.querySelector('.bottleneck-card__breadcrumb')).toHaveTextContent('→');
+    expect(document.querySelector('.bottleneck-card details summary')).toHaveTextContent('Why required?');
+  });
+
+  test('adds a concrete building from a milestone bottleneck card', async () => {
+    renderApp();
+    addIsland();
+    await setGrowthResidenceTarget('eco', '100');
+    selectWorkspace('Production');
+    fireEvent.click(buttonWithLabel('Show Eco Workers coverage'));
+
+    fireEvent.click(buttonWithLabel('Build one Fishery on Island 1'));
+    selectWorkspace('Islands');
+    expect(input('island-0-owned-fishery')).toHaveValue('1');
+  });
+
+  test('adds the recommended whole building from a Current bottleneck card', async () => {
+    renderApp();
+    addIsland();
+    await setIslandHouses(0, 'eco', '100');
+    addBuilding(0, 'fishery');
+    await replaceInput(input('island-0-owned-fishery'), '2');
+    selectWorkspace('Production');
+
+    fireEvent.click(buttonWithLabel('Build one Fishery on Island 1'));
+    selectWorkspace('Islands');
+    expect(input('island-0-owned-fishery')).toHaveValue('3');
+  });
+
+  test('keeps a manual milestone visible without settled islands but renders no actions', async () => {
+    renderApp();
+    await setGrowthResidenceTarget('eco', '100');
+    selectWorkspace('Production');
+
+    fireEvent.click(buttonWithLabel('Show Eco Workers coverage'));
+    expect(byTestId('coverage-scenario-summary')).toBeInTheDocument();
+    expect(document.querySelector('.producer-action')).toBeNull();
+  });
+
+  test('hides milestone contexts when planning inputs are invalid', async () => {
+    renderApp();
+    addIsland();
+    await setGrowthResidenceTarget('eco', 'not-a-number');
+    selectWorkspace('Production');
+
+    expect(buttonWithLabel('Show Current coverage')).toBeInTheDocument();
+    expect(document.querySelector('[aria-label^="Show Eco "]')).toBeNull();
   });
 });

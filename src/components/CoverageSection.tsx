@@ -1,17 +1,21 @@
-import { BUILDINGS } from '../calculations/building-data';
+import { useState } from 'react';
+
+import { BUILDINGS, type BuildingId } from '../calculations/building-data';
 import { tierHeadroom } from '../calculations/coverage';
 import type { GoodId } from '../calculations/goods';
 import { tierCapacities, type Faction } from '../calculations/population';
 import { formatRequirement } from '../calculations/production';
 import { sumIslandPopulations } from '../island';
 import { FACTIONS, FACTION_CONFIGS } from '../model';
-import type { GrowthPlanningResult } from '../calculations/planning';
+import type { GrowthMilestone, GrowthPlanningResult } from '../calculations/planning';
 import type { IslandState } from '../island';
-import { currentCoverageView } from './coverage-card-model';
+import { CoverageBottleneckCard } from './CoverageBottleneckCard';
+import { currentCoverageView, milestoneCoverageCards } from './coverage-card-model';
 
 type CoverageSectionProps = {
   islands: readonly IslandState[];
-  planning?: GrowthPlanningResult | null;
+  planning: GrowthPlanningResult | null;
+  onApplyBuilding: (islandId: string, buildingId: BuildingId) => void;
 };
 
 function canonicalProducerLabel(goodId: GoodId): string {
@@ -51,11 +55,44 @@ function headroomRows(islands: readonly IslandState[]): HeadroomRow[] {
   });
 }
 
-export function CoverageSection({ islands, planning = null }: CoverageSectionProps) {
-  if (!islands.some((island) => island.settled)) return null;
+function milestoneTierLabel(milestone: GrowthMilestone): string {
+  return FACTION_CONFIGS[milestone.faction].tierLabels[milestone.tier - 1];
+}
+
+function milestoneTitle(milestone: GrowthMilestone): string {
+  const config = FACTION_CONFIGS[milestone.faction];
+  const tier = milestoneTierLabel(milestone);
+  return milestone.kind === 'expand'
+    ? `Expand ${config.label} at ${tier}`
+    : `${config.tierLabels[milestone.tier - 2]} → ${tier}`;
+}
+
+function milestoneSummary(milestone: GrowthMilestone): string {
+  const tier = milestoneTierLabel(milestone);
+  const delta = milestone.populationAfter[milestone.faction][milestone.tier - 1]
+    - milestone.populationBefore[milestone.faction][milestone.tier - 1];
+  return `Full-demand supply toward ${delta >= 0 ? '+' : ''}${delta} planned ${tier} · ${milestone.gaps.length} gaps`;
+}
+
+export function CoverageSection({ islands, planning, onApplyBuilding }: CoverageSectionProps) {
+  const [selected, setSelected] = useState<'current' | Faction>('current');
+  const activeMilestones = Object.fromEntries(FACTIONS.map((faction) => [
+    faction,
+    planning?.sequences[faction].find((milestone) => !milestone.complete) ?? null,
+  ])) as Record<Faction, GrowthMilestone | null>;
+  const selectedMilestone = selected === 'current' ? null : activeMilestones[selected];
+  const effectiveSelection = selected !== 'current' && selectedMilestone === null
+    ? 'current'
+    : selected;
+  const hasSettledIsland = islands.some((island) => island.settled);
+  const hasMilestone = FACTIONS.some((faction) => activeMilestones[faction] !== null);
+  if (!hasSettledIsland && !hasMilestone) return null;
 
   const { cards, unbuilt } = currentCoverageView(islands, planning);
   const headroom = headroomRows(islands);
+  const milestoneCards = selectedMilestone ? milestoneCoverageCards(selectedMilestone) : [];
+  const displayedCards = effectiveSelection === 'current' ? cards.slice(0, 4) : milestoneCards.slice(0, 4);
+  const laterCards = effectiveSelection === 'current' ? [] : milestoneCards.slice(4);
 
   return (
     <section className="calculator-section coverage-section">
@@ -66,7 +103,49 @@ export function CoverageSection({ islands, planning = null }: CoverageSectionPro
         <p>What limits you now, and what solving it unlocks</p>
       </div>
 
-      {headroom.length > 0 && (
+      <div className="coverage-contexts" role="tablist" aria-label="Coverage context">
+        <button
+          id="coverage-context-current"
+          type="button"
+          role="tab"
+          aria-controls="coverage-context-panel"
+          aria-selected={effectiveSelection === 'current'}
+          aria-label="Show Current coverage"
+          className={`coverage-context-tab${effectiveSelection === 'current' ? ' coverage-context-tab--active' : ''}`}
+          onClick={() => setSelected('current')}
+        >Current</button>
+        {FACTIONS.map((faction) => {
+          const milestone = activeMilestones[faction];
+          if (milestone === null) return null;
+          const active = effectiveSelection === faction;
+          const config = FACTION_CONFIGS[faction];
+          const tier = milestoneTierLabel(milestone);
+          return <button
+            key={faction}
+            id={`coverage-context-${faction}`}
+            type="button"
+            role="tab"
+            aria-controls="coverage-context-panel"
+            aria-selected={active}
+            aria-label={`Show ${config.label} ${tier} coverage`}
+            className={`coverage-context-tab coverage-context-tab--${faction}${active ? ' coverage-context-tab--active' : ''}`}
+            onClick={() => setSelected(faction)}
+          >{config.label} · {tier}</button>;
+        })}
+      </div>
+
+      <div id="coverage-context-panel" role="tabpanel" aria-labelledby={`coverage-context-${effectiveSelection}`}>
+      {effectiveSelection !== 'current' && selectedMilestone && <div
+        className="coverage-section__scenario"
+        data-testid="coverage-scenario-summary"
+      >
+        <strong>{milestoneTitle(selectedMilestone)}</strong>
+        <span>{milestoneSummary(selectedMilestone)}</span>
+      </div>}
+
+      {effectiveSelection === 'current' && headroom.length > 0 && (
+        <div className="coverage-section__headroom-wrap">
+          <strong>Built-chain supply room</strong>
         <ul className="coverage-section__headroom" data-testid="coverage-headroom">
           {headroom.map((row) => (
             <li key={row.faction} className={`coverage-headroom coverage-headroom--${row.faction}`}>
@@ -89,24 +168,22 @@ export function CoverageSection({ islands, planning = null }: CoverageSectionPro
             </li>
           ))}
         </ul>
+        </div>
       )}
-      {cards.length === 0 && unbuilt.length === 0
-        && <p className="coverage-section__empty">Nothing is limiting the current population right now.</p>}
-      {cards.length > 0 && (
+      {effectiveSelection === 'current' && cards.length === 0 && unbuilt.length === 0
+        && <p className="coverage-section__empty">Nothing is limiting the current population's built supply chains right now.</p>}
+      {displayedCards.length > 0 && (
         <ol className="coverage-section__cards">
-          {cards.slice(0, 4).map((card, index) => (
-            <li key={card.goodId} className="bottleneck-card" data-testid={`bottleneck-${card.id}`}>
-              <h3>
-                <img src={`/assets/${BUILDINGS[card.goodId].image}`} alt="" width="26" height="26" />
-                <span>{index + 1}. {card.title}</span>
-              </h3>
-              <p>{card.requirement}</p>
-              <p className="bottleneck-card__solve">{card.outcome}</p>
-            </li>
-          ))}
+          {displayedCards.map((card, index) => <CoverageBottleneckCard
+            key={card.id}
+            card={card}
+            rank={index + 1}
+            islands={islands}
+            onApplyBuilding={onApplyBuilding}
+          />)}
         </ol>
       )}
-      {unbuilt.length > 0 && (
+      {effectiveSelection === 'current' && unbuilt.length > 0 && (
         <p className="coverage-section__unbuilt" data-testid="coverage-unbuilt">
           <span>Chains not built yet:</span>
           {unbuilt.map((constraint) => (
@@ -117,6 +194,14 @@ export function CoverageSection({ islands, planning = null }: CoverageSectionPro
           ))}
         </p>
       )}
+      {laterCards.length > 0 && <p className="coverage-section__later" data-testid="coverage-later-gaps">
+        <span>Later gaps:</span>
+        {laterCards.map((card) => <span key={card.id} className="coverage-section__later-chip">
+          <img src={`/assets/${BUILDINGS[card.goodId].image}`} alt="" width="18" height="18" />
+          <span>{card.title}</span>
+        </span>)}
+      </p>}
+      </div>
     </section>
   );
 }

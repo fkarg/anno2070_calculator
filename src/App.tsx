@@ -157,7 +157,11 @@ export function App() {
         />
       </div>
       <div id="workspace-production" className="workspace-panel" role="tabpanel" aria-labelledby="tab-production" hidden={workspace !== 'production'}>
-        <CoverageSection islands={state.islands} />
+        <CoverageSection
+          islands={state.islands}
+          planning={planning}
+          onApplyBuilding={applyBuilding}
+        />
         <ProductionSection
               state={state.plan}
               results={production}
