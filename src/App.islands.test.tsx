@@ -53,8 +53,13 @@ describe('islands section', () => {
     expect(input('island-0-eco-population-2')).toHaveValue('725');
     await replaceInput(input('island-0-eco-population-3'), '0');
     expect(input('island-0-eco-population-2')).toHaveValue('1200');
+    const manualTier = input('island-0-eco-population-3').closest('.island-card__tier-mini')!;
+    expect(manualTier).toHaveAttribute('data-mode', 'manual');
+    expect(manualTier).toHaveTextContent('manual');
     fireEvent.click(buttonWithLabel('Use automatic Island 1 Eco Executives population'));
     expect(input('island-0-eco-population-3')).toHaveValue('760');
+    expect(input('island-0-eco-population-3').closest('.island-card__tier-mini'))
+      .toHaveAttribute('data-mode', 'auto');
     expect(document.querySelector('[aria-label="Island 1 name"]')).toBeNull();
 
     openConfiguration('Island 1');
@@ -70,8 +75,8 @@ describe('islands section', () => {
     addIsland();
     await setIslandHouses(0, 'eco', '100');
     const fishRow = byTestId('island-0-balance-fishery');
-    expect(fishRow.querySelectorAll('td')[1].textContent).not.toBe('0');
-    expect(fishRow.querySelectorAll('td')[2].textContent).toMatch(/^-/);
+    expect(fishRow.querySelector('.island-card__coverage-demand')?.textContent).not.toBe('0');
+    expect(fishRow.querySelector('.island-card__coverage-balance')?.textContent).toMatch(/^-/);
   });
 
   test('stepper-owned fisheries flip the local fish balance to surplus', async () => {
@@ -85,8 +90,30 @@ describe('islands section', () => {
     await replaceInput(input('island-0-owned-fishery'), '3');
 
     const fishRow = byTestId('island-0-balance-fishery');
-    expect(fishRow.querySelectorAll('td')[0].textContent).toBe('3');
+    expect(fishRow.querySelector('.island-card__coverage-capacity')).toHaveTextContent('3');
     expect(fishRow.querySelector('.balance--surplus')).not.toBeNull();
+  });
+
+  test('separates building inventory from local coverage', async () => {
+    renderApp();
+    addIsland();
+    await setIslandHouses(0, 'eco', '10');
+    addBuilding(0, 'fishery');
+
+    const island = byTestId('island-0');
+    const ledger = island.querySelector('.island-card__ledger')!;
+    expect([...ledger.querySelectorAll('thead th')].map((heading) => heading.textContent))
+      .toEqual(['Building', 'Owned here', 'Prod %']);
+    expect(input('island-0-owned-fishery')).toHaveValue('1');
+    expect(input('island-0-productivity-fishery')).toHaveValue('100');
+
+    const coverage = island.querySelector('.island-card__balances')!;
+    expect(coverage.querySelector('summary')).toHaveTextContent('Local coverage');
+    const fish = byTestId('island-0-balance-fishery');
+    expect(fish.querySelector('.island-card__coverage-capacity')).toHaveTextContent('1');
+    expect(fish.querySelector('.island-card__coverage-demand')?.textContent).toMatch(/^0\.\d+$/);
+    expect(fish.querySelector('.island-card__coverage-balance')?.textContent).toMatch(/^0\.\d+$/);
+    expect(fish.querySelector('.island-card__coverage-result')).toHaveTextContent(/%/);
   });
 
   test('build-next suggestions add a buildable producer for the biggest deficit', async () => {
@@ -211,14 +238,45 @@ describe('islands section', () => {
     addIsland();
     addBuilding(0, 'fishery');
     addBuilding(0, 'windPark');
+    addBuilding(0, 'coalPowerStation');
     expect(byTestId('island-0-operating-load'))
-      .toHaveTextContent('maintenance credits per minute:-40power:20ecobalance:0');
+      .toHaveTextContent('maintenance credits per minute:-50power:80ecobalance:-15');
     // Impact-only rows show no plan requirement or productivity input.
     expect(document.getElementById('island-0-productivity-windPark')).toBeNull();
+    expect(input('island-0-productivity-coalPowerStation')).toHaveValue('100');
     expect(document.getElementById('island-0-productivity-fishery')).not.toBeNull();
     // Mixed categories get divider rows; a lone category (see other tests) none.
     const groups = [...byTestId('island-0').querySelectorAll('.island-card__ledger-group')];
     expect(groups.map((group) => group.textContent)).toEqual(['Production', 'Power']);
+  });
+
+  test('terminal construction output reads as a stockpile', () => {
+    renderApp();
+    addIsland();
+    addBuilding(0, 'smelter');
+
+    const modules = byTestId('island-0-balance-smelter');
+    expect(modules.querySelector('.island-card__coverage-capacity')).toHaveTextContent('1');
+    expect(modules.querySelector('.island-card__coverage-demand')).toHaveTextContent('—');
+    expect(modules.querySelector('.island-card__coverage-balance')).toHaveTextContent('—');
+    expect(modules.querySelector('.island-card__coverage-result')).toHaveTextContent('stockpile');
+
+    const basalt = byTestId('island-0-balance-basaltExtraction');
+    expect(basalt.querySelector('.island-card__coverage-demand')).toHaveTextContent('1');
+    expect(basalt.querySelector('.island-card__coverage-balance')).toHaveTextContent('-1');
+    expect(basalt.querySelector('.island-card__coverage-result')).toHaveTextContent('0%');
+  });
+
+  test('surplus stays available when no other island needs an import', async () => {
+    renderApp();
+    addIsland();
+    addBuilding(0, 'fishery');
+    addIsland();
+    await setIslandHouses(1, 'eco', '10');
+    addBuilding(1, 'fishery');
+
+    expect(byTestId('island-0-balance-fishery').querySelector('.island-card__coverage-result'))
+      .toHaveTextContent('available');
   });
 
   test('deposit-gated material buildings appear only with the deposit configured', () => {
@@ -255,9 +313,12 @@ describe('islands section', () => {
     // Fully covered empire-wide: the plain import label, and the negative
     // balance number drops the shortfall alarm color.
     await replaceInput(input('island-0-owned-fishery'), '4');
+    expect(byTestId('island-0-balance-fishery').querySelector('.island-card__coverage-result'))
+      .toHaveTextContent('export');
     expect(cell().textContent).toContain('import');
     expect(cell().textContent).not.toContain('%');
-    const balanceCell = byTestId('island-1-balance-fishery').querySelectorAll('td')[2];
+    const balanceCell = byTestId('island-1-balance-fishery')
+      .querySelector('.island-card__coverage-balance')!;
     expect(balanceCell.classList.contains('balance--import')).toBe(true);
     expect(balanceCell.classList.contains('balance--shortfall')).toBe(false);
     // Imported goods leave Build next — they need a route, not a building.

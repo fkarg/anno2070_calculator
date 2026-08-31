@@ -55,6 +55,20 @@ describe('islandOperatingImpact', () => {
     expect(islandOperatingImpact(island)!.ecoBalance).toBeCloseTo(-2, 9);
   });
 
+  test('coal-station energy bonuses scale power output only', () => {
+    const island = createIsland('A');
+    island.owned = { coalPowerStation: editable(1) };
+    island.productivity = { coalPowerStation: editable(135) };
+
+    // +20% sector and +15% island energy bonuses add to 135%: 60 -> 81.
+    // Warehouse power is +6; maintenance and ecobalance remain flat.
+    expect(islandOperatingImpact(island)).toEqual({
+      maintenanceCredits: -20,
+      power: 87,
+      ecoBalance: -15,
+    });
+  });
+
   test('underwater islands use the deep sea warehouse base and have no ecobalance', () => {
     const island = createIsland('A');
     island.underwater = true;

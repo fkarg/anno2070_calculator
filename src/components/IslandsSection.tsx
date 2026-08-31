@@ -12,10 +12,11 @@ import {
   BALANCE_EPSILON,
   DISPLAY_EPSILON,
   calculateIslandBalance,
+  transferNeeds,
   type GoodBalance,
   type IslandBalances,
 } from '../calculations/island-balance';
-import { GOODS, producedGood, type GoodId } from '../calculations/goods';
+import { GOODS, STOCKPILE_GOODS, producedGood, type GoodId } from '../calculations/goods';
 import { islandOperatingImpact } from '../calculations/operating-impact';
 import type { Faction } from '../calculations/population';
 import { formatRequirement } from '../calculations/production';
@@ -84,18 +85,6 @@ function compareByChainTier(left: BuildingId, right: BuildingId): number {
   const tierDifference = (BUILDING_TIER.get(left) ?? 9) - (BUILDING_TIER.get(right) ?? 9);
   if (tierDifference !== 0) return tierDifference;
   return BUILDINGS[left].label.localeCompare(BUILDINGS[right].label);
-}
-
-function ownedTotalsByBuilding(islands: readonly IslandState[]): Map<BuildingId, number | null> {
-  const totals = new Map<BuildingId, number | null>();
-  for (const island of islands) {
-    if (!island.settled) continue;
-    for (const [buildingId, entry] of Object.entries(island.owned) as [BuildingId, EditableNumber][]) {
-      const current = totals.get(buildingId);
-      totals.set(buildingId, current === null || entry.value === null ? null : (current ?? 0) + entry.value);
-    }
-  }
-  return totals;
 }
 
 function cell(value: number | null | undefined): string {
@@ -246,7 +235,11 @@ function FactionSummaryRow({ island, faction, idPrefix, onChange }: {
           const raw = manual ? override.raw : population?.[index]?.toString() ?? '';
           const valid = manual ? override.value !== null : population !== null;
           return (
-            <span key={tierLabel} className="island-card__tier-mini">
+            <span
+              key={tierLabel}
+              className="island-card__tier-mini"
+              data-mode={manual ? 'manual' : 'auto'}
+            >
               <RevealEditValue
                 id={`${idPrefix}${faction}-population-${index}`}
                 label={`${island.name} ${config.label} ${tierLabel} population`}
@@ -260,18 +253,21 @@ function FactionSummaryRow({ island, faction, idPrefix, onChange }: {
                 }))}
               />
               {manual && (
-                <button
-                  type="button"
-                  className="island-card__tier-reset"
-                  aria-label={`Use automatic ${island.name} ${config.label} ${tierLabel} population`}
-                  onClick={() => updateFactionState((current) => ({
-                    ...current,
-                    overrides: current.overrides.map((entry, entryIndex) =>
-                      entryIndex === index ? null : entry),
-                  }))}
-                >
-                  ↺
-                </button>
+                <>
+                  <span className="island-card__tier-status" aria-hidden="true">manual</span>
+                  <button
+                    type="button"
+                    className="island-card__tier-reset"
+                    aria-label={`Use automatic ${island.name} ${config.label} ${tierLabel} population`}
+                    onClick={() => updateFactionState((current) => ({
+                      ...current,
+                      overrides: current.overrides.map((entry, entryIndex) =>
+                        entryIndex === index ? null : entry),
+                    }))}
+                  >
+                    ↺
+                  </button>
+                </>
               )}
             </span>
           );
@@ -285,14 +281,12 @@ function BuildingLedger({
   island,
   idPrefix,
   balances,
-  ownedTotals,
   empire,
   onChange,
 }: {
   island: IslandState;
   idPrefix: string;
   balances: IslandBalances;
-  ownedTotals: Map<BuildingId, number | null>;
   empire: IslandBalances;
   onChange: IslandChange;
 }) {
@@ -384,10 +378,7 @@ function BuildingLedger({
         <thead>
           <tr>
             <th>Building</th>
-            <th title="Owned across all islands">Σ own</th>
-            <th>Here</th>
-            <th title="This island's demand">Demand</th>
-            <th title="This island's capacity minus demand">Balance</th>
+            <th>Owned here</th>
             <th title="Productivity on this island">Prod %</th>
           </tr>
         </thead>
@@ -396,8 +387,6 @@ function BuildingLedger({
             const building = BUILDINGS[buildingId];
             const entry = island.owned[buildingId];
             const goodId = producedGood(buildingId);
-            const canonical = goodId === buildingId;
-            const balance = canonical && goodId !== null ? balances[goodId] : undefined;
             const productivity = island.productivity[buildingId];
             // Category divider rows keep supply-chain buildings visually
             // separate from power/eco/material support once both appear.
@@ -407,7 +396,7 @@ function BuildingLedger({
               <Fragment key={buildingId}>
                 {startsGroup && (
                   <tr className="island-card__ledger-group" aria-hidden="true">
-                    <th colSpan={6}>{CATEGORY_LABELS[building.category]}</th>
+                    <th colSpan={3}>{CATEGORY_LABELS[building.category]}</th>
                   </tr>
                 )}
                 <tr data-testid={`${idPrefix}ledger-${buildingId}`}>
@@ -417,7 +406,6 @@ function BuildingLedger({
                       <span>{building.label}{building.note !== undefined && '*'}</span>
                     </span>
                   </th>
-                  <td>{ownedTotals.get(buildingId) === null ? '—' : ownedTotals.get(buildingId) ?? 0}</td>
                   <td className="island-card__stepper">
                     <button
                       type="button"
@@ -436,10 +424,6 @@ function BuildingLedger({
                       aria-label={`One more ${building.label} on ${island.name}`}
                       onClick={() => step(buildingId, 1)}
                     >+</button>
-                  </td>
-                  <td>{canonical ? cell(balance?.demand) : '·'}</td>
-                  <td className={canonical ? balanceClass(balance?.balance) : ''}>
-                    {canonical ? cell(balance?.balance) : '·'}
                   </td>
                   <td className="island-card__prod-cell">
                     {goodId === null && building.scalableOutput === undefined ? '·' : (
@@ -474,9 +458,17 @@ function BuildingLedger({
 function coverageCell(
   balance: GoodBalance,
   empire: GoodBalance | undefined,
+  transferred: boolean,
 ): { text: string; ratio: number | null; imported: boolean } {
   if (balance.capacity === null || balance.demand === null) return { text: '—', ratio: null, imported: false };
-  if (balance.demand === 0) return { text: balance.capacity > 0 ? 'export' : '—', ratio: null, imported: false };
+  if (balance.demand === 0) {
+    if (balance.capacity <= BALANCE_EPSILON) return { text: '—', ratio: null, imported: false };
+    return {
+      text: transferred ? 'export' : 'available',
+      ratio: null,
+      imported: false,
+    };
+  }
   const ratio = balance.capacity / balance.demand;
   // A local shortfall sourced from other islands is an import, not an alarm.
   // When the empire itself is short, still say import but carry the empire's
@@ -490,12 +482,13 @@ function coverageCell(
   return { text: `${Math.round(Math.min(1, ratio) * 100)}%${ratio > 1 ? ' +' : ''}`, ratio, imported: false };
 }
 
-function LocalBalanceTable({ island, idPrefix, empire }: {
-  island: IslandState;
+function LocalBalanceTable({ balances: islandBalances, idPrefix, empire, transferredGoods }: {
+  balances: IslandBalances;
   idPrefix: string;
   empire: IslandBalances;
+  transferredGoods: ReadonlySet<GoodId>;
 }) {
-  const balances = (Object.entries(calculateIslandBalance(island)) as [GoodId, GoodBalance][])
+  const balances = (Object.entries(islandBalances) as [GoodId, GoodBalance][])
     // Owned-at-zero entries create all-zero rows; only goods this island
     // actually produces or demands are worth a line.
     .filter(([, balance]) => balance.capacity === null || balance.demand === null
@@ -506,24 +499,36 @@ function LocalBalanceTable({ island, idPrefix, empire }: {
   return (
     <table className="island-card__balance-table">
       <thead>
-        <tr><th>Good</th><th>Capacity</th><th>Demand</th><th>Balance</th><th>Coverage</th></tr>
+        <tr><th>Good</th><th>Balance</th><th>Coverage</th></tr>
       </thead>
       <tbody>
         {balances.map(([goodId, balance]) => {
-          const coverage = coverageCell(balance, empire[goodId]);
+          const stockpile = STOCKPILE_GOODS.has(goodId);
+          const coverage = stockpile
+            ? { text: 'stockpile', ratio: null, imported: false }
+            : coverageCell(balance, empire[goodId], transferredGoods.has(goodId));
           return (
             <tr key={goodId} data-testid={`${idPrefix}balance-${goodId}`}>
               <th scope="row">
-                <img src={`/assets/${BUILDINGS[goodId].image}`} alt="" width="20" height="20" />
-                <span>{BUILDINGS[goodId].label}</span>
+                <span className="island-card__coverage-good">
+                  <img src={`/assets/${BUILDINGS[goodId].image}`} alt="" width="20" height="20" />
+                  <span>
+                    <strong>{BUILDINGS[goodId].label}</strong>
+                    <small>
+                      <span className="visually-hidden">Capacity </span>
+                      <span className="island-card__coverage-capacity">{cell(balance.capacity)}</span>
+                      <span aria-hidden="true"> / </span>
+                      <span className="visually-hidden">Demand </span>
+                      <span className="island-card__coverage-demand">{stockpile ? '—' : cell(balance.demand)}</span>
+                    </small>
+                  </span>
+                </span>
               </th>
-              <td>{cell(balance.capacity)}</td>
-              <td>{cell(balance.demand)}</td>
               {/* A deficit fully covered from elsewhere is routine, not an alarm. */}
-              <td className={coverage.imported ? 'balance--import' : balanceClass(balance.balance)}>
-                {cell(balance.balance)}
+              <td className={`island-card__coverage-balance ${stockpile ? '' : coverage.imported ? 'balance--import' : balanceClass(balance.balance)}`}>
+                {stockpile ? '—' : cell(balance.balance)}
               </td>
-              <td className="island-card__coverage-cell">
+              <td className="island-card__coverage-cell island-card__coverage-result">
                 {coverage.ratio !== null && (
                   <span className="coverage-bar" aria-hidden="true">
                     <span
@@ -654,8 +659,8 @@ function IslandConfiguration({ island, index, idPrefix, onChange, onRemove }: {
 
 export function IslandsSection({ islands, onIslandsChange }: IslandsSectionProps) {
   const [configuring, setConfiguring] = useState<ReadonlySet<string>>(new Set());
-  const ownedTotals = ownedTotalsByBuilding(islands);
   const empire = aggregateBalances(islands);
+  const transferredGoods = new Set(transferNeeds(islands).map((need) => need.goodId));
 
   const toggleConfigure = (islandId: string) => setConfiguring((current) => {
     const next = new Set(current);
@@ -734,19 +739,25 @@ export function IslandsSection({ islands, onIslandsChange }: IslandsSectionProps
                 );
               })()}
 
-              <BuildingLedger
-                island={island}
-                idPrefix={idPrefix}
-                balances={balances}
-                ownedTotals={ownedTotals}
-                empire={empire}
-                onChange={onChange}
-              />
+              <div className="island-card__operations">
+                <BuildingLedger
+                  island={island}
+                  idPrefix={idPrefix}
+                  balances={balances}
+                  empire={empire}
+                  onChange={onChange}
+                />
 
-              <details className="island-card__balances" open>
-                <summary>Local balance</summary>
-                <LocalBalanceTable island={island} idPrefix={idPrefix} empire={empire} />
-              </details>
+                <details className="island-card__balances" open>
+                  <summary>Local coverage</summary>
+                  <LocalBalanceTable
+                    balances={balances}
+                    idPrefix={idPrefix}
+                    empire={empire}
+                    transferredGoods={transferredGoods}
+                  />
+                </details>
+              </div>
             </section>
           );
         })}

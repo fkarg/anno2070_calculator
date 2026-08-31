@@ -115,7 +115,10 @@ export const BUILDINGS = {
   thermalPowerStation: { ...powerPlant('Thermal power station', 'Thermal-power-icon.png', -65, 70, 0, 'Thermal_Power_Station', 'Output scales with inhabitants in range (100% at 650) — set its % to match.'), scalableOutput: true },
   offshoreWindPark: powerPlant('Offshore wind park', 'Offshore-wind-icon.png', -50, 30, 0, 'Offshore_Wind_Park'),
   solarTowerGenerator: powerPlant('Solar tower generator', 'Solar-power-icon.png', -120, 120, 0, 'Solar_Tower_Generator'),
-  coalPowerStation: powerPlant('Coal power station', 'Coal-power-stn-icon.png', -10, 60, -15, 'Coal_Power_Station', 'Burns the coal of 1 rotary excavator (= ½ coal mine) per station.'),
+  coalPowerStation: {
+    ...powerPlant('Coal power station', 'Coal-power-stn-icon.png', -10, 60, -15, 'Coal_Power_Station', 'Burns the coal of 1 rotary excavator (= ½ coal mine) per station. Set its % to the combined energy output after sector and island bonuses.'),
+    scalableOutput: true,
+  },
   nuclearPowerPlant: powerPlant('Nuclear power plant', 'Nuclear-power-icon.png', -100, 500, -10, 'Nuclear_Power_Plant', 'Burns the fuel rods of 1 fuel element factory (fed by 1 uranium mine) per plant.'),
   marineCurrentPowerPlant: powerPlant('Marine current power plant', 'Marine-power-icon.png', -40, 25, 0, 'Marine_Current_Power_Plant'),
   hydroelectricPowerPlant: powerPlant('Hydroelectric power plant', 'Hydro-dam-icon.png', -140, 500, -10, 'Hydroelectric_Power_Plant'),
@@ -132,8 +135,8 @@ export const BUILDINGS = {
   deacidificationStation: ecoBuilding('Deacidification station', 'Deacid-stn-icon.png', -80, -60, 90, 'Deacidification_Station'),
   co2Reservoir: ecoBuilding('CO2 reservoir', 'Co2-res-icon.png', -160, -110, 200, 'CO2_Reservoir'),
 
-  // Construction-material buildings: impact-only (material goods flows carry
-  // no wiki-documented absolute rates and stay out of the goods graph).
+  // Construction-material buildings. Their goods graph uses documented
+  // building ratios rather than absolute per-minute rates.
   basaltExtraction: materialBuilding('Basalt extraction', 'Basalt.png', -5, -1, 0, 'Basalt_Extraction'),
   basaltCrusher: materialBuilding('Basalt crusher', 'Granules.png', -5, -2, -4, 'Basalt_Crusher'),
   smelter: materialBuilding('Smelter', 'Building_modules.png', -5, -1, 0, 'Smelter'),

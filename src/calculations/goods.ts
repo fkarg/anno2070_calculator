@@ -17,6 +17,19 @@ export type Good = Readonly<{
   finalDemands: readonly FinalDemand[];
 }>;
 
+// Terminal construction goods are accumulated for episodic building,
+// research, and vehicle costs. They have production capacity, but no stable
+// per-minute demand that could support coverage or transfer inference.
+export const STOCKPILE_GOODS: ReadonlySet<GoodId> = new Set<GoodId>([
+  'smelter',
+  'toolsWorkshop',
+  'sawmill',
+  'glassworks',
+  'concreteFactory',
+  'steelworks',
+  'carbonFactory',
+]);
+
 const RATE_EPSILON = 1e-9;
 const nodeById = new Map(PRODUCTION_NODES.map((node) => [node.id, node]));
 

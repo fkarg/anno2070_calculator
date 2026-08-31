@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { CONSUMPTION, GOODS, producedGood } from './goods';
+import { CONSUMPTION, GOODS, STOCKPILE_GOODS, producedGood } from './goods';
 import { PRODUCTION_NODES } from './production-data';
 import { BUILDINGS, type BuildingId } from './building-data';
 
@@ -35,6 +35,18 @@ describe('GOODS derivation', () => {
     ]));
     expect(CONSUMPTION.get('steelworks')).toContainEqual({ goodId: 'ironSmeltery', rate: 2 });
     expect(CONSUMPTION.get('sawmill')).toContainEqual({ goodId: 'treeNursery', rate: 0.25 });
+  });
+
+  test('terminal construction goods are stockpiles without continuous demand', () => {
+    expect(STOCKPILE_GOODS).toEqual(new Set([
+      'smelter',
+      'toolsWorkshop',
+      'sawmill',
+      'glassworks',
+      'concreteFactory',
+      'steelworks',
+      'carbonFactory',
+    ]));
   });
 
   test('alternative producers share the good at derived rates', () => {
