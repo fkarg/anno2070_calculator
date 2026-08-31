@@ -26,6 +26,26 @@ test('visually distinguishes the active workspace tab', () => {
   expect(css).toMatch(/\.workspace-tabs button:focus-visible \{[^}]*outline:/);
 });
 
+test('defines and consumes semantic color tokens', () => {
+  const css = readFileSync('src/styles.css', 'utf8');
+
+  for (const token of [
+    '--surface-page', '--surface-panel', '--surface-raised', '--surface-section-heading',
+    '--surface-card', '--surface-control', '--surface-selected', '--line-strong',
+    '--line-soft', '--text-primary', '--text-muted', '--select', '--info', '--success',
+    '--deficit', '--focus', '--manual', '--manual-ink', '--manual-wash', '--invalid',
+    '--value-gold', '--value-gold-bright', '--eco', '--tycoon', '--tech',
+  ]) {
+    expect(css).toContain(`${token}:`);
+  }
+
+  expect(css).toMatch(/button:focus-visible, input:focus-visible \{[^}]*var\(--focus\)/);
+  expect(css).toMatch(/\.workspace-tabs button\[aria-selected="true"\] \{[^}]*var\(--select\)/);
+  expect(css).toMatch(/\.population-value--manual \{[^}]*var\(--manual\)/);
+  expect(css).toMatch(/\.balance--shortfall \{[^}]*var\(--deficit\)/);
+  expect(css).toMatch(/\.balance--surplus \{[^}]*var\(--success\)/);
+});
+
 test('keeps island cards two-up on desktop', () => {
   const css = readFileSync('src/styles.css', 'utf8');
 
