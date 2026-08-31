@@ -5,23 +5,13 @@ import { tierCapacities, type Faction } from '../calculations/population';
 import { formatRequirement } from '../calculations/production';
 import { sumIslandPopulations } from '../island';
 import { FACTIONS, FACTION_CONFIGS } from '../model';
-import {
-  calculateSupportedPopulation,
-  throttleCause,
-  type GoodConstraint,
-} from '../calculations/supported-population';
+import type { GrowthPlanningResult } from '../calculations/planning';
 import type { IslandState } from '../island';
+import { currentCoverageView } from './coverage-card-model';
 
 type CoverageSectionProps = {
   islands: readonly IslandState[];
-};
-
-type Card = {
-  goodId: GoodId;
-  title: string;
-  why: string;
-  solve: string;
-  next: string | null;
+  planning?: GrowthPlanningResult | null;
 };
 
 function canonicalProducerLabel(goodId: GoodId): string {
@@ -61,43 +51,10 @@ function headroomRows(islands: readonly IslandState[]): HeadroomRow[] {
   });
 }
 
-// Bottlenecks toward the current population's demand. Chains never built sit
-// at scale 0 and would drown the ranking, but they are known future work; the
-// acute story is production that exists and was outgrown, so unbuilt chains
-// collapse into a compact list below the cards.
-function demandView(islands: readonly IslandState[]): { cards: Card[]; unbuilt: readonly GoodConstraint[] } {
-  const support = calculateSupportedPopulation(islands);
-  const acute = support.constraints.filter((constraint) => constraint.nominalCapacity > 0);
-  const unbuilt = support.constraints.filter((constraint) => constraint.nominalCapacity === 0);
-  const cards = acute.slice(0, 4).map((constraint, index) => {
-    const available = Math.max(0, constraint.effectiveCapacity - constraint.intermediateDemand);
-    const successor = acute[index + 1];
-    // Chain-throttled producers: the real fix is the starved input, not more
-    // of the throttled building itself.
-    const starved = constraint.effectiveCapacity < constraint.nominalCapacity - 1e-9
-      ? throttleCause(islands, constraint.goodId)
-      : null;
-    return {
-      goodId: constraint.goodId,
-      title: `${canonicalProducerLabel(constraint.goodId)} · ×${formatRequirement(constraint.scale)}`,
-      why: starved
-        ? `${formatRequirement(available)} available vs ${formatRequirement(constraint.finalDemand)} current full demand — your ${formatRequirement(constraint.nominalCapacity)} buildings are starved: ${canonicalProducerLabel(starved.goodId)} covers ${formatRequirement(starved.supply)} of ${formatRequirement(starved.demand)} input demand`
-        : `${formatRequirement(available)} available vs ${formatRequirement(constraint.finalDemand)} current full demand`,
-      solve: starved
-        ? `+1 ${canonicalProducerLabel(starved.goodId)} → feeds the starved chain`
-        : constraint.goodId === support.limitingGood && support.scaleAfterNextBuilding !== null
-          ? `+1 ${canonicalProducerLabel(constraint.goodId)} → supports ×${formatRequirement(support.scaleAfterNextBuilding)}`
-          : `+1 ${canonicalProducerLabel(constraint.goodId)} → ×${formatRequirement((available + 1) / constraint.finalDemand)} on this good`,
-      next: successor ? canonicalProducerLabel(successor.goodId) : null,
-    };
-  });
-  return { cards, unbuilt };
-}
-
-export function CoverageSection({ islands }: CoverageSectionProps) {
+export function CoverageSection({ islands, planning = null }: CoverageSectionProps) {
   if (!islands.some((island) => island.settled)) return null;
 
-  const { cards, unbuilt } = demandView(islands);
+  const { cards, unbuilt } = currentCoverageView(islands, planning);
   const headroom = headroomRows(islands);
 
   return (
@@ -137,15 +94,14 @@ export function CoverageSection({ islands }: CoverageSectionProps) {
         && <p className="coverage-section__empty">Nothing is limiting the current population right now.</p>}
       {cards.length > 0 && (
         <ol className="coverage-section__cards">
-          {cards.map((card, index) => (
-            <li key={card.goodId} className="bottleneck-card" data-testid={`bottleneck-demand-${card.goodId}`}>
+          {cards.slice(0, 4).map((card, index) => (
+            <li key={card.goodId} className="bottleneck-card" data-testid={`bottleneck-${card.id}`}>
               <h3>
                 <img src={`/assets/${BUILDINGS[card.goodId].image}`} alt="" width="26" height="26" />
                 <span>{index + 1}. {card.title}</span>
               </h3>
-              <p>{card.why}</p>
-              <p className="bottleneck-card__solve">{card.solve}</p>
-              {card.next && <p className="bottleneck-card__next">next bottleneck: {card.next}</p>}
+              <p>{card.requirement}</p>
+              <p className="bottleneck-card__solve">{card.outcome}</p>
             </li>
           ))}
         </ol>
