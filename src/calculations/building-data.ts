@@ -134,8 +134,8 @@ export const BUILDINGS = {
   // no wiki-documented absolute rates and stay out of the goods graph).
   basaltExtraction: materialBuilding('Basalt extraction', 'Basalt.png', -5, -1, 0, 'Basalt_Extraction'),
   basaltCrusher: materialBuilding('Basalt crusher', 'Granules.png', -5, -2, -4, 'Basalt_Crusher'),
-  smelter: materialBuilding('Smelter', 'Smelter.png', -5, -1, 0, 'Smelter'),
-  underwaterRecyclingStation: materialBuilding('Underwater recycling station', 'Building_modules.png', -60, -4, 0, 'Underwater_Recycling_Station'),
+  smelter: materialBuilding('Smelter', 'Building_modules.png', -5, -1, 0, 'Smelter'),
+  underwaterRecyclingStation: materialBuilding('Underwater recycling station', 'Building_modules_item.png', -60, -4, 0, 'Underwater_Recycling_Station'),
   toolsWorkshop: materialBuilding('Tools workshop', 'Tools.png', -10, -3, -4, 'Tools_Workshop'),
   treeNursery: materialBuilding('Tree nursery', 'Nursery-icon.png', -10, -2, 0, 'Tree_Nursery'),
   sawmill: materialBuilding('Sawmill', 'Wood.png', -5, -2, -3, 'Sawmill'),

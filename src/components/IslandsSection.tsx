@@ -530,7 +530,10 @@ function LocalBalanceTable({ island, idPrefix, empire }: {
               </th>
               <td>{cell(balance.capacity)}</td>
               <td>{cell(balance.demand)}</td>
-              <td className={balanceClass(balance.balance)}>{cell(balance.balance)}</td>
+              {/* A deficit fully covered from elsewhere is routine, not an alarm. */}
+              <td className={coverage.imported ? 'balance--import' : balanceClass(balance.balance)}>
+                {cell(balance.balance)}
+              </td>
               <td className="island-card__coverage-cell">
                 {coverage.ratio !== null && (
                   <span className="coverage-bar" aria-hidden="true">

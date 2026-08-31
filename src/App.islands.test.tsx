@@ -242,10 +242,14 @@ describe('islands section', () => {
     expect(byTestId('island-1-suggestions')
       .querySelector('[aria-label="Build one Fishery on Island 2"]')).not.toBeNull();
 
-    // Fully covered empire-wide: the plain import label.
+    // Fully covered empire-wide: the plain import label, and the negative
+    // balance number drops the shortfall alarm color.
     await replaceInput(input('island-0-owned-fishery'), '4');
     expect(cell().textContent).toContain('import');
     expect(cell().textContent).not.toContain('%');
+    const balanceCell = byTestId('island-1-balance-fishery').querySelectorAll('td')[2];
+    expect(balanceCell.classList.contains('balance--import')).toBe(true);
+    expect(balanceCell.classList.contains('balance--shortfall')).toBe(false);
     // Imported goods leave Build next — they need a route, not a building.
     expect(document.querySelector('[aria-label="Build one Fishery on Island 2"]')).toBeNull();
   });
