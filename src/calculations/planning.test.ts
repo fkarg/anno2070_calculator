@@ -79,6 +79,42 @@ describe('Growth planning', () => {
     ));
   });
 
+  test('records previous and added demand on each milestone chain', () => {
+    const state = createInitialAppState();
+    state.plan.factions.eco.intent = {
+      kind: 'residences', houses: editable(100), maxTier: 2,
+    };
+
+    const [workers, employees] = calculateGrowthPlanning(state.plan, [])!.sequences.eco;
+    const previousFish = workers.gaps.find((gap) => gap.goodId === 'fishery')!
+      .chains.find((chain) => chain.faction === 'eco')!;
+    const nextFish = employees.gaps.find((gap) => gap.goodId === 'fishery')!
+      .chains.find((chain) => chain.faction === 'eco')!;
+
+    expect(nextFish.previousRequired).toBeCloseTo(previousFish.required);
+    expect(nextFish.addedHere).toBeCloseTo(Math.max(
+      0,
+      nextFish.required - previousFish.required,
+    ));
+  });
+
+  test('marks a current-population chain as carried in another faction milestone', () => {
+    const state = createInitialAppState();
+    const actual = createIsland('Tech');
+    actual.factions.tech.houses = editable(10);
+    actual.factions.tech.maxTier = 1;
+    state.plan.factions.eco.intent = {
+      kind: 'residences', houses: editable(100), maxTier: 3,
+    };
+
+    const milestone = calculateGrowthPlanning(state.plan, [actual])!.sequences.eco.at(-1)!;
+    const chain = milestone.gaps.find((gap) => gap.goodId === 'aquafarm')!.chains[0];
+
+    expect(chain.faction).toBe('tech');
+    expect(chain.previousRequired).toBeCloseTo(chain.required);
+    expect(chain.addedHere).toBe(0);
+  });
+
   test('does not retain a higher actual requirement when a target scenario needs less', () => {
     const state = createInitialAppState();
     const workers = createIsland('Workers');

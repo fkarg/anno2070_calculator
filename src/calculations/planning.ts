@@ -18,7 +18,12 @@ export type GrowthGap = Readonly<{
   previousRequired: number;
   checkpointRequired: number;
   addedHere: number;
-  chains: readonly GrowthDemandChain[];
+  chains: readonly GrowthGapChain[];
+}>;
+
+export type GrowthGapChain = GrowthDemandChain & Readonly<{
+  previousRequired: number;
+  addedHere: number;
 }>;
 
 export type GrowthBaseline = Readonly<{
@@ -150,6 +155,10 @@ function compareGaps(left: GrowthGap, right: GrowthGap): number {
 
 type Requirements = ReturnType<typeof calculateGrowthRequirements>;
 
+function demandChainKey(chain: GrowthDemandChain): string {
+  return `${chain.faction}:${chain.rootNodeId}:${chain.pathNodeIds.join('>')}`;
+}
+
 function buildGaps(
   requirements: Requirements,
   previous: Requirements,
@@ -159,6 +168,17 @@ function buildGaps(
   return [...requirements].map(([goodId, snapshot]) => {
     const capacity = capacities[goodId] ?? 0;
     const previousRequired = previous.get(goodId)?.required ?? 0;
+    const previousChains = new Map(
+      (previous.get(goodId)?.chains ?? []).map((chain) => [demandChainKey(chain), chain.required]),
+    );
+    const chains = snapshot.chains.map((chain): GrowthGapChain => {
+      const previousChainRequired = previousChains.get(demandChainKey(chain)) ?? 0;
+      return {
+        ...chain,
+        previousRequired: previousChainRequired,
+        addedHere: Math.max(0, chain.required - previousChainRequired),
+      };
+    });
     return {
       goodId,
       required: snapshot.required,
@@ -168,7 +188,7 @@ function buildGaps(
       previousRequired,
       checkpointRequired: snapshot.required,
       addedHere: Math.max(0, snapshot.required - previousRequired),
-      chains: snapshot.chains,
+      chains,
     };
   }).filter((gap) => gap.remaining > EPSILON).sort(compareGaps);
 }
