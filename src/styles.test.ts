@@ -37,10 +37,13 @@ test('keeps island cards two-up on desktop', () => {
 
 test('lays out the overview and Growth planner as distinct responsive surfaces', () => {
   const css = readFileSync('src/styles.css', 'utf8');
+  const growthCss = readFileSync('src/components/growth-milestones.css', 'utf8');
 
   expect(css).toMatch(/\.pop-rows--overview \.pop-row \{[^}]*grid-template-columns: 32px minmax\(0, 1fr\) minmax\(4rem, \.65fr\) minmax\(8rem, 1fr\) minmax\(7rem, 1fr\);/);
   expect(css).toMatch(/\.growth-targets \{[^}]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/);
   expect(css).toMatch(/\.growth-milestone--current \{[^}]*border-color:/);
   expect(css).toMatch(/\.growth-milestone--future \{[^}]*opacity:/);
   expect(css).toMatch(/@media \(max-width: 1050px\)[\s\S]*\.growth-targets \{ grid-template-columns: 1fr; \}/);
+  expect(growthCss).toMatch(/\.growth-milestones__branches \{[^}]*grid-template-columns: repeat\(3, minmax\(0, 1fr\)\);/);
+  expect(growthCss).toMatch(/@media \(max-width: 1050px\)[\s\S]*\.growth-milestones__branches \{ grid-template-columns: 1fr; \}/);
 });

@@ -1,7 +1,7 @@
 import { sumIslandHouses, sumIslandPopulations, type IslandState } from '../island';
 import { FACTIONS, type CalculatorState } from '../model';
-import { calculateProduction, createDefaultProductivity } from './calculate-production';
 import { CONSUMPTION, producedGood, type GoodId } from './goods';
+import { calculateGrowthRequirements, type GrowthDemandChain } from './growth-requirements';
 import { resolvePopulationTarget, type ResolvedPopulationTarget } from './population-target';
 import { applyPopulationOverrides, type Faction } from './population';
 import { PRODUCTION_NODES } from './production-data';
@@ -14,6 +14,17 @@ export type GrowthGap = Readonly<{
   required: number;
   capacity: number;
   remaining: number;
+  baselineRequired: number;
+  previousRequired: number;
+  checkpointRequired: number;
+  addedHere: number;
+  chains: readonly GrowthDemandChain[];
+}>;
+
+export type GrowthBaseline = Readonly<{
+  gaps: readonly GrowthGap[];
+  complete: boolean;
+  current: boolean;
 }>;
 
 export type GrowthMilestone = Readonly<{
@@ -29,7 +40,8 @@ export type GrowthMilestone = Readonly<{
 }>;
 
 export type GrowthPlanningResult = Readonly<{
-  milestones: readonly GrowthMilestone[];
+  baseline: GrowthBaseline;
+  sequences: Readonly<Record<Faction, readonly GrowthMilestone[]>>;
 }>;
 
 type Descriptor = Readonly<{
@@ -72,53 +84,31 @@ function targetAtTier(
   }, state.overrides.map((override, index) => index < tier ? override?.value ?? null : null));
 }
 
-function buildDescriptors(
+function buildFactionDescriptors(
   state: CalculatorState,
   targets: Record<Faction, ResolvedPopulationTarget>,
   actual: Record<Faction, readonly number[]>,
+  faction: Faction,
 ): Descriptor[] {
   const result: Descriptor[] = [];
-  for (const faction of FACTIONS) {
-    const actualTop = topOccupiedTier(actual[faction]);
-    if (state.factions[faction].intent.kind === 'follow'
-      || targets[faction].maxTier < actualTop
-      || targets[faction].effectivePopulations.reduce((sum, value) => sum + value, 0)
-        <= actual[faction].reduce((sum, value) => sum + value, 0)) continue;
-    let previous = actual[faction];
-    const firstTier = Math.max(1, actualTop);
-    for (let tier = firstTier; tier <= targets[faction].maxTier; tier += 1) {
-      const population = targetAtTier(faction, state.factions[faction], targets[faction], tier);
-      if (!samePopulation(population, previous)) {
-        result.push({
-          kind: tier === firstTier ? 'expand' : 'ascend',
-          faction,
-          tier,
-          population,
-        });
-      }
-      previous = population;
+  const actualTop = topOccupiedTier(actual[faction]);
+  if (state.factions[faction].intent.kind === 'follow'
+    || targets[faction].maxTier < actualTop
+    || targets[faction].effectivePopulations.reduce((sum, value) => sum + value, 0)
+      <= actual[faction].reduce((sum, value) => sum + value, 0)) return result;
+  let previous = actual[faction];
+  const firstTier = Math.max(1, actualTop);
+  for (let tier = firstTier; tier <= targets[faction].maxTier; tier += 1) {
+    const population = targetAtTier(faction, state.factions[faction], targets[faction], tier);
+    if (!samePopulation(population, previous)) {
+      result.push({
+        kind: tier === firstTier ? 'expand' : 'ascend',
+        faction,
+        tier,
+        population,
+      });
     }
-  }
-  return result.sort((left, right) => left.tier - right.tier
-    || FACTIONS.indexOf(left.faction) - FACTIONS.indexOf(right.faction));
-}
-
-function canonicalRequirements(
-  population: Record<Faction, readonly number[]>,
-  recycling: boolean,
-): Map<GoodId, number> {
-  const requirements = calculateProduction({
-    population,
-    productivity: createDefaultProductivity(),
-    recycling,
-    wholeBuildings: false,
-  });
-  const result = new Map<GoodId, number>();
-  for (const node of PRODUCTION_NODES) {
-    const goodId = producedGood(node.buildingId);
-    if (goodId === null || goodId !== node.buildingId) continue;
-    const required = requirements[node.id];
-    result.set(goodId, (result.get(goodId) ?? 0) + required);
+    previous = population;
   }
   return result;
 }
@@ -152,6 +142,37 @@ function inputDepth(goodId: GoodId, visiting = new Set<GoodId>()): number {
   return depth;
 }
 
+function compareGaps(left: GrowthGap, right: GrowthGap): number {
+  return inputDepth(right.goodId) - inputDepth(left.goodId)
+    || (catalogOrder.get(left.goodId) ?? Number.MAX_SAFE_INTEGER)
+      - (catalogOrder.get(right.goodId) ?? Number.MAX_SAFE_INTEGER);
+}
+
+type Requirements = ReturnType<typeof calculateGrowthRequirements>;
+
+function buildGaps(
+  requirements: Requirements,
+  previous: Requirements,
+  baseline: Requirements,
+  capacities: Partial<Record<GoodId, number | null>>,
+): GrowthGap[] {
+  return [...requirements].map(([goodId, snapshot]) => {
+    const capacity = capacities[goodId] ?? 0;
+    const previousRequired = previous.get(goodId)?.required ?? 0;
+    return {
+      goodId,
+      required: snapshot.required,
+      capacity,
+      remaining: Math.max(0, snapshot.required - capacity),
+      baselineRequired: baseline.get(goodId)?.required ?? 0,
+      previousRequired,
+      checkpointRequired: snapshot.required,
+      addedHere: Math.max(0, snapshot.required - previousRequired),
+      chains: snapshot.chains,
+    };
+  }).filter((gap) => gap.remaining > EPSILON).sort(compareGaps);
+}
+
 export function calculateGrowthPlanning(
   state: CalculatorState,
   islands: readonly IslandState[],
@@ -175,42 +196,59 @@ export function calculateGrowthPlanning(
   const capacities = effectiveCapacities(islands);
   if (Object.values(capacities).some((capacity) => capacity === null)) return null;
 
-  let cumulative = clonePopulations(actual);
-  const requirementFloor = canonicalRequirements(actual, state.recycling);
-  const milestones: Omit<GrowthMilestone, 'current'>[] = buildDescriptors(state, targets, actual).map((descriptor) => {
-    const populationBefore = clonePopulations(cumulative);
-    cumulative = { ...cumulative, [descriptor.faction]: [...descriptor.population] };
-    const populationAfter = clonePopulations(cumulative);
-    const requirements = canonicalRequirements(populationAfter, state.recycling);
-    for (const [goodId, required] of requirements) {
-      requirementFloor.set(goodId, Math.max(requirementFloor.get(goodId) ?? 0, required));
-    }
-    const gaps = [...requirementFloor.entries()]
-      .map(([goodId, required]) => {
-        const capacity = capacities[goodId] ?? 0;
-        return { goodId, required, capacity, remaining: Math.max(0, required - capacity) };
-      })
-      .filter((gap) => gap.remaining > EPSILON)
-      .sort((left, right) => inputDepth(right.goodId) - inputDepth(left.goodId)
-        || (catalogOrder.get(left.goodId) ?? Number.MAX_SAFE_INTEGER)
-          - (catalogOrder.get(right.goodId) ?? Number.MAX_SAFE_INTEGER));
-    return {
-      id: `${descriptor.faction}-${descriptor.tier}-${descriptor.kind}`,
-      kind: descriptor.kind,
-      faction: descriptor.faction,
-      tier: descriptor.tier,
-      populationBefore,
-      populationAfter,
-      gaps,
-      complete: gaps.length === 0,
-      current: false,
-    };
-  });
-  const currentIndex = milestones.findIndex((milestone) => !milestone.complete);
-  return {
-    milestones: milestones.map((milestone, index) => ({
+  const baselineRequirements = calculateGrowthRequirements(actual, state.recycling);
+  const baselineGaps = buildGaps(
+    baselineRequirements,
+    new Map(),
+    baselineRequirements,
+    capacities,
+  );
+  const sequences: Record<Faction, readonly GrowthMilestone[]> = {
+    eco: [],
+    tycoon: [],
+    tech: [],
+  };
+  for (const faction of FACTIONS) {
+    let previousPopulation = clonePopulations(actual);
+    let previousRequirements = baselineRequirements;
+    const milestones: Omit<GrowthMilestone, 'current'>[] = buildFactionDescriptors(
+      state,
+      targets,
+      actual,
+      faction,
+    ).map((descriptor) => {
+      const populationBefore = clonePopulations(previousPopulation);
+      const populationAfter = {
+        ...clonePopulations(actual),
+        [faction]: [...descriptor.population],
+      };
+      const requirements = calculateGrowthRequirements(populationAfter, state.recycling);
+      const gaps = buildGaps(requirements, previousRequirements, baselineRequirements, capacities);
+      previousPopulation = populationAfter;
+      previousRequirements = requirements;
+      return {
+        id: `${faction}-${descriptor.tier}-${descriptor.kind}`,
+        kind: descriptor.kind,
+        faction,
+        tier: descriptor.tier,
+        populationBefore,
+        populationAfter,
+        gaps,
+        complete: gaps.length === 0,
+      };
+    });
+    const currentIndex = milestones.findIndex((milestone) => !milestone.complete);
+    sequences[faction] = milestones.map((milestone, index) => ({
       ...milestone,
       current: index === currentIndex,
-    })),
+    }));
+  }
+  return {
+    baseline: {
+      gaps: baselineGaps,
+      complete: baselineGaps.length === 0,
+      current: baselineGaps.length > 0,
+    },
+    sequences,
   };
 }

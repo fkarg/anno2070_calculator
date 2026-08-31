@@ -9,6 +9,7 @@ import {
   renderApp,
   selectWorkspace,
   setGrowthResidenceTarget,
+  setIslandHouses,
 } from './test/app-test-utils';
 
 beforeEach(() => localStorage.clear());
@@ -34,7 +35,7 @@ test('applies a concrete producer to an island and shrinks the current full-dema
   expect(updated).toHaveTextContent('nominal output');
 });
 
-test('shows cumulative current and future milestones without pretending a target is current island demand', async () => {
+test('shows faction-local current and future milestones without pretending a target is current island demand', async () => {
   renderApp();
   await setGrowthResidenceTarget('eco', '100');
   fireEvent.click(buttonWithLabel('Eco Employees'));
@@ -45,4 +46,24 @@ test('shows cumulative current and future milestones without pretending a target
 
   selectWorkspace('Islands');
   expect(document.body).not.toHaveTextContent('target full demand short');
+});
+
+test('separates actual shortages from parallel faction growth steps', async () => {
+  renderApp();
+  addIsland();
+  await setIslandHouses(0, 'tech', '10');
+  await setGrowthResidenceTarget('eco', '100');
+  fireEvent.click(buttonWithLabel('Eco Engineers'));
+
+  const baseline = byTestId('growth-baseline');
+  const eco = byTestId('growth-sequence-eco');
+
+  expect(baseline).toHaveTextContent('Supply current population');
+  expect(baseline).toHaveTextContent('Aquafarm');
+  expect(eco).toHaveTextContent('Changed in this step');
+  expect(eco).toHaveTextContent('Carried gaps');
+  expect(eco).toHaveTextContent('Already required by current population');
+  expect(eco).toHaveTextContent('Why required?');
+  expect(eco).toHaveTextContent('Tech');
+  expect(eco).toHaveTextContent('Functional food factory');
 });
