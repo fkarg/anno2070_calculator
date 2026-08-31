@@ -21,15 +21,15 @@ describe('resolveHouses', () => {
 
   test('a fresh plan follows islands automatically', () => {
     const state = createInitialState();
-    expect(state.factions.eco.intent).toEqual({ kind: 'follow' });
-    expect(state.factions.tycoon.intent).toEqual({ kind: 'follow' });
-    expect(state.factions.tech.intent).toEqual({ kind: 'follow' });
+    expect(state.factions.eco.intent).toEqual({ kind: 'follow', tierMode: 'mirror' });
+    expect(state.factions.tycoon.intent).toEqual({ kind: 'follow', tierMode: 'mirror' });
+    expect(state.factions.tech.intent).toEqual({ kind: 'follow', tierMode: 'mirror' });
   });
 });
 
 describe('separate residence and plan state', () => {
   test('new growth targets follow settled islands', () => {
-    expect(createPlanFactionState('eco').intent).toEqual({ kind: 'follow' });
+    expect(createPlanFactionState('eco').intent).toEqual({ kind: 'follow', tierMode: 'mirror' });
   });
 
   test('residence state always starts with concrete houses', () => {

@@ -41,7 +41,7 @@ describe('loadAppState', () => {
     const result = loadAppState();
     expect(result.storable).toBe(true);
     saveAppState(result.state);
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).version).toBe(3);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).version).toBe(4);
     expect(loadAppState()).toEqual(result);
   });
 
@@ -109,7 +109,7 @@ describe('loadAppState', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
     const result = loadAppState();
     expect(result.storable).toBe(false);
-    expect(result.state.plan.factions.eco.intent).toEqual({ kind: 'follow' });
+    expect(result.state.plan.factions.eco.intent).toEqual({ kind: 'follow', tierMode: 'mirror' });
   });
 
   test('migrates v2 follow and manual houses into target intents', () => {
@@ -122,13 +122,35 @@ describe('loadAppState', () => {
     const loaded = loadAppState();
 
     expect(loaded.storable).toBe(true);
-    expect(loaded.state.plan.factions.eco.intent).toEqual({ kind: 'follow' });
+    expect(loaded.state.plan.factions.eco.intent).toEqual({ kind: 'follow', tierMode: 'mirror' });
     expect(loaded.state.plan.factions.tech.intent).toEqual({
       kind: 'residences', houses: { raw: '120', value: 120 }, maxTier: 2,
     });
   });
 
-  test('round-trips a v3 population target without derived fields', () => {
+  test('migrates v3 follow intents to explicit mirror mode', () => {
+    const state = createInitialAppState();
+    const legacy = JSON.parse(JSON.stringify(state));
+    legacy.plan.factions.eco.intent = { kind: 'follow' };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 3, ...legacy }));
+
+    expect(loadAppState()).toMatchObject({
+      storable: true,
+      state: { plan: { factions: { eco: { intent: { kind: 'follow', tierMode: 'mirror' } } } } },
+    });
+  });
+
+  test('round-trips unrestricted follow mode in version 4', () => {
+    const state = createInitialAppState();
+    state.plan.factions.tech.intent = { kind: 'follow', tierMode: 'unrestricted' };
+
+    saveAppState(state);
+
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).version).toBe(4);
+    expect(loadAppState()).toEqual({ state, storable: true });
+  });
+
+  test('round-trips a v4 population target without derived fields', () => {
     const state = createInitialAppState();
     state.plan.factions.tech.intent = {
       kind: 'population', tier: 3, count: { raw: '2500', value: 2500 },
@@ -137,7 +159,7 @@ describe('loadAppState', () => {
     saveAppState(state);
 
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!);
-    expect(stored.version).toBe(3);
+    expect(stored.version).toBe(4);
     expect(stored.plan.factions.tech.intent).toEqual(state.plan.factions.tech.intent);
     expect(JSON.stringify(stored)).not.toMatch(/normalPopulations|effectivePopulations|achieved/);
     expect(loadAppState()).toEqual({ state, storable: true });

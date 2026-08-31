@@ -19,8 +19,10 @@ export type ResidenceFactionState = PopulationSettings & {
   maxTier: number;
 };
 
+export type FollowTierMode = 'mirror' | 'unrestricted';
+
 export type TargetIntent =
-  | Readonly<{ kind: 'follow' }>
+  | Readonly<{ kind: 'follow'; tierMode: FollowTierMode }>
   | Readonly<{ kind: 'residences'; houses: EditableNumber; maxTier: number }>
   | Readonly<{ kind: 'population'; tier: number; count: EditableNumber }>;
 
@@ -149,7 +151,7 @@ export function createResidenceFactionState(faction: Faction): ResidenceFactionS
 
 export function createPlanFactionState(faction: Faction): PlanFactionState {
   const { livingSpace, senate, overrides } = createFactionState(faction);
-  return { intent: { kind: 'follow' }, livingSpace, senate, overrides };
+  return { intent: { kind: 'follow', tierMode: 'mirror' }, livingSpace, senate, overrides };
 }
 
 export function effectivePopulation(

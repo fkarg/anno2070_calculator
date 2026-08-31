@@ -85,7 +85,7 @@ function migrateLegacyPlanFaction(
   const legacy = sanitizeLegacyFactionState(value, faction, loss);
   return {
     intent: legacy.houses === null
-      ? { kind: 'follow' }
+      ? { kind: 'follow', tierMode: 'mirror' }
       : { kind: 'residences', houses: legacy.houses, maxTier: legacy.maxTier },
     livingSpace: legacy.livingSpace,
     senate: legacy.senate,
@@ -100,9 +100,12 @@ function sanitizeTargetIntent(
 ): TargetIntent {
   if (!isRecord(value) || !['follow', 'residences', 'population'].includes(String(value.kind))) {
     loss.markUnless(false);
-    return { kind: 'follow' };
+    return { kind: 'follow', tierMode: 'mirror' };
   }
-  if (value.kind === 'follow') return { kind: 'follow' };
+  if (value.kind === 'follow') return {
+    kind: 'follow',
+    tierMode: value.tierMode === 'unrestricted' ? 'unrestricted' : 'mirror',
+  };
 
   const tierCount = FACTION_CONFIGS[faction].tierLabels.length;
   const tierKey = value.kind === 'residences' ? 'maxTier' : 'tier';
@@ -112,7 +115,7 @@ function sanitizeTargetIntent(
   ) ? Number(storedTier) : tierCount;
   const entryKey = value.kind === 'residences' ? 'houses' : 'count';
   const entry = sanitizeEntry(value[entryKey], parseNonNegativeInteger, loss);
-  if (entry === null) return { kind: 'follow' };
+  if (entry === null) return { kind: 'follow', tierMode: 'mirror' };
   return value.kind === 'residences'
     ? { kind: 'residences', houses: entry, maxTier: tier }
     : { kind: 'population', count: entry, tier };
@@ -289,12 +292,19 @@ export function loadAppState(): LoadResult {
       : (loss.markUnless(false), []);
     return { state: { plan, islands }, storable: !loss.lossy };
   }
+  if (saved.version === 4) {
+    const plan = sanitizePlan(saved.plan, loss, false);
+    const islands = Array.isArray(saved.islands)
+      ? saved.islands.map((island) => sanitizeIsland(island, loss)).filter((island): island is IslandState => island !== null)
+      : (loss.markUnless(false), []);
+    return { state: { plan, islands }, storable: !loss.lossy };
+  }
   return { state: createInitialAppState(), storable: false };
 }
 
 export function saveAppState(state: AppState): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 3, plan: state.plan, islands: state.islands }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 4, plan: state.plan, islands: state.islands }));
   } catch {
     // Storage can be disabled or full; the calculator remains usable in memory.
   }
