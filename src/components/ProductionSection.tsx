@@ -86,25 +86,35 @@ function connector(row: ProductionTreeRow): string {
   return `${ancestors}${row.isLastSibling ? '└── ' : '├── '}`;
 }
 
+function compactProducerCount(buildingId: BuildingId, goodId: GoodId, count: number | null): string {
+  const fullLabel = BUILDINGS[buildingId].label.toLowerCase();
+  const role = buildingId === goodId
+    ? fullLabel.replace(/ (factory|farm|mine|refinery|extraction)$/, '')
+    : fullLabel.split(' ').at(-1)!;
+  const pluralRole = count === 1
+    ? role
+    : role.endsWith('y') ? `${role.slice(0, -1)}ies` : `${role}s`;
+  return `${count === null ? '—' : formatRequirement(count)} ${pluralRole}`;
+}
+
 function ProductionFaction({
   faction,
   state,
   results,
+  targetResults,
   operatingImpacts,
   owned,
   demandByGood,
-  targetDemandByGood,
   empireBalances,
   onProductivityChange,
   onFactionProductivityChange,
 }: Pick<
   ProductionSectionProps,
-  'state' | 'results' | 'operatingImpacts' | 'empireBalances' | 'onProductivityChange' | 'onFactionProductivityChange'
+  'state' | 'results' | 'targetResults' | 'operatingImpacts' | 'empireBalances' | 'onProductivityChange' | 'onFactionProductivityChange'
 > & {
   faction: Faction;
   owned: Map<BuildingId, number | null>;
   demandByGood: Map<GoodId, number | null>;
-  targetDemandByGood: Map<GoodId, number | null>;
 }) {
   const factionLabel = FACTION_CONFIGS[faction].label;
 
@@ -131,7 +141,7 @@ function ProductionFaction({
           <span>building · per-building costs</span>
           <span>req</span>
           <span>prod %</span>
-          <span>costs · rounded / fractional · owned / actual / target</span>
+          <span>costs · rounded / fractional · owned / empire / chain target Δ</span>
         </div>
         {buildProductionTrees(faction).map((tree) => {
           const rootNode = nodeById.get(tree.rootId)!;
@@ -163,6 +173,11 @@ function ProductionFaction({
               const capacity = empireEntry === undefined ? 0 : empireEntry.capacity;
               let buildGap: number | null = null;
               let ownedStatus = 'own 0';
+              let alternativeOwnership: {
+                summary: string;
+                capacity: string;
+                title: string;
+              } | null = null;
               let targetStatus: string | null = null;
               let targetBalanceClass = '';
               if (canonical) {
@@ -184,39 +199,43 @@ function ProductionFaction({
                 const hasAlternativeProducer = ownedProducers.some(
                   (producer) => producer.buildingId !== goodId,
                 );
-                ownedStatus = hasAlternativeProducer
-                  ? `own ${ownedProducers.map((producer) => (
-                    `${BUILDINGS[producer.buildingId].label} ×${producer.count ?? '—'}`
-                  )).join(' + ')} = ${capacity === null ? '—' : formatRequirement(capacity)} capacity`
-                  : `own ${ownedTotal === null ? '—' : ownedTotal}${
+                if (hasAlternativeProducer) {
+                  alternativeOwnership = {
+                    summary: `own ${ownedProducers.map((producer) => (
+                      compactProducerCount(producer.buildingId, goodId, producer.count)
+                    )).join(' + ')}`,
+                    capacity: `capacity ${capacity === null ? '—' : formatRequirement(capacity)}`,
+                    title: ownedProducers.map((producer) => (
+                      `${BUILDINGS[producer.buildingId].label} ×${producer.count ?? '—'}`
+                    )).join(' + '),
+                  };
+                } else {
+                  ownedStatus = `own ${ownedTotal === null ? '—' : ownedTotal}${
                     capacity !== null && ownedTotal !== null && Math.abs(capacity - ownedTotal) > BALANCE_EPSILON
                       ? `→${formatRequirement(capacity)}`
                       : capacity === null ? '→—' : ''
                   }`;
+                }
                 const required = demandByGood.has(goodId) ? demandByGood.get(goodId)! : 0;
-                const targetRequired = targetDemandByGood.has(goodId)
-                  ? targetDemandByGood.get(goodId)!
-                  : 0;
                 // Full-demand capacity gap. Local shortages live in island
                 // balances and transfer needs.
                 buildGap = capacity === null || required === null ? null : required - capacity;
-                const targetGap = capacity === null || targetRequired === null
-                  ? null
-                  : targetRequired - capacity;
-                const showTarget = required === null
-                  ? targetRequired !== null
-                  : targetRequired === null || Math.abs(required - targetRequired) > BALANCE_EPSILON;
-                if (showTarget) {
-                  if (targetGap === null) targetStatus = 'target —';
-                  else if (targetGap > BALANCE_EPSILON) {
-                    targetStatus = `target build ${formatRequirement(targetGap)}`;
-                    targetBalanceClass = ' balance--shortfall';
-                  } else {
-                    targetStatus = targetGap < -BALANCE_EPSILON
-                      ? `target over ${formatRequirement(-targetGap)}`
-                      : 'target ✓';
-                    if (targetGap < -BALANCE_EPSILON) targetBalanceClass = ' balance--surplus';
-                  }
+              }
+              const targetResult = targetResults[node.id];
+              const targetDelta = result === null || targetResult === null
+                ? null
+                : targetResult - result;
+              const showTarget = result === null
+                ? targetResult !== null
+                : targetResult === null || Math.abs(targetDelta ?? 0) > BALANCE_EPSILON;
+              if (showTarget) {
+                if (targetDelta === null) targetStatus = 'target —';
+                else if (targetDelta > BALANCE_EPSILON) {
+                  targetStatus = `target +${formatRequirement(targetDelta)}`;
+                  targetBalanceClass = ' balance--shortfall';
+                } else {
+                  targetStatus = `target −${formatRequirement(-targetDelta)}`;
+                  targetBalanceClass = ' balance--surplus';
                 }
               }
               return (
@@ -274,40 +293,65 @@ function ProductionFaction({
                           : <OperatingImpactValues impact={fractionalImpact} />}
                       </div>
                     </div>
-                    {canonical && (
+                    {(canonical || targetStatus !== null) && (
                       <div className="production-node__extras" data-testid={`extras-${node.id}`}>
-                        <span
-                          className="production-node__mini"
-                          aria-label={`${building.label} owned across all islands and their capacity`}
-                          title="Owned producer inventory and capacity in canonical units"
-                        >
-                          {ownedStatus}
-                        </span>
-                        {buildGap === null
-                          ? <span className="production-node__mini production-node__mini--actual">actual —</span>
-                          : buildGap > BALANCE_EPSILON
-                            ? (
-                              <span
-                                className="production-node__mini production-node__mini--actual balance--shortfall"
-                                aria-label={`${building.label} capacity still to build for full demand`}
-                              >
-                                actual build {formatRequirement(buildGap)}
-                              </span>
-                            )
-                            : (
-                              <span
-                                className="production-node__mini production-node__mini--actual balance--surplus"
-                                aria-label={`${building.label} full demand covered`}
-                              >
-                                {buildGap < -BALANCE_EPSILON
-                                  ? `actual over ${formatRequirement(-buildGap)}`
-                                  : 'actual ✓'}
-                              </span>
-                            )}
-                        {targetStatus !== null && <span
-                          className={`production-node__mini production-node__mini--target${targetBalanceClass}`}
-                          aria-label={`${building.label} ${targetStatus}`}
-                        >{targetStatus}</span>}
+                        {canonical && (
+                          <>
+                            {alternativeOwnership === null
+                              ? (
+                                <span
+                                  className="production-node__mini"
+                                  aria-label={`${building.label} owned across all islands and their capacity`}
+                                  title="Owned producer inventory and capacity in canonical units"
+                                >
+                                  {ownedStatus}
+                                </span>
+                              )
+                              : (
+                                <>
+                                  <span
+                                    className="production-node__owned-producers"
+                                    aria-label={`${building.label} owned producers across all islands: ${alternativeOwnership.title}`}
+                                    title={alternativeOwnership.title}
+                                  >
+                                    {alternativeOwnership.summary}
+                                  </span>
+                                  <span className="production-node__mini production-node__owned-capacity">
+                                    {alternativeOwnership.capacity}
+                                  </span>
+                                </>
+                              )}
+                            {buildGap === null
+                              ? <span className="production-node__mini production-node__mini--actual">empire —</span>
+                              : buildGap > BALANCE_EPSILON
+                                ? (
+                                  <span
+                                    className="production-node__mini production-node__mini--actual balance--shortfall"
+                                    aria-label={`${building.label} empire capacity still to build for full demand`}
+                                  >
+                                    empire build {formatRequirement(buildGap)}
+                                  </span>
+                                )
+                                : (
+                                  <span
+                                    className="production-node__mini production-node__mini--actual balance--surplus"
+                                    aria-label={`${building.label} empire full demand covered`}
+                                  >
+                                    {buildGap < -BALANCE_EPSILON
+                                      ? `empire over ${formatRequirement(-buildGap)}`
+                                      : 'empire ✓'}
+                                  </span>
+                                )}
+                          </>
+                        )}
+                        {targetStatus !== null && (
+                          <span
+                            className={`production-node__mini production-node__mini--target${targetBalanceClass}`}
+                            aria-label={`${building.label} ${targetStatus}`}
+                          >
+                            {targetStatus}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -343,7 +387,6 @@ function ProductionFaction({
 export function ProductionSection(props: ProductionSectionProps) {
   const owned = ownedByBuilding(props.islands);
   const demandByGood = demandRequirementByGood(props.results);
-  const targetDemandByGood = demandRequirementByGood(props.targetResults);
   const islandNames = new Map(props.islands.map((island) => [island.id, island.name]));
 
   return (
@@ -389,7 +432,6 @@ export function ProductionSection(props: ProductionSectionProps) {
             faction={faction}
             owned={owned}
             demandByGood={demandByGood}
-            targetDemandByGood={targetDemandByGood}
             {...props}
           />
         ))}

@@ -1375,7 +1375,7 @@ main > footer a { color: #8fc9f6; }
 
 .production-node__impact {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(5.4rem, 10rem);
   gap: .5rem;
   align-items: center;
 }
@@ -1398,8 +1398,17 @@ main > footer a { color: #8fc9f6; }
   gap: .05rem;
   justify-items: end;
   font-size: .68rem;
-  min-width: 5.4rem;
+  width: 100%;
+  min-width: 0;
 }
+.production-node__owned-producers {
+  max-width: 100%;
+  color: var(--value-gold);
+  line-height: 1.15;
+  text-align: right;
+  white-space: normal;
+}
+.production-node__owned-capacity { color: var(--value-gold); }
 .production-node__mini--target {
   color: var(--select);
   font-weight: 650;

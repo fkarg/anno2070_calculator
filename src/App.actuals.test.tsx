@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test } from 'vitest';
 import { fireEvent } from '@testing-library/react';
 
 import {
+  buttonWithLabel,
   byTestId,
   input,
   renderApp,
@@ -29,7 +30,7 @@ describe('actuals in the production view', () => {
     renderApp();
 
     expect(document.querySelector('.production-node--header'))
-      .toHaveTextContent('rounded / fractional · owned / actual / target');
+      .toHaveTextContent('rounded / fractional · owned / empire / chain target Δ');
     expect(document.querySelector('.production-node__mini--target')).toBeNull();
   });
   test('canonical rows retain owned counts and capacity beside chain costs', async () => {
@@ -42,7 +43,7 @@ describe('actuals in the production view', () => {
     // own and capacity merge into one cell; the arrow only appears when they differ.
     expect(extras).toHaveTextContent('own 2');
     expect(extras).not.toHaveTextContent('→');
-    expect(extras.querySelector('.balance--surplus')).toHaveTextContent('actual over 2');
+    expect(extras.querySelector('.balance--surplus')).toHaveTextContent('empire over 2');
     expect(extras.querySelector('.production-node__mini--target')).toBeNull();
   });
 
@@ -60,8 +61,11 @@ describe('actuals in the production view', () => {
     await replaceInput(input('island-0-owned-electronicsRecycler'), '2');
 
     // 2 recyclers = 3 chip-factory units; costs are the recyclers' flat costs.
-    expect(byTestId('extras-ecoMicrochipsCommunicators'))
-      .toHaveTextContent('own Electronics recycler ×2 = 3 capacity');
+    const extras = byTestId('extras-ecoMicrochipsCommunicators');
+    expect(extras.querySelector('.production-node__owned-producers'))
+      .toHaveTextContent('own 2 recyclers');
+    expect(extras.querySelector('.production-node__owned-capacity'))
+      .toHaveTextContent('capacity 3');
   });
 
   test('breaks mixed producer inventory out before showing canonical capacity', async () => {
@@ -80,8 +84,11 @@ describe('actuals in the production view', () => {
     fireEvent.click(underwater);
     addBuilding(1, 'electronicsRecycler');
 
-    expect(byTestId('extras-ecoMicrochipsCommunicators'))
-      .toHaveTextContent('own Chip factory ×2 + Electronics recycler ×1 = 3.5 capacity');
+    const extras = byTestId('extras-ecoMicrochipsCommunicators');
+    expect(extras.querySelector('.production-node__owned-producers'))
+      .toHaveTextContent('own 2 chips + 1 recycler');
+    expect(extras.querySelector('.production-node__owned-capacity'))
+      .toHaveTextContent('capacity 3.5');
   });
 
   test('the build gap reports current full demand, not a Growth target', async () => {
@@ -90,11 +97,11 @@ describe('actuals in the production view', () => {
     // Population creates plan demand for fish; no fisheries owned yet.
     await setIslandHouses(0, 'eco', '100');
     const fish = byTestId('extras-ecoFish');
-    expect(fish).toHaveTextContent('actual build 4.18');
+    expect(fish).toHaveTextContent('empire build 4.18');
 
     addBuilding(0, 'fishery');
     await replaceInput(input('island-0-owned-fishery'), '5');
-    expect(byTestId('extras-ecoFish')).toHaveTextContent('actual over 0.83');
+    expect(byTestId('extras-ecoFish')).toHaveTextContent('empire over 0.83');
   });
 
   test('shows actual demand before a clearly distinct final Growth target', async () => {
@@ -106,8 +113,8 @@ describe('actuals in the production view', () => {
     const extras = byTestId('extras-ecoFish');
     const actual = extras.querySelector('.production-node__mini--actual')!;
     const target = extras.querySelector('.production-node__mini--target')!;
-    expect(actual).toHaveTextContent('actual build 0.42');
-    expect(target).toHaveTextContent(/^target build /);
+    expect(actual).toHaveTextContent('empire build 0.42');
+    expect(target).toHaveTextContent('target +3.77');
     expect(target).toHaveClass('balance--shortfall');
     expect([...extras.children].indexOf(actual)).toBeLessThan([...extras.children].indexOf(target));
 
@@ -116,7 +123,7 @@ describe('actuals in the production view', () => {
       .toBeNull();
   });
 
-  test('updates actual and target comparisons from the same owned capacity', async () => {
+  test('keeps the chain target delta independent from owned empire capacity', async () => {
     renderApp();
     addIsland();
     await setIslandHouses(0, 'eco', '10');
@@ -126,9 +133,23 @@ describe('actuals in the production view', () => {
 
     const extras = byTestId('extras-ecoFish');
     expect(extras.querySelector('.production-node__mini--actual'))
-      .toHaveTextContent('actual over 0.59');
+      .toHaveTextContent('empire over 0.59');
     expect(extras.querySelector('.production-node__mini--target'))
-      .toHaveTextContent('target build 3.18');
+      .toHaveTextContent('target +3.77');
+  });
+
+  test('shows chain target deltas on alternative producer routes', async () => {
+    renderApp();
+    addIsland();
+    fireEvent.click(buttonWithLabel('Configure island Island 1'));
+    fireEvent.click(buttonWithLabel('Eco Employees', byTestId('island-0')));
+    fireEvent.click(buttonWithLabel('Finish configuring island Island 1'));
+    await setIslandHouses(0, 'eco', '10');
+    await setGrowthResidenceTarget('eco', '100');
+
+    expect(byTestId('extras-ecoElectronicsRecyclerCommunicators')
+      .querySelector('.production-node__mini--target'))
+      .toHaveTextContent(/^target \+/);
   });
 
   test('shows target surplus independently from the actual comparison', async () => {
@@ -141,9 +162,9 @@ describe('actuals in the production view', () => {
 
     const extras = byTestId('extras-ecoFish');
     expect(extras.querySelector('.production-node__mini--actual'))
-      .toHaveTextContent('actual over 0.83');
+      .toHaveTextContent('empire over 0.83');
     expect(extras.querySelector('.production-node__mini--target'))
-      .toHaveTextContent('target over 4.59');
+      .toHaveTextContent('target −3.77');
     expect(extras.querySelector('.production-node__mini--target'))
       .toHaveClass('balance--surplus');
   });
