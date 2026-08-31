@@ -8,7 +8,11 @@ import { tierCapacities, type Faction } from '../calculations/population';
 import { formatRequirement } from '../calculations/production';
 import { sumIslandPopulations } from '../island';
 import { FACTIONS, FACTION_CONFIGS } from '../model';
-import type { GrowthMilestone, GrowthPlanningResult } from '../calculations/planning';
+import {
+  growthGapIntroducedHere,
+  type GrowthMilestone,
+  type GrowthPlanningResult,
+} from '../calculations/planning';
 import type { IslandState } from '../island';
 import { CoverageBottleneckCard } from './CoverageBottleneckCard';
 import { DemandSourceActions } from './DemandSourceActions';
@@ -94,8 +98,9 @@ function milestoneSummary(milestone: GrowthMilestone): string {
   const tier = milestoneTierLabel(milestone);
   const delta = milestone.populationAfter[milestone.faction][milestone.tier - 1]
     - milestone.populationBefore[milestone.faction][milestone.tier - 1];
-  const gapLabel = milestone.gaps.length === 1 ? 'gap' : 'gaps';
-  return `Full-demand supply toward ${delta >= 0 ? '+' : ''}${delta} planned ${tier} · ${milestone.gaps.length} ${gapLabel}`;
+  const introducedGapCount = milestone.gaps.filter(growthGapIntroducedHere).length;
+  const gapLabel = introducedGapCount === 1 ? 'gap' : 'gaps';
+  return `Full-demand supply toward ${delta >= 0 ? '+' : ''}${delta} planned ${tier} · ${introducedGapCount} ${gapLabel}`;
 }
 
 export function CoverageSection({ islands, planning, ignoredDemands, onIgnoreDemand, onApplyBuilding }: CoverageSectionProps) {

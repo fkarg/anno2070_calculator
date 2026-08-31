@@ -36,7 +36,7 @@ describe('Coverage card models', () => {
     expect(copper.title).toMatch(/ missing$/);
   });
 
-  test('labels purely carried milestone provenance without blaming the target', () => {
+  test('omits purely carried gaps from milestone cards', () => {
     const state = createInitialAppState();
     const actual = createIsland('Tech');
     actual.factions.tech.houses = editable(10);
@@ -46,10 +46,9 @@ describe('Coverage card models', () => {
     };
     const milestone = calculateGrowthPlanning(state.plan, [actual])!.sequences.eco.at(-1)!;
     const algae = milestoneCoverageCards(milestone)
-      .find((card) => card.goodId === 'aquafarm')!;
+      .find((card) => card.goodId === 'aquafarm');
 
-    expect(algae.breadcrumb.at(-1)).toMatch(/current population|previous Eco step/);
-    expect(algae.why.every((reason) => reason.kind === 'carried')).toBe(true);
+    expect(algae).toBeUndefined();
   });
 
   test('preserves input-first order for the four-card and later partitions', () => {
@@ -59,29 +58,60 @@ describe('Coverage card models', () => {
     };
     const milestone = calculateGrowthPlanning(state.plan, [])!.sequences.tech.at(-1)!;
     const cards = milestoneCoverageCards(milestone);
+    const introducedGaps = milestone.gaps.filter((gap) => (
+      gap.chains.some((chain) => chain.addedHere > 1e-9)
+    ));
 
     expect(cards.slice(0, 4).map((card) => card.goodId))
-      .toEqual(milestone.gaps.slice(0, 4).map((gap) => gap.goodId));
+      .toEqual(introducedGaps.slice(0, 4).map((gap) => gap.goodId));
   });
 
-  test('labels a carried gap in the first milestone as current population demand', () => {
-    const state = createInitialAppState();
-    const workers = createIsland('Workers');
-    workers.factions.eco.houses = editable(100);
-    workers.factions.eco.maxTier = 1;
-    const executives = createIsland('Executives');
-    executives.factions.eco.houses = editable(100);
-    executives.factions.eco.maxTier = 4;
-    state.plan.factions.eco.intent = {
-      kind: 'residences', houses: editable(150), maxTier: 4,
+  test('keeps a net-neutral gap when one chain is introduced in this step', () => {
+    const milestone = {
+      id: 'eco-2-ascend',
+      kind: 'ascend' as const,
+      faction: 'eco' as const,
+      tier: 2,
+      populationBefore: { eco: [80, 0, 0, 0], tycoon: [0, 0, 0, 0], tech: [0, 0, 0] },
+      populationAfter: { eco: [40, 80, 0, 0], tycoon: [0, 0, 0, 0], tech: [0, 0, 0] },
+      gaps: [{
+        goodId: 'fishery' as const,
+        required: 1,
+        capacity: 0,
+        remaining: 1,
+        baselineRequired: 1,
+        previousRequired: 1,
+        checkpointRequired: 1,
+        addedHere: 0,
+        chains: [{
+          source: { faction: 'eco' as const, tier: 1, goodId: 'fishery' as const },
+          faction: 'eco' as const,
+          rootNodeId: 'ecoFish',
+          pathNodeIds: ['ecoFish'],
+          required: 0.5,
+          baselineRequired: 0,
+          previousRequired: 0,
+          addedHere: 0.5,
+        }, {
+          source: { faction: 'eco' as const, tier: 0, goodId: 'fishery' as const },
+          faction: 'eco' as const,
+          rootNodeId: 'ecoFish',
+          pathNodeIds: ['ecoFish'],
+          required: 0.5,
+          baselineRequired: 1,
+          previousRequired: 1,
+          addedHere: 0,
+        }],
+      }],
+      complete: false,
+      current: true,
     };
 
-    const milestone = calculateGrowthPlanning(state.plan, [workers, executives])!.sequences.eco[0];
-    const decreasingGap = milestone.gaps.find((gap) => gap.required < gap.baselineRequired)!;
-    const card = milestoneCoverageCards(milestone)
-      .find((candidate) => candidate.goodId === decreasingGap.goodId)!;
+    const [card] = milestoneCoverageCards(milestone);
 
-    expect(card.breadcrumb.at(-1)).toBe('current population');
+    expect(card.goodId).toBe('fishery');
+    expect(card.breadcrumb.at(-1)).toBe('Eco: +80 Employees planned');
+    expect(card.why.map((reason) => reason.kind)).toEqual(['changed', 'carried']);
   });
 
   test('uses stable chain order when changed contributions tie', () => {

@@ -1,6 +1,12 @@
 import type { BuildingId } from '../calculations/building-data';
 import type { IgnoredDemandSource } from '../calculations/demand-policy';
-import type { GrowthGap, GrowthMilestone, GrowthPlanningResult } from '../calculations/planning';
+import {
+  growthGapIntroducedAmount,
+  growthGapIntroducedHere,
+  type GrowthGap,
+  type GrowthMilestone,
+  type GrowthPlanningResult,
+} from '../calculations/planning';
 import { formatRequirement } from '../calculations/production';
 import type { IslandState } from '../island';
 import { FACTIONS, FACTION_CONFIGS } from '../model';
@@ -31,8 +37,8 @@ type MilestoneDetailsProps = {
 };
 
 function MilestoneDetails(props: MilestoneDetailsProps) {
-  const changed = props.gaps.filter((gap) => gap.addedHere > EPSILON);
-  const carried = props.gaps.filter((gap) => gap.addedHere <= EPSILON);
+  const changed = props.gaps.filter(growthGapIntroducedHere);
+  const carried = props.gaps.filter((gap) => !growthGapIntroducedHere(gap));
   const card = (gap: GrowthGap, subtitle: string) => <GrowthGapCard
     key={gap.goodId}
     gap={gap}
@@ -57,7 +63,7 @@ function MilestoneDetails(props: MilestoneDetailsProps) {
             <h5 className="growth-milestone__group-title">Changed in this step</h5>
             {changed.map((gap) => card(
               gap,
-              `This step adds +${formatRequirement(gap.addedHere)} required capacity`,
+              `New demand sources add +${formatRequirement(growthGapIntroducedAmount(gap))} required capacity`,
             ))}
           </section>}
           {carried.length > 0 && <details className="growth-milestone__carried">
@@ -87,7 +93,7 @@ function milestoneSummary(milestone: GrowthMilestone): string {
   const targetTier = config.tierLabels[milestone.tier - 1];
   const delta = milestone.populationAfter[milestone.faction][milestone.tier - 1]
     - milestone.populationBefore[milestone.faction][milestone.tier - 1];
-  const changed = milestone.gaps.filter((gap) => gap.addedHere > EPSILON).length;
+  const changed = milestone.gaps.filter(growthGapIntroducedHere).length;
   const carried = milestone.gaps.length - changed;
   const coverage = milestone.complete
     ? 'covered'

@@ -1,11 +1,12 @@
 import { BUILDINGS } from '../calculations/building-data';
 import type { IgnoredDemandSource } from '../calculations/demand-policy';
 import type { GoodId } from '../calculations/goods';
-import type {
-  GrowthGap,
-  GrowthGapChain,
-  GrowthMilestone,
-  GrowthPlanningResult,
+import {
+  growthGapIntroducedHere,
+  type GrowthGap,
+  type GrowthGapChain,
+  type GrowthMilestone,
+  type GrowthPlanningResult,
 } from '../calculations/planning';
 import { formatRequirement } from '../calculations/production';
 import { PRODUCTION_NODES } from '../calculations/production-data';
@@ -62,16 +63,11 @@ function milestoneDelta(milestone: GrowthMilestone): number {
     - milestone.populationBefore[milestone.faction][milestone.tier - 1];
 }
 
-function milestoneEndpoint(milestone: GrowthMilestone, gap: GrowthGap, chain: GrowthGapChain): string {
-  if (gap.addedHere > EPSILON && chain.addedHere > EPSILON) {
-    const faction = FACTION_CONFIGS[milestone.faction];
-    const tier = faction.tierLabels[milestone.tier - 1];
-    const delta = milestoneDelta(milestone);
-    return `${faction.label}: ${delta >= 0 ? '+' : ''}${delta} ${tier} planned`;
-  }
-  return Math.abs(chain.previousRequired - chain.baselineRequired) <= EPSILON
-    ? 'current population'
-    : `previous ${FACTION_CONFIGS[milestone.faction].label} step`;
+function milestoneEndpoint(milestone: GrowthMilestone): string {
+  const faction = FACTION_CONFIGS[milestone.faction];
+  const tier = faction.tierLabels[milestone.tier - 1];
+  const delta = milestoneDelta(milestone);
+  return `${faction.label}: ${delta >= 0 ? '+' : ''}${delta} ${tier} planned`;
 }
 
 export function currentCoverageView(
@@ -121,9 +117,10 @@ export function currentCoverageView(
 }
 
 export function milestoneCoverageCards(milestone: GrowthMilestone): CoverageCardModel[] {
-  return milestone.gaps.map((gap, index): CoverageCardModel => {
+  const introducedGaps = milestone.gaps.filter(growthGapIntroducedHere);
+  return introducedGaps.map((gap, index): CoverageCardModel => {
     const chain = breadcrumbChain(gap);
-    const successor = milestone.gaps[index + 1];
+    const successor = introducedGaps[index + 1];
     return {
       id: `${milestone.id}-${gap.goodId}`,
       goodId: gap.goodId,
@@ -131,7 +128,7 @@ export function milestoneCoverageCards(milestone: GrowthMilestone): CoverageCard
       title: `${buildingLabel(gap.goodId)} · ${formatRequirement(gap.remaining)} missing`,
       requirement: `${formatRequirement(gap.capacity)} actual effective capacity vs ${formatRequirement(gap.required)} scenario demand`,
       breadcrumb: chain
-        ? chainPathLabels(chain).reverse().concat(milestoneEndpoint(milestone, gap, chain))
+        ? chainPathLabels(chain).reverse().concat(milestoneEndpoint(milestone))
         : [],
       outcome: successor
         ? `Covering this unlocks the next supply step: ${buildingLabel(successor.goodId)}.`

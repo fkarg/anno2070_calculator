@@ -50,6 +50,14 @@ export type GrowthPlanningResult = Readonly<{
   sequences: Readonly<Record<Faction, readonly GrowthMilestone[]>>;
 }>;
 
+export function growthGapIntroducedAmount(gap: GrowthGap): number {
+  return gap.chains.reduce((total, chain) => total + chain.addedHere, 0);
+}
+
+export function growthGapIntroducedHere(gap: GrowthGap): boolean {
+  return gap.chains.some((chain) => chain.addedHere > EPSILON);
+}
+
 type Descriptor = Readonly<{
   kind: 'expand' | 'ascend';
   faction: Faction;
@@ -273,7 +281,7 @@ export function calculateGrowthPlanning(
         populationBefore,
         populationAfter,
         gaps,
-        complete: gaps.length === 0,
+        complete: gaps.every((gap) => !growthGapIntroducedHere(gap)),
       };
     });
     const currentIndex = milestones.findIndex((milestone) => !milestone.complete);

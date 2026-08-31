@@ -19,7 +19,16 @@ const gap = {
   previousRequired: 0,
   checkpointRequired: 1,
   addedHere: 1,
-  chains: [],
+  chains: [{
+    source: { faction: 'eco' as const, tier: 0, goodId: 'fishery' as const },
+    faction: 'eco' as const,
+    rootNodeId: 'ecoFish',
+    pathNodeIds: ['ecoFish'],
+    required: 1,
+    baselineRequired: 0,
+    previousRequired: 0,
+    addedHere: 1,
+  }],
 };
 
 function milestone(tier: number, complete: boolean): GrowthMilestone {

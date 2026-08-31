@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import { createInitialAppState, createIsland } from '../island';
 import type { EditableNumber } from '../model';
-import { calculateGrowthPlanning } from './planning';
+import { calculateGrowthPlanning, growthGapIntroducedHere } from './planning';
 
 const editable = (value: number): EditableNumber => ({ raw: String(value), value });
 
@@ -160,6 +160,57 @@ describe('Growth planning', () => {
     expect(chain.faction).toBe('tech');
     expect(chain.previousRequired).toBeCloseTo(chain.required);
     expect(chain.addedHere).toBe(0);
+  });
+
+  test('does not let another faction current-population gaps block milestone completion', () => {
+    const state = createInitialAppState();
+    const actual = createIsland('Mixed');
+    actual.factions.tech.houses = editable(10);
+    actual.factions.tech.maxTier = 1;
+    actual.owned.fishery = editable(1);
+    actual.owned.teaPlantation = editable(1);
+    actual.fertilities = ['tea'];
+    state.plan.factions.eco.intent = {
+      kind: 'residences', houses: editable(10), maxTier: 1,
+    };
+
+    const planning = calculateGrowthPlanning(state.plan, [actual])!;
+    const milestone = planning.sequences.eco[0];
+
+    expect(planning.baseline.gaps.some((gap) => gap.goodId === 'aquafarm')).toBe(true);
+    expect(milestone.gaps.some((gap) => gap.goodId === 'aquafarm')).toBe(true);
+    expect(milestone.complete).toBe(true);
+    expect(milestone.current).toBe(false);
+  });
+
+  test('keeps a milestone incomplete when a new chain is hidden by a net demand decrease', () => {
+    const state = createInitialAppState();
+    const workers = createIsland('Workers');
+    workers.factions.eco.houses = editable(100);
+    workers.factions.eco.maxTier = 1;
+    const executives = createIsland('Executives');
+    executives.factions.eco.houses = editable(100);
+    executives.factions.eco.maxTier = 4;
+    state.plan.factions.eco.intent = {
+      kind: 'residences', houses: editable(150), maxTier: 4,
+    };
+
+    const initial = calculateGrowthPlanning(state.plan, [workers, executives])!.sequences.eco[0];
+    const netDecreasing = initial.gaps.find((gap) => (
+      gap.addedHere === 0 && growthGapIntroducedHere(gap)
+    ))!;
+    for (const gap of initial.gaps) {
+      if (gap.goodId !== netDecreasing.goodId && growthGapIntroducedHere(gap)) {
+        workers.owned[gap.goodId] = editable(100);
+      }
+    }
+
+    const milestone = calculateGrowthPlanning(state.plan, [workers, executives])!.sequences.eco[0];
+    const introduced = milestone.gaps.filter(growthGapIntroducedHere);
+
+    expect(introduced.map((gap) => gap.goodId)).toEqual([netDecreasing.goodId]);
+    expect(introduced[0].addedHere).toBe(0);
+    expect(milestone.complete).toBe(false);
   });
 
   test('does not retain a higher actual requirement when a target scenario needs less', () => {
