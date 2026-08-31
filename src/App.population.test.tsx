@@ -50,9 +50,7 @@ describe('global per-faction bonuses', () => {
     await setIslandHouses(0, 'eco', '100');
     expect(byTestId('overview-eco-actual-tier-2')).toHaveTextContent('725');
 
-    selectWorkspace('Growth');
-    const livingSpace = document.querySelector<HTMLInputElement>('.growth-target--eco .population-options--compact input')!;
-    fireEvent.click(livingSpace);
+    fireEvent.click(input('overview-eco-living-space'));
 
     // 29 engineer houses × 28 (living space) instead of × 25.
     expect(byTestId('overview-eco-actual-tier-2')).toHaveTextContent('812');

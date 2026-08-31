@@ -39,13 +39,15 @@ describe('saved calculator state', () => {
     firstPage.unmount();
 
     renderApp();
-    expect(byTestId('overview-eco-target')).toHaveTextContent('0');
+    expect(document.querySelector('output[aria-label="Eco actual residences"]')).toHaveTextContent('0');
+    expect(document.querySelector('output[aria-label="Eco target residences"]')).toBeNull();
   });
 
   test('ignores malformed saved data', () => {
     localStorage.setItem('anno2070-calculator-state', '{broken');
 
     expect(() => renderApp()).not.toThrow();
-    expect(byTestId('overview-eco-target')).toHaveTextContent('0');
+    expect(document.querySelector('output[aria-label="Eco actual residences"]')).toHaveTextContent('0');
+    expect(document.querySelector('output[aria-label="Eco target residences"]')).toBeNull();
   });
 });

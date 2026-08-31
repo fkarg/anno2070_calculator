@@ -58,7 +58,8 @@ describe('population overrides', () => {
     fireEvent.click(resetButton());
 
     // Reset returns the target to following the actual islands.
-    expect(byTestId('overview-eco-target')).toHaveTextContent('0');
+    expect(document.querySelector('output[aria-label="Eco actual residences"]')).toHaveTextContent('0');
+    expect(document.querySelector('output[aria-label="Eco target residences"]')).toBeNull();
     expect(buttonWithLabel('Target Eco by following islands')).toHaveAttribute('aria-pressed', 'true');
   });
 });

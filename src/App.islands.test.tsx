@@ -168,11 +168,11 @@ describe('islands section', () => {
     renderApp();
     addIsland();
     await setIslandHouses(0, 'eco', '10');
-    expect(byTestId('overview-eco-target')).toHaveTextContent('10');
+    expect(document.querySelector('output[aria-label="Eco actual residences"]')).toHaveTextContent('10');
 
     openConfiguration('Island 1');
     fireEvent.click(flagCheckbox(0, 'settled'));
-    expect(byTestId('overview-eco-target')).toHaveTextContent('0');
+    expect(document.querySelector('output[aria-label="Eco actual residences"]')).toHaveTextContent('0');
   });
 
   test('island population limits propagate into the plan stats view', async () => {
@@ -184,8 +184,8 @@ describe('islands section', () => {
     // actual distribution, not the plan's own ascension model.
     fireEvent.click(buttonWithLabel('Eco Workers', byTestId('island-0')));
     // Reveal-edit: the Auto values are visible and directly editable.
-    expect(byTestId('overview-eco-target-tier-0')).toHaveTextContent('800');
-    expect(byTestId('overview-eco-target-tier-3')).toHaveTextContent('0');
+    expect(byTestId('overview-eco-actual-tier-0')).toHaveTextContent('800');
+    expect(byTestId('overview-eco-actual-tier-3')).toHaveTextContent('0');
   });
 
   test('manual plan houses ignore islands until returned to Auto', async () => {
@@ -197,7 +197,8 @@ describe('islands section', () => {
 
     selectWorkspace('Growth');
     fireEvent.click(buttonWithLabel('Target Eco by following islands'));
-    expect(byTestId('overview-eco-target')).toHaveTextContent('10');
+    expect(document.querySelector('[data-target-layout="mirror"] output[aria-label="Eco actual residences"]')).toHaveTextContent('10');
+    expect(document.querySelector('output[aria-label="Eco target residences"]')).toBeNull();
   });
 
   test('the add list shows the empire balance of goods with activity', async () => {
