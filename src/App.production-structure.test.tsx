@@ -89,6 +89,11 @@ describe('production structure and impacts', () => {
     await replaceInput(input('island-0-eco-population-0'), '251');
 
     const fish = productionRow('ecoFish');
+    const impactLines = fish.querySelectorAll('.production-node__impact-line');
+    expect(impactLines[0]).toHaveClass('production-node__impact-line--rounded');
+    expect(impactLines[0])
+      .toHaveTextContent('maintenance credits per minute:-10power:-2ecobalance:0');
+    expect(impactLines[1]).toHaveClass('production-node__impact-line--fractional');
     expect(fish.querySelector('[data-testid="direct-operating-impact"]'))
       .toHaveTextContent('maintenance credits per minute:-5.02power:-1ecobalance:0');
     // Per-building costs sit inline below the building name.
@@ -100,10 +105,12 @@ describe('production structure and impacts', () => {
       .toBeInTheDocument();
     expect([...document.querySelectorAll('.production-tree__variants')]
       .some((variants) => variants.textContent?.includes('Full chain (rounded buildings)'))).toBe(true);
+    expect(byTestId('variant-ecoFish-full')).toHaveTextContent('Fishery ×2');
 
     fireEvent.click(productionCheckbox(0));
     expect(fish.querySelector('[data-testid="direct-operating-impact"]'))
-      .toHaveTextContent('maintenance credits per minute:-10');
+      .toHaveTextContent('maintenance credits per minute:-5.02');
+    expect(requiredBuildings('ecoFish')).toHaveTextContent('2');
 
     fireEvent.click(buttonWithLabel('Eco Employees', byTestId('island-0')));
     await replaceInput(input('island-0-eco-population-1'), '571');

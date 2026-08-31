@@ -256,6 +256,8 @@ input[aria-invalid="true"] { border-color: #ef665f; background: #321d1f; }
   font-size: .72rem;
 }
 .production-tree__variants > div { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.production-tree__variant-label { display: flex; flex-wrap: wrap; gap: .2rem .55rem; align-items: baseline; }
+.production-tree__variant-label > span { color: var(--muted); }
 .production-faction__nodes { overflow: hidden; }
 .production-node__impact { display: grid; min-width: 0; justify-items: end; gap: .08rem; font-size: .7rem; }
 .production-node__impact > div { color: #f0d38d; }
@@ -658,8 +660,6 @@ main > footer a { color: #8fc9f6; }
   gap: .45rem;
   flex-wrap: wrap;
 }
-
-.production-node__impact-line--actual { color: var(--muted); font-size: .78rem; }
 
 .production-node__impact-label {
   flex: none;
@@ -1218,7 +1218,8 @@ main > footer a { color: #8fc9f6; }
   font-size: .72rem;
 }
 .production-node__impact-line .operating-impact-values__metric { justify-content: flex-end; }
-.production-node__impact-line--actual { color: var(--muted); font-size: .7rem; }
+.production-node__impact-line--rounded { color: #f0d38d; }
+.production-node__impact-line--fractional { color: var(--muted); font-size: .7rem; }
 
 .production-node__extras {
   display: grid;

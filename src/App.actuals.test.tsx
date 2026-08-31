@@ -4,7 +4,6 @@ import { fireEvent } from '@testing-library/react';
 import {
   byTestId,
   input,
-  productionRow,
   renderApp,
   replaceInput,
   setIslandHouses,
@@ -28,10 +27,10 @@ describe('actuals in the production view', () => {
   test('labels calculated requirements as demand rather than a Growth plan', () => {
     renderApp();
 
-    expect(document.querySelector('.production-node--header')).toHaveTextContent('demand / actual / owned');
+    expect(document.querySelector('.production-node--header')).toHaveTextContent('rounded / fractional / owned');
     expect(document.querySelector('.production-section')).not.toHaveTextContent('plan covered');
   });
-  test('canonical rows carry a labeled actual line; alternatives stay plan-only', async () => {
+  test('canonical rows retain owned counts and capacity beside chain costs', async () => {
     renderApp();
     addIsland();
     addBuilding(0, 'fishery');
@@ -43,13 +42,9 @@ describe('actuals in the production view', () => {
     expect(extras).not.toHaveTextContent('→');
     // No plan demand: the plan is covered, shown as surplus, not a shortage.
     expect(extras.querySelector('.balance--surplus')).toHaveTextContent('over 2');
-    expect(byTestId('actuals-ecoFish')).toHaveTextContent('maintenance credits per minute:-10');
-
-    const alternative = productionRow('ecoElectronicsRecyclerCommunicators');
-    expect(alternative.querySelector('[data-testid^="actuals-"]')).toBeNull();
   });
 
-  test('alternative producers contribute converted capacity and their actual costs', async () => {
+  test('alternative producers contribute converted capacity', async () => {
     renderApp();
     addIsland();
     fireEvent.click(
@@ -64,7 +59,6 @@ describe('actuals in the production view', () => {
 
     // 2 recyclers = 3 chip-factory units; costs are the recyclers' flat costs.
     expect(byTestId('extras-ecoMicrochipsCommunicators')).toHaveTextContent('own 2→3');
-    expect(byTestId('actuals-ecoMicrochipsCommunicators')).toHaveTextContent('maintenance credits per minute:-320');
   });
 
   test('the build gap is a planning number, not an actual shortage', async () => {

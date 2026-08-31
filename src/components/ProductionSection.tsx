@@ -128,7 +128,7 @@ function ProductionFaction({
           <span>building · per-building costs</span>
           <span>req</span>
           <span>prod %</span>
-          <span>costs · demand / actual / owned</span>
+          <span>costs · rounded / fractional / owned</span>
         </div>
         {buildProductionTrees(faction).map((tree) => {
           const rootNode = nodeById.get(tree.rootId)!;
@@ -145,18 +145,17 @@ function ProductionFaction({
               const building = BUILDINGS[node.buildingId];
               const productivity = state.productivity[node.id];
               const result = results[node.id];
-              const direct = operatingImpacts.direct[node.id];
+              const fractionalImpact = operatingImpacts.direct[node.id];
+              const roundedImpact = operatingImpacts.roundedDirect[node.id];
               const labelContext = context(node);
               const relationship = node.calculation.kind === 'primary'
                 ? 'Primary product.'
                 : `Level ${row.depth + 1} dependency of ${BUILDINGS[nodeById.get(node.calculation.parentId)!.buildingId].label}.${row.alternativeRoot ? ' Alternative source.' : ''}`;
 
-              // Actuals render once per good, on its canonical producer's row;
-              // owned counts, capacity, and actual costs aggregate every
-              // producer of the good (owned recyclers count as chips here).
+              // Owned counts and capacity render once per good, on its
+              // canonical producer's row (owned recyclers count as chips).
               const canonical = producedGood(node.buildingId) === node.buildingId;
               let ownedTotal: number | null = 0;
-              let actualImpact: OperatingImpact | null = { maintenanceCredits: 0, power: 0, ecoBalance: 0 };
               let capacity: number | null = 0;
               let buildGap: number | null = null;
               if (canonical) {
@@ -164,18 +163,11 @@ function ProductionFaction({
                 for (const producer of GOODS.get(goodId)?.producers ?? []) {
                   const count = owned.get(producer.buildingId);
                   if (count === undefined) continue;
-                  if (count === null || ownedTotal === null || actualImpact === null) {
+                  if (count === null || ownedTotal === null) {
                     ownedTotal = null;
-                    actualImpact = null;
                     continue;
                   }
                   ownedTotal += count;
-                  const flat = BUILDINGS[producer.buildingId].operatingImpact;
-                  actualImpact = {
-                    maintenanceCredits: actualImpact.maintenanceCredits + count * flat.maintenanceCredits,
-                    power: actualImpact.power + count * flat.power,
-                    ecoBalance: actualImpact.ecoBalance + count * flat.ecoBalance,
-                  };
                 }
                 // undefined means untouched (0); null is invalid and must survive.
                 const empireEntry = empireBalances[goodId];
@@ -224,18 +216,21 @@ function ProductionFaction({
                   />
                   <div className="production-node__impact">
                     <div className="production-node__impact-lines">
-                      <div className="production-node__impact-line" data-testid="direct-operating-impact">
-                        {direct === null
-                          ? <span><span className="visually-hidden">{building.label} direct operating impact unavailable:</span>—</span>
-                          : <OperatingImpactValues impact={direct} />}
+                      <div className="production-node__impact-line production-node__impact-line--rounded">
+                        <span className="visually-hidden">{building.label} rounded required buildings: </span>
+                        {roundedImpact === null
+                          ? <span>—</span>
+                          : <OperatingImpactValues impact={roundedImpact} />}
                       </div>
-                      {canonical && (
-                        <div className="production-node__impact-line production-node__impact-line--actual" data-testid={`actuals-${node.id}`}>
-                          {actualImpact === null
-                            ? <span>—</span>
-                            : <OperatingImpactValues impact={actualImpact} />}
-                        </div>
-                      )}
+                      <div
+                        className="production-node__impact-line production-node__impact-line--fractional"
+                        data-testid="direct-operating-impact"
+                      >
+                        <span className="visually-hidden">{building.label} fractional requirement: </span>
+                        {fractionalImpact === null
+                          ? <span>—</span>
+                          : <OperatingImpactValues impact={fractionalImpact} />}
+                      </div>
                     </div>
                     {canonical && (
                       <div className="production-node__extras" data-testid={`extras-${node.id}`}>
@@ -278,7 +273,14 @@ function ProductionFaction({
             <footer className="production-tree__variants">
               {operatingImpacts.byRoot[tree.rootId].map((variant) => (
                 <div key={variant.id} data-testid={`variant-${tree.rootId}-${variant.id}`}>
-                  <span>{variant.label} (rounded buildings)</span>
+                  <span className="production-tree__variant-label">
+                    <strong>{variant.label} (rounded buildings)</strong>
+                    {variant.roundedBuildings?.map(({ nodeId, count }) => (
+                      <span key={nodeId}>
+                        {BUILDINGS[nodeById.get(nodeId)!.buildingId].label} ×{count}
+                      </span>
+                    ))}
+                  </span>
                   {variant.impact === null
                     ? <span><span className="visually-hidden">{variant.label} operating impact unavailable:</span>—</span>
                     : <OperatingImpactValues impact={variant.impact} />}
