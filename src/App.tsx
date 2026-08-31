@@ -8,7 +8,6 @@ import { PRODUCTION_NODES } from './calculations/production-data';
 import { CoverageSection } from './components/CoverageSection';
 import { IslandsSection } from './components/IslandsSection';
 import { PopulationSection } from './components/PopulationSection';
-import { PopulationOverview } from './components/PopulationOverview';
 import { ProductionSection } from './components/ProductionSection';
 import { createInitialAppState, sumIslandHouses, sumIslandPopulations, type AppState } from './island';
 import {
@@ -99,16 +98,28 @@ export function App() {
         <button type="button" onClick={() => update(createInitialAppState)}>Reset all</button>
       </header>
 
-      <PopulationOverview
-        actualHouses={islandHouses}
-        targetHouses={{
-          eco: state.plan.factions.eco.houses?.value ?? islandHouses.eco,
-          tycoon: state.plan.factions.tycoon.houses?.value ?? islandHouses.tycoon,
-          tech: state.plan.factions.tech.houses?.value ?? islandHouses.tech,
-        }}
-        actualPopulations={islandPopulations}
-        targetPopulations={population}
-        islands={state.islands}
+      <PopulationSection
+        state={state.plan}
+        islandHouses={islandHouses}
+        islandPopulations={islandPopulations}
+        onFactionChange={updateFaction}
+        onBonusChange={(faction, bonus, checked) => update((current) => ({
+          ...current,
+          plan: {
+            ...current.plan,
+            factions: {
+              ...current.plan.factions,
+              [faction]: { ...current.plan.factions[faction], [bonus]: checked },
+            },
+          },
+          islands: current.islands.map((island) => ({
+            ...island,
+            factions: {
+              ...island.factions,
+              [faction]: { ...island.factions[faction], [bonus]: checked },
+            },
+          })),
+        }))}
       />
       <nav className="workspace-tabs" role="tablist" aria-label="Calculator workspace">
         {workspaces.map((item) => (
@@ -174,29 +185,12 @@ export function App() {
         />
       </div>
       <div id="workspace-growth" className="workspace-panel" role="tabpanel" aria-labelledby="tab-growth" hidden={workspace !== 'growth'}>
-        <PopulationSection
-          state={state.plan}
-          islandHouses={islandHouses}
-          islandPopulations={islandPopulations}
-          onFactionChange={updateFaction}
-          onBonusChange={(faction, bonus, checked) => update((current) => ({
-            ...current,
-            plan: {
-              ...current.plan,
-              factions: {
-                ...current.plan.factions,
-                [faction]: { ...current.plan.factions[faction], [bonus]: checked },
-              },
-            },
-            islands: current.islands.map((island) => ({
-              ...island,
-              factions: {
-                ...island.factions,
-                [faction]: { ...island.factions[faction], [bonus]: checked },
-              },
-            })),
-          }))}
-        />
+        <section className="calculator-section growth-section">
+          <div className="calculator-section__heading">
+            <div><h2>Growth</h2></div>
+            <p>Population targets and cumulative supply milestones</p>
+          </div>
+        </section>
       </div>
 
       <aside className="calculator-section page-notes" aria-label="Calculator guidance">

@@ -1,19 +1,18 @@
 import { beforeEach, expect, test } from 'vitest';
 
-import { renderApp, selectWorkspace } from './test/app-test-utils';
+import { input, renderApp, selectWorkspace } from './test/app-test-utils';
 
 beforeEach(() => localStorage.clear());
 
-test('keeps a read-only Actual, Target, and Headroom overview above every workspace', () => {
+test('keeps the established residences view above every workspace', () => {
   renderApp();
-  const overview = document.querySelector('.population-overview')!;
+  const residences = document.querySelector('.population-section')!;
 
-  expect(overview).toHaveTextContent('Actual');
-  expect(overview).toHaveTextContent('Target');
-  expect(overview).toHaveTextContent('Headroom / limit');
-  expect(overview.querySelector('input, button')).toBeNull();
+  expect(residences).toHaveTextContent('Residences & inhabitants');
+  expect(input('eco-houses')).toBeVisible();
 
   selectWorkspace('Growth');
-  expect(document.querySelector('.population-overview')).toBe(overview);
-  expect(document.querySelector('#workspace-growth input')).not.toBeNull();
+  expect(document.querySelector('.population-section')).toBe(residences);
+  expect(input('eco-houses')).toBeVisible();
+  expect(document.querySelector('#workspace-growth .population-section')).toBeNull();
 });

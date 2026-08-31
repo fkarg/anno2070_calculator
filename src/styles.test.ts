@@ -25,9 +25,3 @@ test('visually distinguishes the active workspace tab', () => {
   expect(css).toMatch(/\.workspace-tabs button\[aria-selected="true"\] \{[^}]*border-color:/);
   expect(css).toMatch(/\.workspace-tabs button:focus-visible \{[^}]*outline:/);
 });
-
-test('aligns the population overview into four readable columns', () => {
-  const css = readFileSync('src/styles.css', 'utf8');
-
-  expect(css).toMatch(/\.population-overview__row \{[^}]*grid-template-columns: minmax\(6rem, \.5fr\) repeat\(3, minmax\(14rem, 1fr\)\);/);
-});
