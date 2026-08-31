@@ -113,7 +113,7 @@ export function PopulationFaction({
         <h3>{config.label}</h3>
         {variant === 'plan' && (
           <span className={`population-faction__mode${state.houses !== null ? ' population-faction__mode--manual' : ''}`}>
-            {state.houses !== null ? 'Manual plan' : 'Following islands'}
+            {state.houses !== null ? 'Manual target' : 'Following islands'}
           </span>
         )}
       </header>
@@ -124,7 +124,7 @@ export function PopulationFaction({
           label="Houses"
           subLabel={variant === 'island'
             ? 'actual residences'
-            : state.houses !== null ? 'manual plan' : 'auto · from islands'}
+            : state.houses !== null ? 'manual target' : 'auto · from islands'}
           manual={variant === 'plan' && state.houses !== null}
           inputId={`${idPrefix}${config.id}-houses`}
           inputLabel={`${config.label} houses`}
@@ -168,9 +168,9 @@ export function PopulationFaction({
           <button
             type="button"
             onClick={() => onHousesChange(houses)}
-            aria-label={`Plan ${config.label} manually`}
+            aria-label={`Set ${config.label} Growth target manually`}
           >
-            Plan manually
+            Set target
           </button>
         </div>
       )}

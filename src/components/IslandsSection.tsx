@@ -42,7 +42,6 @@ import { RevealEditValue } from './RevealEditValue';
 
 type IslandsSectionProps = {
   islands: readonly IslandState[];
-  planRequirements: Record<string, number | null>;
   onIslandsChange: (updater: (current: readonly IslandState[]) => IslandState[]) => void;
 };
 
@@ -86,24 +85,6 @@ function compareByChainTier(left: BuildingId, right: BuildingId): number {
   return BUILDINGS[left].label.localeCompare(BUILDINGS[right].label);
 }
 
-// Plan requirement per building: canonical rows only — non-canonical
-// alternatives restate demand the canonical producer already covers.
-function planRequirementByBuilding(planRequirements: Record<string, number | null>): Map<BuildingId, number | null> {
-  const required = new Map<BuildingId, number | null>();
-  for (const node of PRODUCTION_NODES) {
-    if (producedGood(node.buildingId) !== node.buildingId) continue;
-    const current = required.get(node.buildingId);
-    const requirement = planRequirements[node.id];
-    required.set(
-      node.buildingId,
-      current === null || requirement === null || requirement === undefined
-        ? null
-        : (current ?? 0) + requirement,
-    );
-  }
-  return required;
-}
-
 function ownedTotalsByBuilding(islands: readonly IslandState[]): Map<BuildingId, number | null> {
   const totals = new Map<BuildingId, number | null>();
   for (const island of islands) {
@@ -141,8 +122,6 @@ type Suggestion = { buildingId: BuildingId; reason: string };
 function buildSuggestions(
   island: IslandState,
   balances: IslandBalances,
-  planByBuilding: Map<BuildingId, number | null>,
-  ownedTotals: Map<BuildingId, number | null>,
   empire: IslandBalances,
 ): Suggestion[] {
   const local = (Object.entries(balances) as [GoodId, GoodBalance][])
@@ -157,26 +136,10 @@ function buildSuggestions(
       const buildingId = buildableProducer(island, goodId);
       return buildingId === null ? [] : [{
         buildingId,
-        reason: `local ${formatRequirement(balance.balance ?? 0)}`,
+        reason: `current full demand ${formatRequirement(-(balance.balance ?? 0))} short`,
       }];
     });
-
-  const global = [...planByBuilding.entries()]
-    .map(([buildingId, plan]) => ({
-      buildingId,
-      gap: plan === null ? 0 : plan - (ownedTotals.get(buildingId) ?? 0),
-    }))
-    .filter(({ buildingId, gap }) => gap > BALANCE_EPSILON && canBuildOn(island, buildingId))
-    .sort((left, right) => right.gap - left.gap)
-    .map(({ buildingId, gap }): Suggestion => ({ buildingId, reason: `plan +${formatRequirement(gap)}` }));
-
-  const suggestions: Suggestion[] = [];
-  for (const candidate of [...local.slice(0, 2), ...global]) {
-    if (suggestions.some((suggestion) => suggestion.buildingId === candidate.buildingId)) continue;
-    suggestions.push(candidate);
-    if (suggestions.length === 4) break;
-  }
-  return suggestions;
+  return local.slice(0, 4);
 }
 
 function IslandPlaque({ island, index, editing, operatingLoad, onToggleEdit }: {
@@ -321,7 +284,6 @@ function BuildingLedger({
   island,
   idPrefix,
   balances,
-  planByBuilding,
   ownedTotals,
   empire,
   onChange,
@@ -329,7 +291,6 @@ function BuildingLedger({
   island: IslandState;
   idPrefix: string;
   balances: IslandBalances;
-  planByBuilding: Map<BuildingId, number | null>;
   ownedTotals: Map<BuildingId, number | null>;
   empire: IslandBalances;
   onChange: IslandChange;
@@ -357,7 +318,7 @@ function BuildingLedger({
     setOwned(buildingId, { raw: String(value), value });
   };
 
-  const suggestions = buildSuggestions(island, balances, planByBuilding, ownedTotals, empire);
+  const suggestions = buildSuggestions(island, balances, empire);
   const mixedCategories = new Set(rows.map((buildingId) => BUILDINGS[buildingId].category)).size > 1;
 
   return (
@@ -423,7 +384,6 @@ function BuildingLedger({
         <thead>
           <tr>
             <th>Building</th>
-            <th title="Empire-wide plan requirement">Plan</th>
             <th title="Owned across all islands">Σ own</th>
             <th>Here</th>
             <th title="This island's demand">Demand</th>
@@ -447,7 +407,7 @@ function BuildingLedger({
               <Fragment key={buildingId}>
                 {startsGroup && (
                   <tr className="island-card__ledger-group" aria-hidden="true">
-                    <th colSpan={7}>{CATEGORY_LABELS[building.category]}</th>
+                    <th colSpan={6}>{CATEGORY_LABELS[building.category]}</th>
                   </tr>
                 )}
                 <tr data-testid={`${idPrefix}ledger-${buildingId}`}>
@@ -457,7 +417,6 @@ function BuildingLedger({
                       <span>{building.label}{building.note !== undefined && '*'}</span>
                     </span>
                   </th>
-                  <td>{building.category === 'production' ? cell(planByBuilding.get(buildingId)) : '·'}</td>
                   <td>{ownedTotals.get(buildingId) === null ? '—' : ownedTotals.get(buildingId) ?? 0}</td>
                   <td className="island-card__stepper">
                     <button
@@ -620,7 +579,7 @@ function IslandConfiguration({ island, index, idPrefix, onChange, onRemove }: {
             checked={island.settled}
             onChange={(event) => onChange((current) => ({ ...current, settled: event.target.checked }))}
           />
-          <span>Settled (counts toward the plan and totals)</span>
+          <span>Settled (counts toward actual population and totals)</span>
         </label>
         <label>
           <input
@@ -693,9 +652,8 @@ function IslandConfiguration({ island, index, idPrefix, onChange, onRemove }: {
   );
 }
 
-export function IslandsSection({ islands, planRequirements, onIslandsChange }: IslandsSectionProps) {
+export function IslandsSection({ islands, onIslandsChange }: IslandsSectionProps) {
   const [configuring, setConfiguring] = useState<ReadonlySet<string>>(new Set());
-  const planByBuilding = planRequirementByBuilding(planRequirements);
   const ownedTotals = ownedTotalsByBuilding(islands);
   const empire = aggregateBalances(islands);
 
@@ -712,7 +670,7 @@ export function IslandsSection({ islands, planRequirements, onIslandsChange }: I
         <div>
           <h2>Islands (actuals)</h2>
         </div>
-        <p>Record what you actually own; the plan compares against it</p>
+        <p>Record what you actually own and compare it with current full demand</p>
         <button
           type="button"
           onClick={() => onIslandsChange((current) => [...current, createIsland(`Island ${current.length + 1}`)])}
@@ -780,7 +738,6 @@ export function IslandsSection({ islands, planRequirements, onIslandsChange }: I
                 island={island}
                 idPrefix={idPrefix}
                 balances={balances}
-                planByBuilding={planByBuilding}
                 ownedTotals={ownedTotals}
                 empire={empire}
                 onChange={onChange}

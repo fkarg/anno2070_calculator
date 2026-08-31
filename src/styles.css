@@ -84,6 +84,35 @@ main > header p { margin: 0; color: var(--muted); }
 .calculator-section__heading h2 { margin: 0; font-size: 1.05rem; text-transform: uppercase; letter-spacing: .065em; }
 .calculator-section__heading p { margin: 0; color: var(--muted); font-size: .83rem; }
 
+.workspace-tabs {
+  display: flex;
+  gap: .35rem;
+  margin: 0 0 1rem;
+  padding: .35rem;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #192126;
+}
+.workspace-tabs button { flex: 1; border-color: transparent; background: transparent; }
+.workspace-tabs button[aria-selected="true"] { border-color: #f4a75e; background: #35434a; }
+.workspace-tabs button:focus-visible { outline: 2px solid #f4a75e; outline-offset: 2px; }
+.workspace-panel[hidden] { display: none; }
+
+.population-overview__headings,
+.population-overview__row {
+  display: grid;
+  grid-template-columns: minmax(6rem, .5fr) repeat(3, minmax(14rem, 1fr));
+  gap: .8rem;
+  align-items: center;
+  padding: .55rem .8rem;
+}
+.population-overview__headings { color: var(--muted); font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; }
+.population-overview ul { margin: 0; padding: 0; list-style: none; overflow-x: auto; }
+.population-overview__row { min-width: 58rem; border-top: 1px solid #344148; font-size: .8rem; }
+.population-overview__row--eco strong { color: #9fd9a6; }
+.population-overview__row--tycoon strong { color: #cdd3da; }
+.population-overview__row--tech strong { color: #8fb8d9; }
+
 .population-section__factions,
 .production-section__factions {
   display: grid;

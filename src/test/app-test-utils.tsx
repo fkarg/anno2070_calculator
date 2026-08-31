@@ -52,6 +52,12 @@ export function resetButton(): HTMLButtonElement {
   return requiredElement(document.querySelector('main > header button'), 'reset button');
 }
 
+export function selectWorkspace(name: 'Islands' | 'Production' | 'Growth'): void {
+  const tab = [...document.querySelectorAll<HTMLButtonElement>('[role="tab"]')]
+    .find((candidate) => candidate.textContent === name);
+  fireEvent.click(requiredElement(tab, `${name} workspace tab`));
+}
+
 export async function replaceInput(input: HTMLElement, value: string): Promise<void> {
   fireEvent.change(input, { target: { value } });
 }

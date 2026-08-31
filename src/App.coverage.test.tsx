@@ -25,6 +25,14 @@ function addBuilding(islandIndex: number, buildingId: string) {
 }
 
 describe('coverage and bottlenecks', () => {
+  test('uses current full demand language without a separate plan frame', async () => {
+    renderApp();
+    addIsland();
+    await setIslandHouses(0, 'eco', '10');
+    await replaceInput(input('eco-houses'), '20');
+
+    expect(document.body).not.toHaveTextContent('Toward plan');
+  });
   test('outgrown production leads the cards; unbuilt chains collapse to a list', async () => {
     renderApp();
     addIsland();

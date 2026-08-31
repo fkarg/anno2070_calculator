@@ -22,7 +22,7 @@ describe('production structure and impacts', () => {
     renderApp();
     // Chains dim on zero requirement: population capped at Workers demands
     // no health food, whether the cap comes from the plan or from islands.
-    fireEvent.click(buttonWithLabel('Plan Eco manually'));
+    fireEvent.click(buttonWithLabel('Set Eco Growth target manually'));
     await replaceInput(input('eco-houses'), '100');
     fireEvent.click(buttonWithLabel('Eco Workers'));
 
@@ -79,7 +79,7 @@ describe('production structure and impacts', () => {
 
   test('updates direct and full-chain operating impacts and honors rounding', async () => {
     renderApp();
-    fireEvent.click(buttonWithLabel('Plan Eco manually'));
+    fireEvent.click(buttonWithLabel('Set Eco Growth target manually'));
     await replaceInput(input('eco-population-0'), '251');
 
     const fish = productionRow('ecoFish');

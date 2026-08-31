@@ -25,6 +25,12 @@ function addBuilding(islandIndex: number, buildingId: string) {
 }
 
 describe('actuals in the production view', () => {
+  test('labels calculated requirements as demand rather than a Growth plan', () => {
+    renderApp();
+
+    expect(document.querySelector('.production-node--header')).toHaveTextContent('demand / actual / owned');
+    expect(document.querySelector('.production-section')).not.toHaveTextContent('plan covered');
+  });
   test('canonical rows carry a labeled actual line; alternatives stay plan-only', async () => {
     renderApp();
     addIsland();

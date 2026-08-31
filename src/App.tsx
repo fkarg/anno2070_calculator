@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type KeyboardEvent } from 'react';
 
 import type { Faction } from './calculations/population';
 import { calculateAvailableProduction } from './calculations/calculate-production';
@@ -8,6 +8,7 @@ import { PRODUCTION_NODES } from './calculations/production-data';
 import { CoverageSection } from './components/CoverageSection';
 import { IslandsSection } from './components/IslandsSection';
 import { PopulationSection } from './components/PopulationSection';
+import { PopulationOverview } from './components/PopulationOverview';
 import { ProductionSection } from './components/ProductionSection';
 import { createInitialAppState, sumIslandHouses, sumIslandPopulations, type AppState } from './island';
 import {
@@ -23,6 +24,7 @@ export function App() {
   const [initial] = useState(loadAppState);
   const [state, setState] = useState(initial.state);
   const [dirty, setDirty] = useState(false);
+  const [workspace, setWorkspace] = useState<'islands' | 'production' | 'growth'>('islands');
   useEffect(() => {
     // A payload that failed to load stays untouched until a real user change.
     if (initial.storable || dirty) saveAppState(state);
@@ -69,6 +71,24 @@ export function App() {
     }));
   };
 
+  const workspaces = ['islands', 'production', 'growth'] as const;
+  const onWorkspaceKeyDown = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    current: typeof workspaces[number],
+  ) => {
+    const index = workspaces.indexOf(current);
+    const nextIndex = event.key === 'Home' ? 0
+      : event.key === 'End' ? workspaces.length - 1
+        : event.key === 'ArrowRight' ? (index + 1) % workspaces.length
+          : event.key === 'ArrowLeft' ? (index - 1 + workspaces.length) % workspaces.length
+            : null;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const next = workspaces[nextIndex];
+    setWorkspace(next);
+    document.getElementById(`tab-${next}`)?.focus();
+  };
+
   return (
     <main>
       <header>
@@ -79,83 +99,105 @@ export function App() {
         <button type="button" onClick={() => update(createInitialAppState)}>Reset all</button>
       </header>
 
-      <PopulationSection
-        state={state.plan}
-        islandHouses={islandHouses}
-        islandPopulations={islandPopulations}
-        onFactionChange={updateFaction}
-        onBonusChange={(faction, bonus, checked) => update((current) => ({
-          ...current,
-          // Bonuses are global per faction: mirror onto plan and every island
-          // so the per-island population math stays correct without new params.
-          plan: {
-            ...current.plan,
-            factions: {
-              ...current.plan.factions,
-              [faction]: { ...current.plan.factions[faction], [bonus]: checked },
-            },
-          },
-          islands: current.islands.map((island) => ({
-            ...island,
-            factions: {
-              ...island.factions,
-              [faction]: { ...island.factions[faction], [bonus]: checked },
-            },
-          })),
-        }))}
-      />
-      <IslandsSection
+      <PopulationOverview
+        actualHouses={islandHouses}
+        targetHouses={{
+          eco: state.plan.factions.eco.houses?.value ?? islandHouses.eco,
+          tycoon: state.plan.factions.tycoon.houses?.value ?? islandHouses.tycoon,
+          tech: state.plan.factions.tech.houses?.value ?? islandHouses.tech,
+        }}
+        actualPopulations={islandPopulations}
+        targetPopulations={population}
         islands={state.islands}
-        planRequirements={production}
-        onIslandsChange={(updater) => update((current) => ({
-          ...current,
-          // New or edited islands inherit the global per-faction bonuses.
-          islands: updater(current.islands).map((island) => ({
-            ...island,
-            factions: {
-              eco: { ...island.factions.eco, livingSpace: current.plan.factions.eco.livingSpace, senate: current.plan.factions.eco.senate },
-              tycoon: { ...island.factions.tycoon, livingSpace: current.plan.factions.tycoon.livingSpace, senate: current.plan.factions.tycoon.senate },
-              tech: { ...island.factions.tech, livingSpace: current.plan.factions.tech.livingSpace, senate: current.plan.factions.tech.senate },
+      />
+      <nav className="workspace-tabs" role="tablist" aria-label="Calculator workspace">
+        {workspaces.map((item) => (
+          <button
+            key={item}
+            id={`tab-${item}`}
+            type="button"
+            role="tab"
+            aria-selected={workspace === item}
+            aria-controls={`workspace-${item}`}
+            tabIndex={workspace === item ? 0 : -1}
+            onClick={() => setWorkspace(item)}
+            onKeyDown={(event) => onWorkspaceKeyDown(event, item)}
+          >{item[0].toUpperCase() + item.slice(1)}</button>
+        ))}
+      </nav>
+
+      <div id="workspace-islands" className="workspace-panel" role="tabpanel" aria-labelledby="tab-islands" hidden={workspace !== 'islands'}>
+        <IslandsSection
+            islands={state.islands}
+            onIslandsChange={(updater) => update((current) => ({
+              ...current,
+              // New or edited islands inherit the global per-faction bonuses.
+              islands: updater(current.islands).map((island) => ({
+                ...island,
+                factions: {
+                  eco: { ...island.factions.eco, livingSpace: current.plan.factions.eco.livingSpace, senate: current.plan.factions.eco.senate },
+                  tycoon: { ...island.factions.tycoon, livingSpace: current.plan.factions.tycoon.livingSpace, senate: current.plan.factions.tycoon.senate },
+                  tech: { ...island.factions.tech, livingSpace: current.plan.factions.tech.livingSpace, senate: current.plan.factions.tech.senate },
+                },
+              })),
+            }))}
+        />
+      </div>
+      <div id="workspace-production" className="workspace-panel" role="tabpanel" aria-labelledby="tab-production" hidden={workspace !== 'production'}>
+        <CoverageSection islands={state.islands} />
+        <ProductionSection
+              state={state.plan}
+              results={production}
+              operatingImpacts={operatingImpacts}
+              islands={state.islands}
+              empireBalances={empireBalances}
+              needs={needs}
+              ownedImpact={ownedImpact}
+              onProductivityChange={(id: string, value: EditableNumber) => updatePlan((current) => ({
+                ...current,
+                productivity: {
+                  ...current.productivity,
+                  [id]: { raw: value.raw, value: parsePositiveNumber(value.raw) },
+                },
+              }))}
+              onFactionProductivityChange={(faction, delta) => updatePlan((current) => ({
+                ...current,
+                productivity: Object.fromEntries(Object.entries(current.productivity).map(([id, entry]) => {
+                  const node = PRODUCTION_NODES.find((candidate) => candidate.id === id)!;
+                  if (node.faction !== faction || entry.value === null || entry.value + delta <= 0) return [id, entry];
+                  const value = entry.value + delta;
+                  return [id, { raw: String(value), value }];
+                })),
+              }))}
+              onRecyclingChange={(recycling) => updatePlan((current) => ({ ...current, recycling }))}
+              onWholeBuildingsChange={(wholeBuildings) => updatePlan((current) => ({ ...current, wholeBuildings }))}
+        />
+      </div>
+      <div id="workspace-growth" className="workspace-panel" role="tabpanel" aria-labelledby="tab-growth" hidden={workspace !== 'growth'}>
+        <PopulationSection
+          state={state.plan}
+          islandHouses={islandHouses}
+          islandPopulations={islandPopulations}
+          onFactionChange={updateFaction}
+          onBonusChange={(faction, bonus, checked) => update((current) => ({
+            ...current,
+            plan: {
+              ...current.plan,
+              factions: {
+                ...current.plan.factions,
+                [faction]: { ...current.plan.factions[faction], [bonus]: checked },
+              },
             },
-          })),
-        }))}
-      />
-      <CoverageSection
-        islands={state.islands}
-        planRequirements={production}
-        planIsManual={(['eco', 'tycoon', 'tech'] as const).some((faction) =>
-          state.plan.factions[faction].houses !== null
-          || state.plan.factions[faction].overrides.some((override) => override !== null))}
-      />
-      <ProductionSection
-        state={state.plan}
-        results={production}
-        operatingImpacts={operatingImpacts}
-        islands={state.islands}
-        empireBalances={empireBalances}
-        needs={needs}
-        ownedImpact={ownedImpact}
-        onProductivityChange={(id: string, value: EditableNumber) => updatePlan((current) => ({
-          ...current,
-          productivity: {
-            ...current.productivity,
-            [id]: { raw: value.raw, value: parsePositiveNumber(value.raw) },
-          },
-        }))}
-        onFactionProductivityChange={(faction, delta) => updatePlan((current) => ({
-          ...current,
-          productivity: Object.fromEntries(Object.entries(current.productivity).map(([id, entry]) => {
-            const node = PRODUCTION_NODES.find((candidate) => candidate.id === id)!;
-            if (node.faction !== faction || entry.value === null || entry.value + delta <= 0) {
-              return [id, entry];
-            }
-            const value = entry.value + delta;
-            return [id, { raw: String(value), value }];
-          })),
-        }))}
-        onRecyclingChange={(recycling) => updatePlan((current) => ({ ...current, recycling }))}
-        onWholeBuildingsChange={(wholeBuildings) => updatePlan((current) => ({ ...current, wholeBuildings }))}
-      />
+            islands: current.islands.map((island) => ({
+              ...island,
+              factions: {
+                ...island.factions,
+                [faction]: { ...island.factions[faction], [bonus]: checked },
+              },
+            })),
+          }))}
+        />
+      </div>
 
       <aside className="calculator-section page-notes" aria-label="Calculator guidance">
         <details open>

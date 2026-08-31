@@ -1,16 +1,12 @@
-import { useState } from 'react';
-
 import { BUILDINGS } from '../calculations/building-data';
 import { tierHeadroom } from '../calculations/coverage';
-import { GOODS, producedGood, type GoodId } from '../calculations/goods';
+import type { GoodId } from '../calculations/goods';
 import { tierCapacities, type Faction } from '../calculations/population';
 import { formatRequirement } from '../calculations/production';
-import { PRODUCTION_NODES } from '../calculations/production-data';
 import { sumIslandPopulations } from '../island';
 import { FACTIONS, FACTION_CONFIGS } from '../model';
 import {
   calculateSupportedPopulation,
-  effectiveCapacities,
   throttleCause,
   type GoodConstraint,
 } from '../calculations/supported-population';
@@ -18,9 +14,6 @@ import type { IslandState } from '../island';
 
 type CoverageSectionProps = {
   islands: readonly IslandState[];
-  planRequirements: Record<string, number | null>;
-  // Without a manual plan, plan == demand and the second framing is noise.
-  planIsManual: boolean;
 };
 
 type Card = {
@@ -88,8 +81,8 @@ function demandView(islands: readonly IslandState[]): { cards: Card[]; unbuilt: 
       goodId: constraint.goodId,
       title: `${canonicalProducerLabel(constraint.goodId)} · ×${formatRequirement(constraint.scale)}`,
       why: starved
-        ? `${formatRequirement(available)} available vs ${formatRequirement(constraint.finalDemand)} needed — your ${formatRequirement(constraint.nominalCapacity)} buildings are starved: ${canonicalProducerLabel(starved.goodId)} covers ${formatRequirement(starved.supply)} of ${formatRequirement(starved.demand)} demanded`
-        : `${formatRequirement(available)} available vs ${formatRequirement(constraint.finalDemand)} needed by the current population`,
+        ? `${formatRequirement(available)} available vs ${formatRequirement(constraint.finalDemand)} current full demand — your ${formatRequirement(constraint.nominalCapacity)} buildings are starved: ${canonicalProducerLabel(starved.goodId)} covers ${formatRequirement(starved.supply)} of ${formatRequirement(starved.demand)} input demand`
+        : `${formatRequirement(available)} available vs ${formatRequirement(constraint.finalDemand)} current full demand`,
       solve: starved
         ? `+1 ${canonicalProducerLabel(starved.goodId)} → feeds the starved chain`
         : constraint.goodId === support.limitingGood && support.scaleAfterNextBuilding !== null
@@ -101,51 +94,11 @@ function demandView(islands: readonly IslandState[]): { cards: Card[]; unbuilt: 
   return { cards, unbuilt };
 }
 
-// Bottlenecks toward the plan: the largest gaps between plan requirements and
-// actual (chain-throttled) capacity, per good.
-function planCards(
-  islands: readonly IslandState[],
-  planRequirements: Record<string, number | null>,
-): Card[] {
-  const capacities = effectiveCapacities(islands);
-  const required = new Map<GoodId, number>();
-  for (const node of PRODUCTION_NODES) {
-    if (producedGood(node.buildingId) !== node.buildingId) continue;
-    const requirement = planRequirements[node.id];
-    if (requirement === null || requirement === undefined) continue;
-    required.set(node.buildingId, (required.get(node.buildingId) ?? 0) + requirement);
-  }
-
-  const gaps = [...required.entries()]
-    .filter(([goodId]) => GOODS.has(goodId))
-    .map(([goodId, requirement]) => {
-      const capacity = goodId in capacities ? capacities[goodId] : 0;
-      return capacity === null || capacity === undefined
-        ? null
-        : { goodId, requirement, capacity, gap: requirement - capacity };
-    })
-    .filter((entry): entry is NonNullable<typeof entry> => entry !== null && entry.gap > 1e-9)
-    .sort((left, right) => right.gap - left.gap)
-    .slice(0, 4);
-
-  return gaps.map((entry, index) => ({
-    goodId: entry.goodId,
-    title: `${canonicalProducerLabel(entry.goodId)} · ${formatRequirement(entry.gap)} short`,
-    why: `plan needs ${formatRequirement(entry.requirement)}, actual capacity covers ${formatRequirement(entry.capacity)}`,
-    solve: `build ${Math.ceil(entry.gap - 1e-9)} more to cover the plan`,
-    next: gaps[index + 1] ? canonicalProducerLabel(gaps[index + 1].goodId) : null,
-  }));
-}
-
-export function CoverageSection({ islands, planRequirements, planIsManual }: CoverageSectionProps) {
-  const [frame, setFrame] = useState<'demand' | 'plan'>('demand');
+export function CoverageSection({ islands }: CoverageSectionProps) {
   if (!islands.some((island) => island.settled)) return null;
 
-  const effectiveFrame = planIsManual ? frame : 'demand';
-  const { cards, unbuilt } = effectiveFrame === 'demand'
-    ? demandView(islands)
-    : { cards: planCards(islands, planRequirements), unbuilt: [] as readonly GoodConstraint[] };
-  const headroom = effectiveFrame === 'demand' ? headroomRows(islands) : [];
+  const { cards, unbuilt } = demandView(islands);
+  const headroom = headroomRows(islands);
 
   return (
     <section className="calculator-section coverage-section">
@@ -154,24 +107,6 @@ export function CoverageSection({ islands, planRequirements, planIsManual }: Cov
           <h2>Coverage &amp; bottlenecks</h2>
         </div>
         <p>What limits you now, and what solving it unlocks</p>
-        {planIsManual && (
-          <div className="coverage-section__frames">
-            <button
-              type="button"
-              aria-pressed={effectiveFrame === 'demand'}
-              onClick={() => setFrame('demand')}
-            >
-              Toward demand
-            </button>
-            <button
-              type="button"
-              aria-pressed={effectiveFrame === 'plan'}
-              onClick={() => setFrame('plan')}
-            >
-              Toward plan
-            </button>
-          </div>
-        )}
       </div>
 
       {headroom.length > 0 && (
@@ -199,11 +134,11 @@ export function CoverageSection({ islands, planRequirements, planIsManual }: Cov
         </ul>
       )}
       {cards.length === 0 && unbuilt.length === 0
-        && <p className="coverage-section__empty">Nothing is limiting {effectiveFrame === 'demand' ? 'the current population' : 'the plan'} right now.</p>}
+        && <p className="coverage-section__empty">Nothing is limiting the current population right now.</p>}
       {cards.length > 0 && (
         <ol className="coverage-section__cards">
           {cards.map((card, index) => (
-            <li key={card.goodId} className="bottleneck-card" data-testid={`bottleneck-${frame}-${card.goodId}`}>
+            <li key={card.goodId} className="bottleneck-card" data-testid={`bottleneck-demand-${card.goodId}`}>
               <h3>
                 <img src={`/assets/${BUILDINGS[card.goodId].image}`} alt="" width="26" height="26" />
                 <span>{index + 1}. {card.title}</span>
@@ -221,7 +156,7 @@ export function CoverageSection({ islands, planRequirements, planIsManual }: Cov
           {unbuilt.map((constraint) => (
             <span key={constraint.goodId} className="coverage-section__unbuilt-chip">
               <img src={`/assets/${BUILDINGS[constraint.goodId].image}`} alt="" width="18" height="18" />
-              <span>{canonicalProducerLabel(constraint.goodId)} ({formatRequirement(constraint.finalDemand + constraint.intermediateDemand)} needed)</span>
+              <span>{canonicalProducerLabel(constraint.goodId)} ({formatRequirement(constraint.finalDemand + constraint.intermediateDemand)} current full demand)</span>
             </span>
           ))}
         </p>

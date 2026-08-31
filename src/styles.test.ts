@@ -17,3 +17,17 @@ test('fits production impacts inside faction boundaries', () => {
   expect(css).toMatch(/\.operating-impact-values \{[^}]*flex-wrap: wrap;/);
   expect(css).toMatch(/\.operating-impact-values__metric \{[^}]*white-space: nowrap;/);
 });
+
+test('visually distinguishes the active workspace tab', () => {
+  const css = readFileSync('src/styles.css', 'utf8');
+
+  expect(css).toMatch(/\.workspace-tabs \{[^}]*display: flex;/);
+  expect(css).toMatch(/\.workspace-tabs button\[aria-selected="true"\] \{[^}]*border-color:/);
+  expect(css).toMatch(/\.workspace-tabs button:focus-visible \{[^}]*outline:/);
+});
+
+test('aligns the population overview into four readable columns', () => {
+  const css = readFileSync('src/styles.css', 'utf8');
+
+  expect(css).toMatch(/\.population-overview__row \{[^}]*grid-template-columns: minmax\(6rem, \.5fr\) repeat\(3, minmax\(14rem, 1fr\)\);/);
+});

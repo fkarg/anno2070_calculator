@@ -94,6 +94,9 @@ describe('islands section', () => {
 
     const suggestions = byTestId('island-0-suggestions');
     expect(suggestions).toHaveTextContent('Build next:');
+    expect(suggestions).toHaveTextContent('current full demand');
+    expect(suggestions).not.toHaveTextContent('plan');
+    expect(byTestId('island-0').querySelector('th[title="Empire-wide plan requirement"]')).toBeNull();
     fireEvent.click(buttonWithLabel('Build one Fishery on Island 1', suggestions));
     expect(input('island-0-owned-fishery')).toHaveValue('1');
   });

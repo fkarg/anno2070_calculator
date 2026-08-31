@@ -46,8 +46,8 @@ function ownedByBuilding(islands: readonly IslandState[]): Map<BuildingId, numbe
   return totals;
 }
 
-// Plan requirement per good: canonical rows only, summed across all chains.
-function planRequirementByGood(results: Record<string, number | null>): Map<GoodId, number | null> {
+// Full-demand requirement per good: canonical rows only, summed across chains.
+function demandRequirementByGood(results: Record<string, number | null>): Map<GoodId, number | null> {
   const required = new Map<GoodId, number | null>();
   for (const node of PRODUCTION_NODES) {
     if (producedGood(node.buildingId) !== node.buildingId) continue;
@@ -91,7 +91,7 @@ function ProductionFaction({
   results,
   operatingImpacts,
   owned,
-  planByGood,
+  demandByGood,
   empireBalances,
   onProductivityChange,
   onFactionProductivityChange,
@@ -101,7 +101,7 @@ function ProductionFaction({
 > & {
   faction: Faction;
   owned: Map<BuildingId, number | null>;
-  planByGood: Map<GoodId, number | null>;
+  demandByGood: Map<GoodId, number | null>;
 }) {
   const factionLabel = FACTION_CONFIGS[faction].label;
 
@@ -128,7 +128,7 @@ function ProductionFaction({
           <span>building · per-building costs</span>
           <span>req</span>
           <span>prod %</span>
-          <span>costs · plan / act · owned</span>
+          <span>costs · demand / actual / owned</span>
         </div>
         {buildProductionTrees(faction).map((tree) => {
           const rootNode = nodeById.get(tree.rootId)!;
@@ -180,9 +180,9 @@ function ProductionFaction({
                 // undefined means untouched (0); null is invalid and must survive.
                 const empireEntry = empireBalances[goodId];
                 capacity = empireEntry === undefined ? 0 : empireEntry.capacity;
-                const required = planByGood.has(goodId) ? planByGood.get(goodId)! : 0;
-                // Purely a planning gap: plan demand minus owned capacity. Actual
-                // shortages live in island balances and transfer needs.
+                const required = demandByGood.has(goodId) ? demandByGood.get(goodId)! : 0;
+                // Full-demand capacity gap. Local shortages live in island
+                // balances and transfer needs.
                 buildGap = capacity === null || required === null ? null : required - capacity;
               }
               return (
@@ -255,7 +255,7 @@ function ProductionFaction({
                             ? (
                               <span
                                 className="production-node__mini balance--shortfall"
-                                aria-label={`${building.label} still to build for the plan`}
+                                aria-label={`${building.label} capacity still to build for full demand`}
                               >
                                 build {formatRequirement(buildGap)}
                               </span>
@@ -263,7 +263,7 @@ function ProductionFaction({
                             : (
                               <span
                                 className="production-node__mini balance--surplus"
-                                aria-label={`${building.label} plan covered`}
+                                aria-label={`${building.label} full demand covered`}
                               >
                                 {buildGap < -BALANCE_EPSILON ? `over ${formatRequirement(-buildGap)}` : '✓'}
                               </span>
@@ -295,7 +295,7 @@ function ProductionFaction({
 
 export function ProductionSection(props: ProductionSectionProps) {
   const owned = ownedByBuilding(props.islands);
-  const planByGood = planRequirementByGood(props.results);
+  const demandByGood = demandRequirementByGood(props.results);
   const islandNames = new Map(props.islands.map((island) => [island.id, island.name]));
 
   return (
@@ -340,7 +340,7 @@ export function ProductionSection(props: ProductionSectionProps) {
             key={faction}
             faction={faction}
             owned={owned}
-            planByGood={planByGood}
+            demandByGood={demandByGood}
             {...props}
           />
         ))}
