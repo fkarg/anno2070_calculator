@@ -20,6 +20,7 @@ import { OperatingImpactValues } from './OperatingImpactValues';
 type ProductionSectionProps = {
   state: CalculatorState;
   results: Record<string, number | null>;
+  targetResults: Record<string, number | null>;
   operatingImpacts: ProductionOperatingImpacts;
   islands: readonly IslandState[];
   empireBalances: IslandBalances;
@@ -92,6 +93,7 @@ function ProductionFaction({
   operatingImpacts,
   owned,
   demandByGood,
+  targetDemandByGood,
   empireBalances,
   onProductivityChange,
   onFactionProductivityChange,
@@ -102,6 +104,7 @@ function ProductionFaction({
   faction: Faction;
   owned: Map<BuildingId, number | null>;
   demandByGood: Map<GoodId, number | null>;
+  targetDemandByGood: Map<GoodId, number | null>;
 }) {
   const factionLabel = FACTION_CONFIGS[faction].label;
 
@@ -128,7 +131,7 @@ function ProductionFaction({
           <span>building · per-building costs</span>
           <span>req</span>
           <span>prod %</span>
-          <span>costs · rounded / fractional / owned</span>
+          <span>costs · rounded / fractional · owned / actual / target</span>
         </div>
         {buildProductionTrees(faction).map((tree) => {
           const rootNode = nodeById.get(tree.rootId)!;
@@ -158,6 +161,7 @@ function ProductionFaction({
               let ownedTotal: number | null = 0;
               let capacity: number | null = 0;
               let buildGap: number | null = null;
+              let targetStatus: string | null = null;
               if (canonical) {
                 const goodId = node.buildingId as GoodId;
                 for (const producer of GOODS.get(goodId)?.producers ?? []) {
@@ -173,9 +177,28 @@ function ProductionFaction({
                 const empireEntry = empireBalances[goodId];
                 capacity = empireEntry === undefined ? 0 : empireEntry.capacity;
                 const required = demandByGood.has(goodId) ? demandByGood.get(goodId)! : 0;
+                const targetRequired = targetDemandByGood.has(goodId)
+                  ? targetDemandByGood.get(goodId)!
+                  : 0;
                 // Full-demand capacity gap. Local shortages live in island
                 // balances and transfer needs.
                 buildGap = capacity === null || required === null ? null : required - capacity;
+                const targetGap = capacity === null || targetRequired === null
+                  ? null
+                  : targetRequired - capacity;
+                const showTarget = required === null
+                  ? targetRequired !== null
+                  : targetRequired === null || Math.abs(required - targetRequired) > BALANCE_EPSILON;
+                if (showTarget) {
+                  if (targetGap === null) targetStatus = 'target —';
+                  else if (targetGap > BALANCE_EPSILON) {
+                    targetStatus = `target build ${formatRequirement(targetGap)}`;
+                  } else {
+                    targetStatus = targetGap < -BALANCE_EPSILON
+                      ? `target over ${formatRequirement(-targetGap)}`
+                      : 'target ✓';
+                  }
+                }
               }
               return (
                 <li
@@ -245,24 +268,30 @@ function ProductionFaction({
                             : capacity === null ? '→—' : ''}
                         </span>
                         {buildGap === null
-                          ? <span className="production-node__mini">build —</span>
+                          ? <span className="production-node__mini production-node__mini--actual">actual —</span>
                           : buildGap > BALANCE_EPSILON
                             ? (
                               <span
-                                className="production-node__mini balance--shortfall"
+                                className="production-node__mini production-node__mini--actual balance--shortfall"
                                 aria-label={`${building.label} capacity still to build for full demand`}
                               >
-                                build {formatRequirement(buildGap)}
+                                actual build {formatRequirement(buildGap)}
                               </span>
                             )
                             : (
                               <span
-                                className="production-node__mini balance--surplus"
+                                className="production-node__mini production-node__mini--actual balance--surplus"
                                 aria-label={`${building.label} full demand covered`}
                               >
-                                {buildGap < -BALANCE_EPSILON ? `over ${formatRequirement(-buildGap)}` : '✓'}
+                                {buildGap < -BALANCE_EPSILON
+                                  ? `actual over ${formatRequirement(-buildGap)}`
+                                  : 'actual ✓'}
                               </span>
                             )}
+                        {targetStatus !== null && <span
+                          className="production-node__mini production-node__mini--target"
+                          aria-label={`${building.label} ${targetStatus}`}
+                        >{targetStatus}</span>}
                       </div>
                     )}
                   </div>
@@ -298,6 +327,7 @@ function ProductionFaction({
 export function ProductionSection(props: ProductionSectionProps) {
   const owned = ownedByBuilding(props.islands);
   const demandByGood = demandRequirementByGood(props.results);
+  const targetDemandByGood = demandRequirementByGood(props.targetResults);
   const islandNames = new Map(props.islands.map((island) => [island.id, island.name]));
 
   return (
@@ -343,6 +373,7 @@ export function ProductionSection(props: ProductionSectionProps) {
             faction={faction}
             owned={owned}
             demandByGood={demandByGood}
+            targetDemandByGood={targetDemandByGood}
             {...props}
           />
         ))}

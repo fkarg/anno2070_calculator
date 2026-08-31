@@ -58,6 +58,17 @@ export function App() {
     wholeBuildings: state.plan.wholeBuildings,
     ignoredDemands: state.plan.ignoredDemands,
   });
+  const targetProduction = calculateAvailableProduction({
+    population: {
+      eco: targets.eco?.effectivePopulations ?? null,
+      tycoon: targets.tycoon?.effectivePopulations ?? null,
+      tech: targets.tech?.effectivePopulations ?? null,
+    },
+    productivity,
+    recycling: state.plan.recycling,
+    wholeBuildings: state.plan.wholeBuildings,
+    ignoredDemands: state.plan.ignoredDemands,
+  });
   const fractionalProduction = calculateAvailableProduction({
     population: islandPopulations,
     productivity,
@@ -188,6 +199,7 @@ export function App() {
         <ProductionSection
               state={state.plan}
               results={production}
+              targetResults={targetProduction}
               operatingImpacts={operatingImpacts}
               islands={state.islands}
               empireBalances={empireBalances}

@@ -1400,3 +1400,7 @@ main > footer a { color: #8fc9f6; }
   font-size: .68rem;
   min-width: 5.4rem;
 }
+.production-node__mini--target {
+  color: var(--select);
+  font-weight: 650;
+}
