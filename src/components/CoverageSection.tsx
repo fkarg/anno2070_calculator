@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from 'react';
+import { useEffect, useState, type KeyboardEvent } from 'react';
 
 import { BUILDINGS, type BuildingId } from '../calculations/building-data';
 import { isDemandIgnored, type IgnoredDemandSource } from '../calculations/demand-policy';
@@ -108,6 +108,11 @@ export function CoverageSection({ islands, planning, ignoredDemands, onIgnoreDem
   const effectiveSelection = selected !== 'current' && selectedMilestone === null
     ? 'current'
     : selected;
+  useEffect(() => {
+    if (selected === 'current' || selectedMilestone !== null) return;
+    const timeout = window.setTimeout(() => setSelected('current'), 0);
+    return () => window.clearTimeout(timeout);
+  }, [selected, selectedMilestone]);
   const hasSettledIsland = islands.some((island) => island.settled);
   const hasMilestone = FACTIONS.some((faction) => activeMilestones[faction] !== null);
   if (!hasSettledIsland && !hasMilestone) return null;
@@ -133,7 +138,7 @@ export function CoverageSection({ islands, planning, ignoredDemands, onIgnoreDem
     document.getElementById(`coverage-context-${next}`)?.focus();
   };
 
-  const { cards, unbuilt } = currentCoverageView(islands, planning, ignoredDemands);
+  const { cards, unbuilt, available } = currentCoverageView(islands, planning, ignoredDemands);
   const populations = sumIslandPopulations(islands);
   const headroom = headroomRows(islands, ignoredDemands);
   const milestoneCards = selectedMilestone ? milestoneCoverageCards(selectedMilestone) : [];
@@ -220,7 +225,9 @@ export function CoverageSection({ islands, planning, ignoredDemands, onIgnoreDem
         </ul>
         </div>
       )}
-      {effectiveSelection === 'current' && cards.length === 0 && unbuilt.length === 0
+      {effectiveSelection === 'current' && !available
+        && <p className="coverage-section__empty">Coverage unavailable while an actual population or building value is invalid.</p>}
+      {effectiveSelection === 'current' && available && cards.length === 0 && unbuilt.length === 0
         && <p className="coverage-section__empty">{ignoredDemands.length > 0
           ? `No active bottlenecks · ${ignoredDemands.length} ${ignoredDemands.length === 1 ? 'demand' : 'demands'} ignored`
           : "Nothing is limiting the current population's built supply chains right now."}</p>}

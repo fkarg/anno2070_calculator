@@ -50,8 +50,11 @@ function reasonLabel(chain: GrowthGapChain): string {
 }
 
 function breadcrumbChain(gap: GrowthGap): GrowthGapChain | null {
-  return [...gap.chains].sort((left, right) => right.addedHere - left.addedHere
-    || right.required - left.required)[0] ?? null;
+  const largestAdded = Math.max(0, ...gap.chains.map((chain) => chain.addedHere));
+  if (largestAdded > EPSILON) {
+    return gap.chains.find((chain) => Math.abs(chain.addedHere - largestAdded) <= EPSILON) ?? null;
+  }
+  return [...gap.chains].sort((left, right) => right.required - left.required)[0] ?? null;
 }
 
 function milestoneDelta(milestone: GrowthMilestone): number {
@@ -60,7 +63,7 @@ function milestoneDelta(milestone: GrowthMilestone): number {
 }
 
 function milestoneEndpoint(milestone: GrowthMilestone, gap: GrowthGap, chain: GrowthGapChain): string {
-  if (chain.addedHere > EPSILON) {
+  if (gap.addedHere > EPSILON && chain.addedHere > EPSILON) {
     const faction = FACTION_CONFIGS[milestone.faction];
     const tier = faction.tierLabels[milestone.tier - 1];
     const delta = milestoneDelta(milestone);
@@ -75,7 +78,7 @@ export function currentCoverageView(
   islands: readonly IslandState[],
   planning: GrowthPlanningResult | null,
   ignoredDemands: readonly IgnoredDemandSource[],
-): { cards: CoverageCardModel[]; unbuilt: readonly GoodConstraint[] } {
+): { cards: CoverageCardModel[]; unbuilt: readonly GoodConstraint[]; available: boolean } {
   const support = calculateSupportedPopulation(islands, ignoredDemands);
   const acute = support.constraints.filter((constraint) => constraint.nominalCapacity > 0);
   const unbuilt = support.constraints.filter((constraint) => constraint.nominalCapacity === 0);
@@ -114,7 +117,7 @@ export function currentCoverageView(
       })) ?? [],
     };
   });
-  return { cards, unbuilt };
+  return { cards, unbuilt, available: support.available };
 }
 
 export function milestoneCoverageCards(milestone: GrowthMilestone): CoverageCardModel[] {

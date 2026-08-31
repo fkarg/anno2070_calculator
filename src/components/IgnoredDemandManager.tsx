@@ -1,6 +1,6 @@
 import type { IgnoredDemandSource } from '../calculations/demand-policy';
 import type { Faction } from '../calculations/population';
-import { demandSourceLabel } from './DemandSourceActions';
+import { demandSourceLabel } from './demand-source-label';
 
 type Props = {
   ignored: readonly IgnoredDemandSource[];

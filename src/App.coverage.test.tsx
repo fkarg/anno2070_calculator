@@ -157,6 +157,28 @@ describe('coverage and bottlenecks', () => {
     expect(document.querySelector('[aria-label^="Show Eco "]')).toBeNull();
   });
 
+  test('reports unavailable Coverage for invalid actual population', async () => {
+    renderApp();
+    addIsland();
+    await setIslandHouses(0, 'eco', 'invalid');
+    selectWorkspace('Production');
+
+    expect(document.querySelector('.coverage-section__empty'))
+      .toHaveTextContent('Coverage unavailable while an actual population or building value is invalid.');
+  });
+
+  test('reports unavailable Coverage for an invalid owned-building count', async () => {
+    renderApp();
+    addIsland();
+    await setIslandHouses(0, 'eco', '100');
+    addBuilding(0, 'fishery');
+    await replaceInput(input('island-0-owned-fishery'), 'invalid');
+    selectWorkspace('Production');
+
+    expect(document.querySelector('.coverage-section__empty'))
+      .toHaveTextContent('Coverage unavailable while an actual population or building value is invalid.');
+  });
+
   test('ignores and restores one current demand source everywhere', async () => {
     renderApp();
     addIsland();

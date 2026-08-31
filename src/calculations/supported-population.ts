@@ -23,6 +23,7 @@ export type GoodConstraint = Readonly<{
 }>;
 
 export type SupportedPopulation = Readonly<{
+  available: boolean;
   scale: number | null;
   limitingGood: GoodId | null;
   supported: Record<Faction, number[] | null>;
@@ -145,6 +146,7 @@ export function calculateSupportedPopulation(
 ): SupportedPopulation {
   const populations = sumIslandPopulations(islands);
   const unavailable: SupportedPopulation = {
+    available: false,
     scale: null,
     limitingGood: null,
     supported: { eco: null, tycoon: null, tech: null },
@@ -184,7 +186,7 @@ export function calculateSupportedPopulation(
   }
   constraints.sort((left, right) => left.scale - right.scale);
 
-  if (constraints.length === 0) return unavailable;
+  if (constraints.length === 0) return { ...unavailable, available: true };
 
   const limiting = constraints[0];
   const scale = limiting.scale;
@@ -206,6 +208,7 @@ export function calculateSupportedPopulation(
     : relaxedScale;
 
   return {
+    available: true,
     scale,
     limitingGood: limiting.goodId,
     supported,

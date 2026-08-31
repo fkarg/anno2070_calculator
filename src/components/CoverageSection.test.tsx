@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { expect, test, vi } from 'vitest';
 
 import type { GrowthMilestone, GrowthPlanningResult } from '../calculations/planning';
@@ -76,7 +76,7 @@ function planning(firstComplete: boolean, secondComplete: boolean): GrowthPlanni
   };
 }
 
-test('advances a selected faction context, then falls back to Current', () => {
+test('advances a selected faction context, then falls back to Current', async () => {
   const props = { islands: [createIsland('Actual')], ignoredDemands: [], onIgnoreDemand: vi.fn(), onApplyBuilding: vi.fn() };
   const view = render(<CoverageSection {...props} planning={planning(false, false)} />);
   fireEvent.click(screen.getByRole('tab', { name: 'Show Eco Workers coverage' }));
@@ -88,6 +88,10 @@ test('advances a selected faction context, then falls back to Current', () => {
     .toHaveAttribute('aria-selected', 'true');
 
   view.rerender(<CoverageSection {...props} planning={planning(true, true)} />);
+  await waitFor(() => expect(screen.getByRole('tab', { name: 'Show Current coverage' }))
+    .toHaveAttribute('aria-selected', 'true'));
+
+  view.rerender(<CoverageSection {...props} planning={planning(false, false)} />);
   expect(screen.getByRole('tab', { name: 'Show Current coverage' }))
     .toHaveAttribute('aria-selected', 'true');
 });
