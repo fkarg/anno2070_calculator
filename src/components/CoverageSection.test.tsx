@@ -58,7 +58,7 @@ test('keeps the first four milestone gaps as cards and the rest as later gaps', 
     },
   };
 
-  render(<CoverageSection islands={[]} planning={manyGaps} ignoredDemands={[]} onApplyBuilding={vi.fn()} />);
+  render(<CoverageSection islands={[]} planning={manyGaps} ignoredDemands={[]} onIgnoreDemand={vi.fn()} onApplyBuilding={vi.fn()} />);
   fireEvent.click(screen.getByRole('tab', { name: 'Show Eco Workers coverage' }));
 
   expect(document.querySelectorAll('.bottleneck-card')).toHaveLength(4);
@@ -77,7 +77,7 @@ function planning(firstComplete: boolean, secondComplete: boolean): GrowthPlanni
 }
 
 test('advances a selected faction context, then falls back to Current', () => {
-  const props = { islands: [createIsland('Actual')], ignoredDemands: [], onApplyBuilding: vi.fn() };
+  const props = { islands: [createIsland('Actual')], ignoredDemands: [], onIgnoreDemand: vi.fn(), onApplyBuilding: vi.fn() };
   const view = render(<CoverageSection {...props} planning={planning(false, false)} />);
   fireEvent.click(screen.getByRole('tab', { name: 'Show Eco Workers coverage' }));
   expect(screen.getByTestId('coverage-scenario-summary')).toHaveTextContent('1 gap');
@@ -97,6 +97,7 @@ test('moves context selection and focus with the existing tab keyboard pattern',
     islands={[createIsland('Actual')]}
     planning={planning(false, false)}
     ignoredDemands={[]}
+    onIgnoreDemand={vi.fn()}
     onApplyBuilding={vi.fn()}
   />);
   const current = screen.getByRole('tab', { name: 'Show Current coverage' });

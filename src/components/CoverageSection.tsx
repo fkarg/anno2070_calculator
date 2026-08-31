@@ -1,9 +1,9 @@
 import { useState, type KeyboardEvent } from 'react';
 
 import { BUILDINGS, type BuildingId } from '../calculations/building-data';
-import type { IgnoredDemandSource } from '../calculations/demand-policy';
+import { isDemandIgnored, type IgnoredDemandSource } from '../calculations/demand-policy';
 import { tierHeadroom } from '../calculations/coverage';
-import type { GoodId } from '../calculations/goods';
+import { GOODS, type GoodId } from '../calculations/goods';
 import { tierCapacities, type Faction } from '../calculations/population';
 import { formatRequirement } from '../calculations/production';
 import { sumIslandPopulations } from '../island';
@@ -11,17 +11,35 @@ import { FACTIONS, FACTION_CONFIGS } from '../model';
 import type { GrowthMilestone, GrowthPlanningResult } from '../calculations/planning';
 import type { IslandState } from '../island';
 import { CoverageBottleneckCard } from './CoverageBottleneckCard';
+import { DemandSourceActions } from './DemandSourceActions';
 import { currentCoverageView, milestoneCoverageCards } from './coverage-card-model';
 
 type CoverageSectionProps = {
   islands: readonly IslandState[];
   planning: GrowthPlanningResult | null;
   ignoredDemands: readonly IgnoredDemandSource[];
+  onIgnoreDemand: (source: IgnoredDemandSource) => void;
   onApplyBuilding: (islandId: string, buildingId: BuildingId) => void;
 };
 
 function canonicalProducerLabel(goodId: GoodId): string {
   return BUILDINGS[goodId].label;
+}
+
+function activeSources(
+  goodId: GoodId,
+  populations: Record<Faction, readonly number[] | null>,
+  ignored: readonly IgnoredDemandSource[],
+): IgnoredDemandSource[] {
+  return (GOODS.get(goodId)?.finalDemands ?? []).flatMap((demand) =>
+    demand.satisfaction.flatMap((satisfied, tier) => (
+      satisfied > 0
+        && (populations[demand.faction]?.[tier] ?? 0) > 0
+        && !isDemandIgnored(ignored, demand.faction, tier, goodId)
+        ? [{ faction: demand.faction, tier, goodId }]
+        : []
+    )),
+  );
 }
 
 type HeadroomRow = Readonly<{
@@ -80,7 +98,7 @@ function milestoneSummary(milestone: GrowthMilestone): string {
   return `Full-demand supply toward ${delta >= 0 ? '+' : ''}${delta} planned ${tier} · ${milestone.gaps.length} ${gapLabel}`;
 }
 
-export function CoverageSection({ islands, planning, ignoredDemands, onApplyBuilding }: CoverageSectionProps) {
+export function CoverageSection({ islands, planning, ignoredDemands, onIgnoreDemand, onApplyBuilding }: CoverageSectionProps) {
   const [selected, setSelected] = useState<'current' | Faction>('current');
   const activeMilestones = Object.fromEntries(FACTIONS.map((faction) => [
     faction,
@@ -116,6 +134,7 @@ export function CoverageSection({ islands, planning, ignoredDemands, onApplyBuil
   };
 
   const { cards, unbuilt } = currentCoverageView(islands, planning, ignoredDemands);
+  const populations = sumIslandPopulations(islands);
   const headroom = headroomRows(islands, ignoredDemands);
   const milestoneCards = selectedMilestone ? milestoneCoverageCards(selectedMilestone) : [];
   const displayedCards = effectiveSelection === 'current' ? cards.slice(0, 4) : milestoneCards.slice(0, 4);
@@ -202,7 +221,9 @@ export function CoverageSection({ islands, planning, ignoredDemands, onApplyBuil
         </div>
       )}
       {effectiveSelection === 'current' && cards.length === 0 && unbuilt.length === 0
-        && <p className="coverage-section__empty">Nothing is limiting the current population's built supply chains right now.</p>}
+        && <p className="coverage-section__empty">{ignoredDemands.length > 0
+          ? `No active bottlenecks · ${ignoredDemands.length} ${ignoredDemands.length === 1 ? 'demand' : 'demands'} ignored`
+          : "Nothing is limiting the current population's built supply chains right now."}</p>}
       {displayedCards.length > 0 && (
         <ol className="coverage-section__cards">
           {displayedCards.map((card, index) => <CoverageBottleneckCard
@@ -210,20 +231,23 @@ export function CoverageSection({ islands, planning, ignoredDemands, onApplyBuil
             card={card}
             rank={index + 1}
             islands={islands}
+            sources={activeSources(card.goodId, populations, ignoredDemands)}
+            onIgnoreDemand={onIgnoreDemand}
             onApplyBuilding={onApplyBuilding}
           />)}
         </ol>
       )}
       {effectiveSelection === 'current' && unbuilt.length > 0 && (
-        <p className="coverage-section__unbuilt" data-testid="coverage-unbuilt">
+        <div className="coverage-section__unbuilt" data-testid="coverage-unbuilt">
           <span>Chains not built yet:</span>
           {unbuilt.map((constraint) => (
             <span key={constraint.goodId} className="coverage-section__unbuilt-chip">
               <img src={`/assets/${BUILDINGS[constraint.goodId].image}`} alt="" width="18" height="18" />
               <span>{canonicalProducerLabel(constraint.goodId)} ({formatRequirement(constraint.finalDemand + constraint.intermediateDemand)} current full demand)</span>
+              <DemandSourceActions sources={activeSources(constraint.goodId, populations, ignoredDemands)} onIgnore={onIgnoreDemand} />
             </span>
           ))}
-        </p>
+        </div>
       )}
       {laterCards.length > 0 && <p className="coverage-section__later" data-testid="coverage-later-gaps">
         <span>Later gaps:</span>

@@ -12,13 +12,14 @@ type Props = {
   targets: Record<Faction, ResolvedPopulationTarget | null>;
   factionStates: CalculatorState['factions'];
   ignoredDemands: readonly IgnoredDemandSource[];
+  onManageIgnoredDemands: () => void;
   islands: readonly IslandState[];
   onBonusChange: (faction: Faction, bonus: 'livingSpace' | 'senate', checked: boolean) => void;
 };
 
-export function PopulationSection({ actualHouses, actualPopulations, targets, factionStates, ignoredDemands, islands, onBonusChange }: Props) {
+export function PopulationSection({ actualHouses, actualPopulations, targets, factionStates, ignoredDemands, islands, onBonusChange, onManageIgnoredDemands }: Props) {
   return <section className="calculator-section population-section">
-    <div className="calculator-section__heading"><h2>Residences &amp; inhabitants</h2><p>Actual, Growth target, and current full-demand headroom</p></div>
+    <div className="calculator-section__heading"><h2>Residences &amp; inhabitants</h2><p>Actual, Growth target, and current full-demand headroom</p>{ignoredDemands.length > 0 && <button type="button" className="ignored-demand-status" aria-label={`Manage ${ignoredDemands.length} ignored ${ignoredDemands.length === 1 ? 'demand' : 'demands'}`} onClick={onManageIgnoredDemands}>{ignoredDemands.length} {ignoredDemands.length === 1 ? 'demand' : 'demands'} ignored</button>}</div>
     <div className="population-section__factions">{FACTIONS.map((faction) => {
       const config = FACTION_CONFIGS[faction];
       const actual = actualPopulations[faction];

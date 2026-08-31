@@ -6,6 +6,7 @@ import {
   byTestId,
   input,
   renderApp,
+  requiredBuildings,
   replaceInput,
   selectWorkspace,
   setGrowthResidenceTarget,
@@ -154,5 +155,46 @@ describe('coverage and bottlenecks', () => {
 
     expect(buttonWithLabel('Show Current coverage')).toBeInTheDocument();
     expect(document.querySelector('[aria-label^="Show Eco "]')).toBeNull();
+  });
+
+  test('ignores and restores one current demand source everywhere', async () => {
+    renderApp();
+    addIsland();
+    fireEvent.click(buttonWithLabel('Configure island Island 1'));
+    fireEvent.click(buttonWithLabel('Tech Geniuses', byTestId('island-0')));
+    await replaceInput(input('island-0-config-tech-houses'), '100');
+    fireEvent.click(buttonWithLabel('Finish configuring island Island 1'));
+    selectWorkspace('Production');
+
+    const before = requiredBuildings('techBionicSuits').textContent;
+    fireEvent.click(buttonWithLabel('Ignore Tech · Geniuses · Bionics factory everywhere'));
+
+    expect(requiredBuildings('techBionicSuits')).toHaveTextContent('0');
+    expect(buttonWithLabel('Manage 1 ignored demand')).toBeVisible();
+
+    selectWorkspace('Growth');
+    const manager = byTestId('ignored-demand-manager');
+    fireEvent.click(manager.querySelector('summary')!);
+    expect(manager).toHaveTextContent('Tech · Geniuses · Bionics factory');
+    fireEvent.click(buttonWithLabel('Restore Tech · Geniuses · Bionics factory', manager));
+
+    selectWorkspace('Production');
+    expect(requiredBuildings('techBionicSuits').textContent).toBe(before);
+  });
+
+  test('reports ignored demands when they remove every active bottleneck', async () => {
+    renderApp();
+    addIsland();
+    fireEvent.click(buttonWithLabel('Configure island Island 1'));
+    fireEvent.click(buttonWithLabel('Eco Workers', byTestId('island-0')));
+    await replaceInput(input('island-0-config-eco-houses'), '100');
+    fireEvent.click(buttonWithLabel('Finish configuring island Island 1'));
+    selectWorkspace('Production');
+
+    fireEvent.click(buttonWithLabel('Ignore Eco · Workers · Fishery everywhere'));
+    fireEvent.click(buttonWithLabel('Ignore Eco · Workers · Tea plantation everywhere'));
+
+    expect(document.querySelector('.coverage-section__empty'))
+      .toHaveTextContent('No active bottlenecks · 2 demands ignored');
   });
 });

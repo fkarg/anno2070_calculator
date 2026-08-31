@@ -1,4 +1,5 @@
 import type { BuildingId } from '../calculations/building-data';
+import type { IgnoredDemandSource } from '../calculations/demand-policy';
 import type { GrowthGap, GrowthMilestone, GrowthPlanningResult } from '../calculations/planning';
 import { formatRequirement } from '../calculations/production';
 import type { IslandState } from '../island';
@@ -12,6 +13,7 @@ type Props = {
   planning: GrowthPlanningResult | null;
   islands: readonly IslandState[];
   onApplyBuilding: (islandId: string, buildingId: BuildingId) => void;
+  onIgnoreDemand: (source: IgnoredDemandSource) => void;
 };
 
 type MilestoneDetailsProps = {
@@ -25,6 +27,7 @@ type MilestoneDetailsProps = {
   state: 'current' | 'future' | 'complete';
   islands: readonly IslandState[];
   onApplyBuilding: Props['onApplyBuilding'];
+  onIgnoreDemand: Props['onIgnoreDemand'];
 };
 
 function MilestoneDetails(props: MilestoneDetailsProps) {
@@ -37,6 +40,7 @@ function MilestoneDetails(props: MilestoneDetailsProps) {
     testId={`growth-gap-${props.testId.replace('growth-milestone-', '')}-${gap.goodId}`}
     islands={props.islands}
     onApplyBuilding={props.onApplyBuilding}
+    onIgnoreDemand={props.onIgnoreDemand}
   />;
 
   return <details
@@ -96,7 +100,7 @@ function milestoneState(milestone: GrowthMilestone): 'current' | 'future' | 'com
   return milestone.current ? 'current' : 'future';
 }
 
-export function GrowthMilestones({ planning, islands, onApplyBuilding }: Props) {
+export function GrowthMilestones({ planning, islands, onApplyBuilding, onIgnoreDemand }: Props) {
   if (planning === null) {
     return <section className="growth-milestones"><h3>Full-supply milestones</h3><p>Planning unavailable while a target or actual value is invalid.</p></section>;
   }
@@ -121,6 +125,7 @@ export function GrowthMilestones({ planning, islands, onApplyBuilding }: Props) 
       state={planning.baseline.complete ? 'complete' : 'current'}
       islands={islands}
       onApplyBuilding={onApplyBuilding}
+      onIgnoreDemand={onIgnoreDemand}
     />}
     {hasMilestones && <div className="growth-milestones__branches">
       {FACTIONS.map((faction) => <section
@@ -142,6 +147,7 @@ export function GrowthMilestones({ planning, islands, onApplyBuilding }: Props) 
           state={milestoneState(milestone)}
           islands={islands}
           onApplyBuilding={onApplyBuilding}
+          onIgnoreDemand={onIgnoreDemand}
         />)}
       </section>)}
     </div>}

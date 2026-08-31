@@ -75,3 +75,15 @@ test('separates actual shortages from parallel faction growth steps', async () =
   expect(carried).toHaveTextContent('Tech');
   expect(carried).toHaveTextContent('Functional food factory');
 });
+
+test('keeps an ignored future demand visible while it is inactive', async () => {
+  renderApp();
+  await setGrowthResidenceTarget('tech', '100');
+  fireEvent.click(buttonWithLabel('Tech Geniuses'));
+  fireEvent.click(buttonWithLabel('Ignore Tech · Geniuses · Bionics factory everywhere'));
+
+  const manager = byTestId('ignored-demand-manager');
+  fireEvent.click(manager.querySelector('summary')!);
+  expect(manager).toHaveTextContent('Tech · Geniuses · Bionics factory');
+  expect(manager).toHaveTextContent('Not currently applicable');
+});

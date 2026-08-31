@@ -5,6 +5,7 @@ import { resolvePopulationTarget } from './calculations/population-target';
 import { calculateAvailableProduction } from './calculations/calculate-production';
 import { calculateGrowthPlanning } from './calculations/planning';
 import type { BuildingId } from './calculations/building-data';
+import type { IgnoredDemandSource } from './calculations/demand-policy';
 import { aggregateBalances, transferNeeds } from './calculations/island-balance';
 import { calculateOperatingImpacts, calculateOwnedImpact } from './calculations/operating-impact';
 import { PRODUCTION_NODES } from './calculations/production-data';
@@ -21,6 +22,9 @@ import {
   type PlanFactionState,
 } from './model';
 import { loadAppState, saveAppState } from './storage';
+
+const sameDemandSource = (left: IgnoredDemandSource, right: IgnoredDemandSource) =>
+  left.faction === right.faction && left.tier === right.tier && left.goodId === right.goodId;
 
 export function App() {
   const [initial] = useState(loadAppState);
@@ -89,6 +93,20 @@ export function App() {
       ? stepOwnedBuilding(island, buildingId, 1)
       : island),
   }));
+  const ignoreDemand = (source: IgnoredDemandSource) => updatePlan((current) => (
+    current.ignoredDemands.some((entry) => sameDemandSource(entry, source))
+      ? current
+      : { ...current, ignoredDemands: [...current.ignoredDemands, source] }
+  ));
+  const restoreDemand = (source: IgnoredDemandSource) => updatePlan((current) => ({
+    ...current,
+    ignoredDemands: current.ignoredDemands.filter((entry) => !sameDemandSource(entry, source)),
+  }));
+  const restoreAllDemands = () => updatePlan((current) => ({ ...current, ignoredDemands: [] }));
+  const manageIgnoredDemands = () => {
+    setWorkspace('growth');
+    window.setTimeout(() => document.querySelector<HTMLElement>('#ignored-demands > summary')?.focus(), 0);
+  };
 
   const workspaces = ['islands', 'production', 'growth'] as const;
   const onWorkspaceKeyDown = (
@@ -126,6 +144,7 @@ export function App() {
         ignoredDemands={state.plan.ignoredDemands}
         islands={state.islands}
         onBonusChange={updateBonus}
+        onManageIgnoredDemands={manageIgnoredDemands}
       />
       <nav className="workspace-tabs" role="tablist" aria-label="Calculator workspace">
         {workspaces.map((item) => (
@@ -166,6 +185,7 @@ export function App() {
           islands={state.islands}
           planning={planning}
           ignoredDemands={state.plan.ignoredDemands}
+          onIgnoreDemand={ignoreDemand}
           onApplyBuilding={applyBuilding}
         />
         <ProductionSection
@@ -197,7 +217,7 @@ export function App() {
         />
       </div>
       <div id="workspace-growth" className="workspace-panel" role="tabpanel" aria-labelledby="tab-growth" hidden={workspace !== 'growth'}>
-        <GrowthSection state={state.plan} targets={targets} planning={planning} islands={state.islands} onFactionChange={updateFaction} onApplyBuilding={applyBuilding} />
+        <GrowthSection state={state.plan} targets={targets} planning={planning} islands={state.islands} actualPopulations={islandPopulations} onFactionChange={updateFaction} onApplyBuilding={applyBuilding} onIgnoreDemand={ignoreDemand} onRestoreDemand={restoreDemand} onRestoreAllDemands={restoreAllDemands} />
       </div>
 
       <aside className="calculator-section page-notes" aria-label="Calculator guidance">

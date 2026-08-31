@@ -344,6 +344,25 @@ main > footer a { color: #8fc9f6; }
 }
 .population-faction__bonuses legend { width: 100%; color: var(--muted); font-size: .68rem; }
 .population-faction__bonuses label { display: flex; align-items: center; gap: .25rem; color: var(--muted); font-size: .68rem; }
+.ignored-demand-status,
+.demand-source-actions button,
+.ignored-demands button { font-size: .78rem; }
+.ignored-demand-status { color: var(--muted); background: transparent; border-color: var(--line); }
+.demand-source-actions,
+.ignored-demands ul {
+  display: grid;
+  gap: .3rem;
+  margin: .5rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.demand-source-actions li,
+.ignored-demands li { display: flex; align-items: center; gap: .5rem; }
+.demand-source-actions li > span { min-width: 0; color: var(--muted); font-size: .68rem; }
+.demand-source-actions button { margin-left: auto; padding: .18rem .4rem; }
+.ignored-demands { margin: .7rem; padding: .6rem; border: 1px solid var(--line); border-radius: 4px; }
+.ignored-demands > summary { cursor: pointer; color: var(--muted); font-size: .78rem; }
+.ignored-demands small { color: var(--muted); margin-left: auto; }
 
 /* Growth target editor and cumulative full-supply milestones */
 
@@ -1230,7 +1249,8 @@ main > footer a { color: #8fc9f6; }
   color: var(--muted);
   font-size: .85rem;
 }
-.coverage-section__unbuilt-chip { display: inline-flex; align-items: center; gap: .3rem; white-space: nowrap; }
+.coverage-section__unbuilt-chip { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: .3rem; }
+.coverage-section__unbuilt-chip .demand-source-actions { grid-column: 1 / -1; }
 
 .coverage-section__later {
   display: flex;
