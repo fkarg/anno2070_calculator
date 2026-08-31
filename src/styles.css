@@ -37,6 +37,9 @@
   --eco: #4c6329;
   --tycoon: #4a413b;
   --tech: #35566a;
+  --eco-indicator: #96b067;
+  --tycoon-indicator: #a99b92;
+  --tech-indicator: #78a9c7;
 }
 
 * { box-sizing: border-box; }
@@ -278,7 +281,7 @@ input[aria-invalid="true"] { border-color: var(--invalid); background: #321d1f; 
   gap: .2rem;
   padding: .38rem .55rem;
   color: var(--value-gold);
-  background: #23333f;
+  background: var(--surface-raised);
   font-size: .72rem;
 }
 .production-tree__variants > div { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
@@ -406,12 +409,12 @@ main > footer a { color: #8fc9f6; }
   background: var(--surface-subtle);
   overflow: hidden;
 }
-.growth-target--eco { border-top: 3px solid var(--eco); }
-.growth-target--tycoon { border-top: 3px solid var(--tycoon); }
-.growth-target--tech { border-top: 3px solid var(--tech); }
+.growth-target--eco { border-top: 3px solid var(--eco-indicator); }
+.growth-target--tycoon { border-top: 3px solid var(--tycoon-indicator); }
+.growth-target--tech { border-top: 3px solid var(--tech-indicator); }
 .growth-target > summary {
   padding: .7rem;
-  background: #23333f;
+  background: var(--surface-raised);
   cursor: pointer;
   font-weight: 700;
 }
@@ -747,7 +750,7 @@ main > footer a { color: #8fc9f6; }
   letter-spacing: .05em;
 }
 
-.island-card__badge--unsettled { color: var(--manual-ink); border-color: #a5722f; }
+.island-card__badge--unsettled { color: var(--manual-ink); border-color: var(--manual); }
 
 .island-card__header > button { margin-left: auto; }
 
@@ -1178,7 +1181,7 @@ main > footer a { color: #8fc9f6; }
   margin-right: .35rem;
   border: 1px solid var(--line-strong);
   border-radius: 999px;
-  background: #16242d;
+  background: var(--surface-subtle);
   overflow: hidden;
   vertical-align: middle;
 }
@@ -1188,18 +1191,14 @@ main > footer a { color: #8fc9f6; }
 /* Coverage & bottlenecks section */
 
 .coverage-section {
-  --coverage-surface: var(--surface-card);
-  --coverage-surface-raised: var(--surface-section-heading);
   --coverage-line: #41545f;
-  --coverage-path: var(--info);
-  --coverage-outcome: var(--success);
 }
 
 .coverage-contexts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   border-bottom: 1px solid var(--coverage-line);
-  background: #16242d;
+  background: var(--surface-subtle);
 }
 
 .coverage-context-tab {
@@ -1218,9 +1217,9 @@ main > footer a { color: #8fc9f6; }
   color: #edf1f2;
   box-shadow: inset 0 -2px var(--select);
 }
-.coverage-context-tab--active.coverage-context-tab--eco { box-shadow: inset 0 -2px var(--eco); }
-.coverage-context-tab--active.coverage-context-tab--tycoon { box-shadow: inset 0 -2px var(--tycoon); }
-.coverage-context-tab--active.coverage-context-tab--tech { box-shadow: inset 0 -2px var(--tech); }
+.coverage-context-tab--active.coverage-context-tab--eco { box-shadow: inset 0 -2px var(--eco-indicator); }
+.coverage-context-tab--active.coverage-context-tab--tycoon { box-shadow: inset 0 -2px var(--tycoon-indicator); }
+.coverage-context-tab--active.coverage-context-tab--tech { box-shadow: inset 0 -2px var(--tech-indicator); }
 .coverage-context-tab:focus-visible,
 .producer-action--compact:focus-visible { outline-color: #87abc0; }
 
@@ -1302,7 +1301,7 @@ main > footer a { color: #8fc9f6; }
   min-width: 0;
   border: 1px solid var(--coverage-line);
   border-radius: 5px;
-  background: var(--coverage-surface);
+  background: var(--surface-card);
   padding: .55rem .7rem;
   font-size: .8rem;
 }
@@ -1310,8 +1309,8 @@ main > footer a { color: #8fc9f6; }
 .bottleneck-card h3 { display: flex; align-items: center; gap: .4rem; margin: 0 0 .3rem; font-size: .85rem; color: #dde6ea; }
 .bottleneck-card p { margin: 0 0 .25rem; }
 .bottleneck-card__requirement { color: #bcc7cc; }
-.bottleneck-card__breadcrumb { color: var(--coverage-path); font-size: .72rem; overflow-wrap: anywhere; }
-.bottleneck-card__outcome { color: var(--coverage-outcome); font-size: .74rem; }
+.bottleneck-card__breadcrumb { color: var(--info); font-size: .72rem; overflow-wrap: anywhere; }
+.bottleneck-card__outcome { color: var(--success); font-size: .74rem; }
 .bottleneck-card__why { margin-top: .4rem; }
 .bottleneck-card__why > summary { color: #8eacbc; cursor: pointer; font-size: .7rem; }
 .bottleneck-card__why ul { display: grid; gap: .2rem; margin: .35rem 0 0; padding: 0; list-style: none; }

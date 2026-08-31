@@ -13,7 +13,7 @@
 
 .growth-sequence > h4 {
   margin: .15rem 0 0;
-  color: var(--muted);
+  color: var(--text-muted);
   text-transform: uppercase;
   font-size: .72rem;
   letter-spacing: .08em;
@@ -21,13 +21,13 @@
 
 .growth-milestone__group-title {
   margin: .15rem 0;
-  color: var(--muted);
+  color: var(--text-muted);
   font-size: .72rem;
 }
 
 .growth-milestone__carried > summary,
 .growth-gap__why > summary {
-  color: var(--muted);
+  color: var(--text-muted);
   cursor: pointer;
   font-size: .7rem;
 }

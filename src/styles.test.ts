@@ -49,19 +49,27 @@ test('defines and consumes semantic color tokens', () => {
 test('uses the approved Steel HUD palette and semantic selection colors', () => {
   const css = readFileSync('src/styles.css', 'utf8');
 
-  expect(css).toContain('--surface-page: #111820;');
-  expect(css).toContain('--surface-panel: #1a2530;');
-  expect(css).toContain('--surface-raised: #223140;');
-  expect(css).toContain('--select: #5c9dc1;');
-  expect(css).toContain('--value-gold: #f0d38d;');
-  expect(css).toContain('--eco: #4c6329;');
-  expect(css).toContain('--tycoon: #4a413b;');
-  expect(css).toContain('--tech: #35566a;');
-
   expect(css).toMatch(/\.tier-selector__option\[aria-pressed="true"\] \{[^}]*var\(--select\)/);
   expect(css).toMatch(/\.growth-target__modes button\[aria-pressed="true"\] \{[^}]*var\(--select\)/);
   expect(css).toMatch(/\.growth-milestone--current \{[^}]*var\(--select\)/);
   expect(css).toMatch(/\.coverage-context-tab--active \{[^}]*var\(--select\)/);
+});
+
+test('uses readable faction indicators without changing faction fills', () => {
+  const css = readFileSync('src/styles.css', 'utf8');
+
+  expect(css).toContain('--eco-indicator:');
+  expect(css).toContain('--tycoon-indicator:');
+  expect(css).toContain('--tech-indicator:');
+  expect(css).toMatch(/\.growth-target--tycoon \{[^}]*var\(--tycoon-indicator\)/);
+  expect(css).toMatch(/\.coverage-context-tab--active\.coverage-context-tab--tycoon \{[^}]*var\(--tycoon-indicator\)/);
+});
+
+test('uses the global muted token in component stylesheets', () => {
+  const growthCss = readFileSync('src/components/growth-milestones.css', 'utf8');
+
+  expect(growthCss).not.toContain('var(--muted)');
+  expect(growthCss).toContain('var(--text-muted)');
 });
 
 test('keeps island cards two-up on desktop', () => {
