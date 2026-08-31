@@ -79,6 +79,59 @@ describe('Growth planning', () => {
     ));
   });
 
+  test('does not retain a higher actual requirement when a target scenario needs less', () => {
+    const state = createInitialAppState();
+    const workers = createIsland('Workers');
+    workers.factions.eco.houses = editable(100);
+    workers.factions.eco.maxTier = 1;
+    const executives = createIsland('Executives');
+    executives.factions.eco.houses = editable(100);
+    executives.factions.eco.maxTier = 4;
+    state.plan.factions.eco.intent = {
+      kind: 'residences', houses: editable(150), maxTier: 4,
+    };
+
+    const milestone = calculateGrowthPlanning(state.plan, [workers, executives])!.sequences.eco[0];
+    const decreasing = milestone.gaps.find((gap) => gap.required < gap.baselineRequired);
+
+    expect(decreasing).toBeDefined();
+    expect(decreasing?.required).toBe(decreasing?.checkpointRequired);
+  });
+
+  test('does not introduce other factions high-tier chains for pure Eco Engineers', () => {
+    const state = createInitialAppState();
+    state.plan.factions.eco.intent = {
+      kind: 'residences', houses: editable(100), maxTier: 3,
+    };
+
+    const engineers = calculateGrowthPlanning(state.plan, [])!.sequences.eco.at(-1)!;
+    const gapIds = engineers.gaps.map((gap) => gap.goodId);
+
+    expect(gapIds).not.toContain('aquafarm');
+    expect(gapIds).not.toContain('cyberneticFactory');
+    expect(gapIds).not.toContain('gourmetFactory');
+    expect(gapIds).not.toContain('champagneCellar');
+  });
+
+  test('attributes carried Aquafarm demand to current Tech population', () => {
+    const state = createInitialAppState();
+    const actual = createIsland('Tech');
+    actual.factions.tech.houses = editable(10);
+    actual.factions.tech.maxTier = 1;
+    state.plan.factions.eco.intent = {
+      kind: 'residences', houses: editable(100), maxTier: 3,
+    };
+
+    const engineers = calculateGrowthPlanning(state.plan, [actual])!.sequences.eco.at(-1)!;
+    const algae = engineers.gaps.find((gap) => gap.goodId === 'aquafarm')!;
+
+    expect(algae.addedHere).toBe(0);
+    expect(algae.baselineRequired).toBeGreaterThan(0);
+    expect(algae.chains).toEqual([expect.objectContaining({
+      faction: 'tech', rootNodeId: 'techFunctionalFood',
+    })]);
+  });
+
   test('masks overrides above an earlier ascension checkpoint', () => {
     const state = createInitialAppState();
     state.plan.factions.eco.intent = { kind: 'residences', houses: editable(100), maxTier: 4 };

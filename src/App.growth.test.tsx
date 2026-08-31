@@ -57,13 +57,21 @@ test('separates actual shortages from parallel faction growth steps', async () =
 
   const baseline = byTestId('growth-baseline');
   const eco = byTestId('growth-sequence-eco');
+  const engineers = byTestId('growth-milestone-eco-3-ascend');
+  const carried = engineers.querySelector('.growth-milestone__carried');
 
   expect(baseline).toHaveTextContent('Supply current population');
   expect(baseline).toHaveTextContent('Aquafarm');
   expect(eco).toHaveTextContent('Changed in this step');
-  expect(eco).toHaveTextContent('Carried gaps');
-  expect(eco).toHaveTextContent('Already required by current population');
-  expect(eco).toHaveTextContent('Why required?');
-  expect(eco).toHaveTextContent('Tech');
-  expect(eco).toHaveTextContent('Functional food factory');
+  expect(engineers.querySelector(':scope > summary')).toHaveTextContent(
+    /\d+ gaps · \d+ changed here · \d+ carried/,
+  );
+  expect(carried).not.toBeNull();
+  expect(carried).toHaveTextContent('Carried gaps');
+  expect(carried).toHaveTextContent('Already required by current population');
+  expect(carried?.querySelector('[data-testid="growth-gap-eco-3-ascend-aquafarm"]'))
+    .not.toBeNull();
+  expect(carried).toHaveTextContent('Why required?');
+  expect(carried).toHaveTextContent('Tech');
+  expect(carried).toHaveTextContent('Functional food factory');
 });

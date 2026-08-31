@@ -58,7 +58,12 @@ function MilestoneDetails(props: MilestoneDetailsProps) {
           </section>}
           {carried.length > 0 && <details className="growth-milestone__carried">
             <summary>Carried gaps ({carried.length})</summary>
-            {carried.map((gap) => card(gap, props.carriedSubtitle))}
+            {carried.map((gap) => card(
+              gap,
+              Math.abs(gap.required - gap.baselineRequired) <= EPSILON
+                ? 'Already required by current population'
+                : props.carriedSubtitle,
+            ))}
           </details>}
         </>}
     </div>}
