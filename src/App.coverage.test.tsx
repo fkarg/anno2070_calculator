@@ -104,6 +104,26 @@ describe('coverage and bottlenecks', () => {
     expect(document.querySelector('.bottleneck-card__outcome')).toBeInTheDocument();
     expect(document.querySelector('.producer-actions--compact')).toBeInTheDocument();
     expect(document.querySelector('.bottleneck-card details summary')).toHaveTextContent('Why required?');
+    expect(document.querySelector('.demand-source-actions:empty')).toBeNull();
+  });
+
+  test('offers projected-only demand sources from an active milestone card', async () => {
+    renderApp();
+    addIsland();
+    fireEvent.click(buttonWithLabel('Configure island Island 1'));
+    fireEvent.click(buttonWithLabel('Tech Researchers', byTestId('island-0')));
+    await replaceInput(input('island-0-config-tech-houses'), '100');
+    fireEvent.click(buttonWithLabel('Finish configuring island Island 1'));
+    selectWorkspace('Growth');
+    fireEvent.click(buttonWithLabel('Project Tech through unrestricted ascension'));
+    selectWorkspace('Production');
+    fireEvent.click(buttonWithLabel('Show Tech Geniuses coverage'));
+
+    expect(buttonWithLabel(
+      'Ignore Tech · Geniuses · Bionics factory everywhere',
+      document.getElementById('coverage-context-panel')!,
+    ))
+      .toBeInTheDocument();
   });
 
   test('adds a concrete building from a milestone bottleneck card', async () => {

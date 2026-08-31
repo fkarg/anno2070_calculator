@@ -1,7 +1,7 @@
 import { BUILDINGS, ISLAND_REQUIREMENTS, OPEN_FERTILITY_SLOT } from './calculations/building-data';
 import { PRODUCTION_NODES } from './calculations/production-data';
 import { GOODS, type GoodId } from './calculations/goods';
-import type { IgnoredDemandSource } from './calculations/demand-policy';
+import { sameDemandSource, type IgnoredDemandSource } from './calculations/demand-policy';
 import type { Faction } from './calculations/population';
 import {
   createInitialAppState,
@@ -228,9 +228,7 @@ function sanitizeIgnoredDemands(value: unknown, loss: Loss): readonly IgnoredDem
       continue;
     }
     const source: IgnoredDemandSource = { faction, tier, goodId };
-    if (!result.some((candidate) => candidate.faction === source.faction
-      && candidate.tier === source.tier
-      && candidate.goodId === source.goodId)) result.push(source);
+    if (!result.some((candidate) => sameDemandSource(candidate, source))) result.push(source);
   }
   return result;
 }
@@ -322,14 +320,7 @@ export function loadAppState(): LoadResult {
       : (loss.markUnless(false), []);
     return { state: { plan, islands }, storable: !loss.lossy };
   }
-  if (saved.version === 3) {
-    const plan = sanitizePlan(saved.plan, loss, false);
-    const islands = Array.isArray(saved.islands)
-      ? saved.islands.map((island) => sanitizeIsland(island, loss)).filter((island): island is IslandState => island !== null)
-      : (loss.markUnless(false), []);
-    return { state: { plan, islands }, storable: !loss.lossy };
-  }
-  if (saved.version === 4) {
+  if (saved.version === 3 || saved.version === 4) {
     const plan = sanitizePlan(saved.plan, loss, false);
     const islands = Array.isArray(saved.islands)
       ? saved.islands.map((island) => sanitizeIsland(island, loss)).filter((island): island is IslandState => island !== null)

@@ -54,4 +54,5 @@ test('shows headroom and its chain limit for every population tier', async () =>
   expect(byTestId('overview-eco-headroom-tier-1')).toHaveTextContent('+655 · Fishery');
   expect(byTestId('overview-eco-headroom-tier-2')).toHaveTextContent('+1027 · Fishery');
   expect(byTestId('overview-eco-headroom-tier-3')).toHaveTextContent('+1440 · Fishery');
+  expect(byTestId('overview-eco-headroom-tier-0')).toHaveClass('population-overview__headroom');
 });

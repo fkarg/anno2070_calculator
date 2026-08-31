@@ -67,6 +67,23 @@ describe('Growth planning', () => {
     expect(milestones[0].populationAfter.tech).toEqual([200, 1260, 900]);
   });
 
+  test('does not add a normalization step for pooled unrestricted follow houses', () => {
+    const state = createInitialAppState();
+    const islands = ['One', 'Two', 'Three'].map((name) => {
+      const island = createIsland(name);
+      island.factions.tech.houses = editable(33);
+      island.factions.tech.maxTier = 2;
+      return island;
+    });
+    state.plan.factions.tech.intent = { kind: 'follow', tierMode: 'unrestricted' };
+
+    const milestones = calculateGrowthPlanning(state.plan, islands)!.sequences.tech;
+
+    expect(milestones.map(({ kind, tier }) => ({ kind, tier }))).toEqual([
+      { kind: 'ascend', tier: 3 },
+    ]);
+  });
+
   test('keeps faction target branches independent', () => {
     const state = createInitialAppState();
     state.plan.factions.eco.intent = { kind: 'residences', houses: editable(10), maxTier: 1 };

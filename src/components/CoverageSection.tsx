@@ -1,7 +1,7 @@
 import { useEffect, useState, type KeyboardEvent } from 'react';
 
 import { BUILDINGS, type BuildingId } from '../calculations/building-data';
-import { isDemandIgnored, type IgnoredDemandSource } from '../calculations/demand-policy';
+import { isDemandIgnored, sameDemandSource, type IgnoredDemandSource } from '../calculations/demand-policy';
 import { tierHeadroom } from '../calculations/coverage';
 import { GOODS, type GoodId } from '../calculations/goods';
 import { tierCapacities, type Faction } from '../calculations/population';
@@ -144,6 +144,17 @@ export function CoverageSection({ islands, planning, ignoredDemands, onIgnoreDem
   const milestoneCards = selectedMilestone ? milestoneCoverageCards(selectedMilestone) : [];
   const displayedCards = effectiveSelection === 'current' ? cards.slice(0, 4) : milestoneCards.slice(0, 4);
   const laterCards = effectiveSelection === 'current' ? [] : milestoneCards.slice(4);
+  const sourcesForCard = (goodId: GoodId): IgnoredDemandSource[] => {
+    if (effectiveSelection === 'current' || selectedMilestone === null) {
+      return activeSources(goodId, populations, ignoredDemands);
+    }
+    return selectedMilestone.gaps
+      .filter((gap) => gap.goodId === goodId)
+      .flatMap((gap) => gap.chains.map((chain) => chain.source))
+      .filter((source, index, sources) => (
+        sources.findIndex((candidate) => sameDemandSource(candidate, source)) === index
+      ));
+  };
 
   return (
     <section className="calculator-section coverage-section">
@@ -238,7 +249,7 @@ export function CoverageSection({ islands, planning, ignoredDemands, onIgnoreDem
             card={card}
             rank={index + 1}
             islands={islands}
-            sources={activeSources(card.goodId, populations, ignoredDemands)}
+            sources={sourcesForCard(card.goodId)}
             onIgnoreDemand={onIgnoreDemand}
             onApplyBuilding={onApplyBuilding}
           />)}
@@ -248,11 +259,11 @@ export function CoverageSection({ islands, planning, ignoredDemands, onIgnoreDem
         <div className="coverage-section__unbuilt" data-testid="coverage-unbuilt">
           <span>Chains not built yet:</span>
           {unbuilt.map((constraint) => (
-            <span key={constraint.goodId} className="coverage-section__unbuilt-chip">
+            <div key={constraint.goodId} className="coverage-section__unbuilt-chip">
               <img src={`/assets/${BUILDINGS[constraint.goodId].image}`} alt="" width="18" height="18" />
               <span>{canonicalProducerLabel(constraint.goodId)} ({formatRequirement(constraint.finalDemand + constraint.intermediateDemand)} current full demand)</span>
               <DemandSourceActions sources={activeSources(constraint.goodId, populations, ignoredDemands)} onIgnore={onIgnoreDemand} />
-            </span>
+            </div>
           ))}
         </div>
       )}

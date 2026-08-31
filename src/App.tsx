@@ -5,7 +5,7 @@ import { resolvePopulationTarget } from './calculations/population-target';
 import { calculateAvailableProduction } from './calculations/calculate-production';
 import { calculateGrowthPlanning } from './calculations/planning';
 import type { BuildingId } from './calculations/building-data';
-import type { IgnoredDemandSource } from './calculations/demand-policy';
+import { sameDemandSource, type IgnoredDemandSource } from './calculations/demand-policy';
 import { aggregateBalances, transferNeeds } from './calculations/island-balance';
 import { calculateOperatingImpacts, calculateOwnedImpact } from './calculations/operating-impact';
 import { PRODUCTION_NODES } from './calculations/production-data';
@@ -22,9 +22,6 @@ import {
   type PlanFactionState,
 } from './model';
 import { loadAppState, saveAppState } from './storage';
-
-const sameDemandSource = (left: IgnoredDemandSource, right: IgnoredDemandSource) =>
-  left.faction === right.faction && left.tier === right.tier && left.goodId === right.goodId;
 
 export function App() {
   const [initial] = useState(loadAppState);

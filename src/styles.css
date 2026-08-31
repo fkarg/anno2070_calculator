@@ -332,7 +332,7 @@ main > footer a { color: #8fc9f6; }
   grid-template-columns: 32px minmax(0, 1fr) minmax(4rem, .65fr) minmax(8rem, 1fr);
 }
 .pop-rows--overview output { text-align: right; font-size: .82rem; font-variant-numeric: tabular-nums; }
-.pop-rows--overview output:nth-last-child(2) { color: #f2d4a4; }
+.pop-rows--overview .population-overview__headroom { color: #f2d4a4; }
 .population-overview__not-applicable { color: var(--muted); text-align: right; }
 .population-faction__bonuses {
   display: flex;

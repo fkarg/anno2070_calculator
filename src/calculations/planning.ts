@@ -114,7 +114,11 @@ function buildFactionDescriptors(
       <= actual[faction].reduce((sum, value) => sum + value, 0)) return result;
   let previous = actual[faction];
   const firstTier = Math.max(1, actualTop);
-  for (let tier = firstTier; tier <= targets[faction].maxTier; tier += 1) {
+  const startTier = state.factions[faction].intent.kind === 'follow'
+    && state.factions[faction].intent.tierMode === 'unrestricted'
+    ? Math.max(1, actualTop + 1)
+    : firstTier;
+  for (let tier = startTier; tier <= targets[faction].maxTier; tier += 1) {
     const population = targetAtTier(faction, state.factions[faction], targets[faction], tier);
     if (!samePopulation(population, previous)) {
       result.push({

@@ -7,15 +7,17 @@ export type IgnoredDemandSource = Readonly<{
   goodId: GoodId;
 }>;
 
+export function sameDemandSource(left: IgnoredDemandSource, right: IgnoredDemandSource): boolean {
+  return left.faction === right.faction && left.tier === right.tier && left.goodId === right.goodId;
+}
+
 export function isDemandIgnored(
   ignored: readonly IgnoredDemandSource[],
   faction: Faction,
   tier: number,
   goodId: GoodId,
 ): boolean {
-  return ignored.some((source) => source.faction === faction
-    && source.tier === tier
-    && source.goodId === goodId);
+  return ignored.some((source) => sameDemandSource(source, { faction, tier, goodId }));
 }
 
 export function maskSatisfaction(

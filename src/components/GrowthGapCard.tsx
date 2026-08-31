@@ -1,5 +1,5 @@
 import { BUILDINGS, type BuildingId } from '../calculations/building-data';
-import type { IgnoredDemandSource } from '../calculations/demand-policy';
+import { sameDemandSource, type IgnoredDemandSource } from '../calculations/demand-policy';
 import type { GrowthGap } from '../calculations/planning';
 import { formatRequirement } from '../calculations/production';
 import { PRODUCTION_NODES } from '../calculations/production-data';
@@ -21,9 +21,7 @@ const nodeById = new Map(PRODUCTION_NODES.map((node) => [node.id, node]));
 
 export function GrowthGapCard({ gap, islands, subtitle, testId, onApplyBuilding, onIgnoreDemand }: Props) {
   const sources = gap.chains.map((chain) => chain.source).filter((source, index, entries) => (
-    entries.findIndex((candidate) => candidate.faction === source.faction
-      && candidate.tier === source.tier
-      && candidate.goodId === source.goodId) === index
+    entries.findIndex((candidate) => sameDemandSource(candidate, source)) === index
   ));
   return <article className="growth-gap" data-testid={testId}>
     <header>

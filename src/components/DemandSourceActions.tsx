@@ -7,6 +7,7 @@ type Props = {
 };
 
 export function DemandSourceActions({ sources, onIgnore }: Props) {
+  if (sources.length === 0) return null;
   return <ul className="demand-source-actions">
     {sources.map((source) => {
       const label = demandSourceLabel(source);
