@@ -65,6 +65,21 @@ export function resolvePopulationTarget(
 ): ResolvedPopulationTarget | null {
   if (state.intent.kind === 'follow') {
     if (islandHouses === null || islandPopulations === null) return null;
+    if (state.intent.tierMode === 'unrestricted') {
+      const maxTier = tierCapacities(faction, state.livingSpace).length;
+      const normal = population(faction, state, islandHouses, maxTier);
+      return {
+        intent: state.intent,
+        houses: islandHouses,
+        maxTier,
+        normalPopulations: normal,
+        effectivePopulations: normal,
+        requested: null,
+        achieved: normal[maxTier - 1],
+        overshoot: 0,
+        targetMetAfterOverrides: true,
+      };
+    }
     const maxTier = Math.max(
       1,
       islandPopulations.reduce((top, value, tier) => value > 0 ? tier + 1 : top, 1),

@@ -72,6 +72,32 @@ describe('resolvePopulationTarget', () => {
     expect(result?.effectivePopulations).toEqual([96, 60, 75, 40]);
   });
 
+  test('projects followed houses through the full Tech ladder when unrestricted', () => {
+    const state = {
+      ...createPlanFactionState('tech'),
+      intent: { kind: 'follow' as const, tierMode: 'unrestricted' as const },
+    };
+
+    const result = resolvePopulationTarget('tech', state, 100, [200, 900, 0]);
+
+    expect(result).toMatchObject({ houses: 100, maxTier: 3 });
+    expect(result?.normalPopulations).toEqual([200, 1260, 900]);
+    expect(result?.effectivePopulations).toEqual([200, 1260, 900]);
+  });
+
+  test('applies global bonuses but not retained overrides to unrestricted follow', () => {
+    const state = {
+      ...createPlanFactionState('tech'),
+      livingSpace: true,
+      senate: true,
+      overrides: [null, null, editable(1)],
+      intent: { kind: 'follow' as const, tierMode: 'unrestricted' as const },
+    };
+
+    expect(resolvePopulationTarget('tech', state, 100, [200, 900, 0])?.effectivePopulations)
+      .toEqual([200, 1287, 1176]);
+  });
+
   test('advanced overrides take precedence and can leave the normal goal unmet', () => {
     const state = {
       ...createPlanFactionState('tech'),
