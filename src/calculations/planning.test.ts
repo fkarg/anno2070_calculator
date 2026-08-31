@@ -168,6 +168,21 @@ describe('Growth planning', () => {
     })]);
   });
 
+  test('keeps chain contributions equal to the checkpoint requirement', () => {
+    const state = createInitialAppState();
+    const actual = createIsland('Mixed');
+    actual.factions.eco.houses = editable(10);
+    actual.factions.eco.maxTier = 1;
+    actual.factions.tycoon.houses = editable(20);
+    actual.factions.tycoon.maxTier = 1;
+
+    const fish = calculateGrowthPlanning(state.plan, [actual])!.baseline.gaps
+      .find((gap) => gap.goodId === 'fishery')!;
+
+    expect(fish.chains.reduce((sum, chain) => sum + chain.required, 0))
+      .toBeCloseTo(fish.checkpointRequired);
+  });
+
   test('masks overrides above an earlier ascension checkpoint', () => {
     const state = createInitialAppState();
     state.plan.factions.eco.intent = { kind: 'residences', houses: editable(100), maxTier: 4 };

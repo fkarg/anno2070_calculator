@@ -112,7 +112,10 @@ describe('coverage and bottlenecks', () => {
     selectWorkspace('Production');
     fireEvent.click(buttonWithLabel('Show Eco Workers coverage'));
 
-    fireEvent.click(buttonWithLabel('Build one Fishery on Island 1'));
+    fireEvent.click(buttonWithLabel(
+      'Build one Fishery on Island 1',
+      document.getElementById('coverage-context-panel')!,
+    ));
     selectWorkspace('Islands');
     expect(input('island-0-owned-fishery')).toHaveValue('1');
   });
@@ -125,7 +128,10 @@ describe('coverage and bottlenecks', () => {
     await replaceInput(input('island-0-owned-fishery'), '2');
     selectWorkspace('Production');
 
-    fireEvent.click(buttonWithLabel('Build one Fishery on Island 1'));
+    fireEvent.click(buttonWithLabel(
+      'Build one Fishery on Island 1',
+      document.getElementById('coverage-context-panel')!,
+    ));
     selectWorkspace('Islands');
     expect(input('island-0-owned-fishery')).toHaveValue('3');
   });

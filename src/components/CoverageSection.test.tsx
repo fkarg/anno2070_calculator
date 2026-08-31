@@ -80,6 +80,8 @@ test('advances a selected faction context, then falls back to Current', () => {
   const props = { islands: [createIsland('Actual')], onApplyBuilding: vi.fn() };
   const view = render(<CoverageSection {...props} planning={planning(false, false)} />);
   fireEvent.click(screen.getByRole('tab', { name: 'Show Eco Workers coverage' }));
+  expect(screen.getByTestId('coverage-scenario-summary')).toHaveTextContent('1 gap');
+  expect(screen.getByTestId('coverage-scenario-summary')).not.toHaveTextContent('1 gaps');
 
   view.rerender(<CoverageSection {...props} planning={planning(true, false)} />);
   expect(screen.getByRole('tab', { name: 'Show Eco Employees coverage' }))
@@ -88,4 +90,26 @@ test('advances a selected faction context, then falls back to Current', () => {
   view.rerender(<CoverageSection {...props} planning={planning(true, true)} />);
   expect(screen.getByRole('tab', { name: 'Show Current coverage' }))
     .toHaveAttribute('aria-selected', 'true');
+});
+
+test('moves context selection and focus with the existing tab keyboard pattern', () => {
+  render(<CoverageSection
+    islands={[createIsland('Actual')]}
+    planning={planning(false, false)}
+    onApplyBuilding={vi.fn()}
+  />);
+  const current = screen.getByRole('tab', { name: 'Show Current coverage' });
+  const eco = screen.getByRole('tab', { name: 'Show Eco Workers coverage' });
+
+  current.focus();
+  fireEvent.keyDown(current, { key: 'ArrowRight' });
+
+  expect(eco).toHaveAttribute('aria-selected', 'true');
+  expect(eco).toHaveFocus();
+  expect(eco).toHaveAttribute('tabindex', '0');
+  expect(current).toHaveAttribute('tabindex', '-1');
+
+  fireEvent.keyDown(eco, { key: 'Home' });
+  expect(current).toHaveFocus();
+  expect(current).toHaveAttribute('aria-selected', 'true');
 });

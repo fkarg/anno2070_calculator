@@ -22,6 +22,7 @@ export type GrowthGap = Readonly<{
 }>;
 
 export type GrowthGapChain = GrowthDemandChain & Readonly<{
+  baselineRequired: number;
   previousRequired: number;
   addedHere: number;
 }>;
@@ -171,10 +172,14 @@ function buildGaps(
     const previousChains = new Map(
       (previous.get(goodId)?.chains ?? []).map((chain) => [demandChainKey(chain), chain.required]),
     );
+    const baselineChains = new Map(
+      (baseline.get(goodId)?.chains ?? []).map((chain) => [demandChainKey(chain), chain.required]),
+    );
     const chains = snapshot.chains.map((chain): GrowthGapChain => {
       const previousChainRequired = previousChains.get(demandChainKey(chain)) ?? 0;
       return {
         ...chain,
+        baselineRequired: baselineChains.get(demandChainKey(chain)) ?? 0,
         previousRequired: previousChainRequired,
         addedHere: Math.max(0, chain.required - previousChainRequired),
       };

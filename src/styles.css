@@ -396,10 +396,10 @@ main > footer a { color: #8fc9f6; }
 .growth-gap dl div { display: grid; justify-items: end; }
 .growth-gap dt { color: var(--muted); font-size: .6rem; text-transform: uppercase; }
 .growth-gap dd { margin: 0; font-size: .78rem; font-variant-numeric: tabular-nums; }
-.growth-gap__actions { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .45rem; }
-.growth-producer-action { display: grid; grid-template-columns: 28px minmax(9rem, auto) auto; align-items: center; gap: .4rem; padding: .3rem .45rem; text-align: left; }
-.growth-producer-action > small { color: #9fd9a6; }
-.growth-producer-action .operating-impact-values { grid-column: 2 / -1; justify-content: flex-start; color: var(--muted); font-size: .65rem; }
+.producer-actions--detailed { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .45rem; }
+.producer-action--detailed { display: grid; grid-template-columns: 28px minmax(9rem, auto) auto; align-items: center; gap: .4rem; padding: .3rem .45rem; text-align: left; }
+.producer-action--detailed > small { color: #9fd9a6; }
+.producer-action--detailed .operating-impact-values { grid-column: 2 / -1; justify-content: flex-start; color: var(--muted); font-size: .65rem; }
 
 .islands-section__cards {
   display: grid;

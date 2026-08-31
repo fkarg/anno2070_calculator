@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 
 import { BUILDINGS, type BuildingId } from '../calculations/building-data';
 import { tierHeadroom } from '../calculations/coverage';
@@ -71,7 +71,8 @@ function milestoneSummary(milestone: GrowthMilestone): string {
   const tier = milestoneTierLabel(milestone);
   const delta = milestone.populationAfter[milestone.faction][milestone.tier - 1]
     - milestone.populationBefore[milestone.faction][milestone.tier - 1];
-  return `Full-demand supply toward ${delta >= 0 ? '+' : ''}${delta} planned ${tier} · ${milestone.gaps.length} gaps`;
+  const gapLabel = milestone.gaps.length === 1 ? 'gap' : 'gaps';
+  return `Full-demand supply toward ${delta >= 0 ? '+' : ''}${delta} planned ${tier} · ${milestone.gaps.length} ${gapLabel}`;
 }
 
 export function CoverageSection({ islands, planning, onApplyBuilding }: CoverageSectionProps) {
@@ -87,6 +88,27 @@ export function CoverageSection({ islands, planning, onApplyBuilding }: Coverage
   const hasSettledIsland = islands.some((island) => island.settled);
   const hasMilestone = FACTIONS.some((faction) => activeMilestones[faction] !== null);
   if (!hasSettledIsland && !hasMilestone) return null;
+
+  const contexts: ('current' | Faction)[] = [
+    'current',
+    ...FACTIONS.filter((faction) => activeMilestones[faction] !== null),
+  ];
+  const onContextKeyDown = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    current: 'current' | Faction,
+  ) => {
+    const index = contexts.indexOf(current);
+    const nextIndex = event.key === 'Home' ? 0
+      : event.key === 'End' ? contexts.length - 1
+        : event.key === 'ArrowRight' ? (index + 1) % contexts.length
+          : event.key === 'ArrowLeft' ? (index - 1 + contexts.length) % contexts.length
+            : null;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    const next = contexts[nextIndex];
+    setSelected(next);
+    document.getElementById(`coverage-context-${next}`)?.focus();
+  };
 
   const { cards, unbuilt } = currentCoverageView(islands, planning);
   const headroom = headroomRows(islands);
@@ -111,8 +133,10 @@ export function CoverageSection({ islands, planning, onApplyBuilding }: Coverage
           aria-controls="coverage-context-panel"
           aria-selected={effectiveSelection === 'current'}
           aria-label="Show Current coverage"
+          tabIndex={effectiveSelection === 'current' ? 0 : -1}
           className={`coverage-context-tab${effectiveSelection === 'current' ? ' coverage-context-tab--active' : ''}`}
           onClick={() => setSelected('current')}
+          onKeyDown={(event) => onContextKeyDown(event, 'current')}
         >Current</button>
         {FACTIONS.map((faction) => {
           const milestone = activeMilestones[faction];
@@ -128,8 +152,10 @@ export function CoverageSection({ islands, planning, onApplyBuilding }: Coverage
             aria-controls="coverage-context-panel"
             aria-selected={active}
             aria-label={`Show ${config.label} ${tier} coverage`}
+            tabIndex={active ? 0 : -1}
             className={`coverage-context-tab coverage-context-tab--${faction}${active ? ' coverage-context-tab--active' : ''}`}
             onClick={() => setSelected(faction)}
+            onKeyDown={(event) => onContextKeyDown(event, faction)}
           >{config.label} · {tier}</button>;
         })}
       </div>

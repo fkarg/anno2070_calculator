@@ -49,11 +49,8 @@ function reasonLabel(chain: GrowthGapChain): string {
 }
 
 function breadcrumbChain(gap: GrowthGap): GrowthGapChain | null {
-  return gap.chains
-    .map((chain, index) => ({ chain, index }))
-    .sort((left, right) => right.chain.addedHere - left.chain.addedHere
-      || right.chain.required - left.chain.required
-      || left.index - right.index)[0]?.chain ?? null;
+  return [...gap.chains].sort((left, right) => right.addedHere - left.addedHere
+    || right.required - left.required)[0] ?? null;
 }
 
 function milestoneDelta(milestone: GrowthMilestone): number {
@@ -68,7 +65,7 @@ function milestoneEndpoint(milestone: GrowthMilestone, gap: GrowthGap, chain: Gr
     const delta = milestoneDelta(milestone);
     return `${faction.label}: ${delta >= 0 ? '+' : ''}${delta} ${tier} planned`;
   }
-  return Math.abs(gap.required - gap.baselineRequired) <= EPSILON
+  return Math.abs(chain.previousRequired - chain.baselineRequired) <= EPSILON
     ? 'current population'
     : `previous ${FACTION_CONFIGS[milestone.faction].label} step`;
 }
@@ -83,7 +80,7 @@ export function currentCoverageView(
   const baselineByGood = new Map(
     (planning?.baseline.gaps ?? []).map((gap) => [gap.goodId, gap]),
   );
-  const cards = acute.map((constraint, index): CoverageCardModel => {
+  const cards = acute.slice(0, 4).map((constraint, index): CoverageCardModel => {
     const available = Math.max(0, constraint.effectiveCapacity - constraint.intermediateDemand);
     const successor = acute[index + 1];
     const starved = constraint.effectiveCapacity < constraint.nominalCapacity - EPSILON
@@ -100,7 +97,7 @@ export function currentCoverageView(
       requirement: starved
         ? `${formatRequirement(available)} available vs ${formatRequirement(constraint.finalDemand)} current full demand — ${formatRequirement(constraint.nominalCapacity)} nominal capacity is starved because ${buildingLabel(actionGoodId)} covers ${formatRequirement(starved.supply)} of ${formatRequirement(starved.demand)} input demand`
         : `${formatRequirement(available)} available vs ${formatRequirement(constraint.finalDemand)} current full demand`,
-      breadcrumb: chain ? [...chainPathLabels(chain).reverse(), 'current population'] : [],
+      breadcrumb: chain ? chainPathLabels(chain).reverse().concat('current population') : [],
       outcome: starved
         ? `Adding ${buildingLabel(actionGoodId)} feeds this starved chain.`
         : constraint.goodId === support.limitingGood && support.scaleAfterNextBuilding !== null
@@ -126,10 +123,10 @@ export function milestoneCoverageCards(milestone: GrowthMilestone): CoverageCard
       id: `${milestone.id}-${gap.goodId}`,
       goodId: gap.goodId,
       actionGoodId: gap.goodId,
-      title: `${buildingLabel(gap.goodId)} · ×${formatRequirement(gap.remaining)}`,
+      title: `${buildingLabel(gap.goodId)} · ${formatRequirement(gap.remaining)} missing`,
       requirement: `${formatRequirement(gap.capacity)} actual effective capacity vs ${formatRequirement(gap.required)} scenario demand`,
       breadcrumb: chain
-        ? [...chainPathLabels(chain).reverse(), milestoneEndpoint(milestone, gap, chain)]
+        ? chainPathLabels(chain).reverse().concat(milestoneEndpoint(milestone, gap, chain))
         : [],
       outcome: successor
         ? `Covering this unlocks the next supply step: ${buildingLabel(successor.goodId)}.`

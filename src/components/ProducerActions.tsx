@@ -12,7 +12,7 @@ type Props = {
 };
 
 export function ProducerActions({ goodId, islands, variant, onApplyBuilding }: Props) {
-  return <div className={`producer-actions producer-actions--${variant}${variant === 'detailed' ? ' growth-gap__actions' : ''}`}>
+  return <div className={`producer-actions producer-actions--${variant}`}>
     {GOODS.get(goodId)!.producers.flatMap((producer) => islands
       .filter((island) => island.settled && canBuildOn(island, producer.buildingId))
       .flatMap((island) => {
@@ -23,7 +23,7 @@ export function ProducerActions({ goodId, islands, variant, onApplyBuilding }: P
         return [<button
           key={`${producer.buildingId}-${island.id}`}
           type="button"
-          className={`producer-action producer-action--${variant}${variant === 'detailed' ? ' growth-producer-action' : ''}`}
+          className={`producer-action producer-action--${variant}`}
           aria-label={`Build one ${building.label} on ${island.name}`}
           onClick={() => onApplyBuilding(island.id, producer.buildingId)}
         >
