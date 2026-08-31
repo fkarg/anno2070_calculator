@@ -159,15 +159,21 @@ function ProductionFaction({
               // canonical producer's row (owned recyclers count as chips).
               const canonical = producedGood(node.buildingId) === node.buildingId;
               let ownedTotal: number | null = 0;
-              let capacity: number | null = 0;
+              const empireEntry = canonical ? empireBalances[node.buildingId as GoodId] : undefined;
+              const capacity = empireEntry === undefined ? 0 : empireEntry.capacity;
               let buildGap: number | null = null;
+              let ownedStatus = 'own 0';
               let targetStatus: string | null = null;
               let targetBalanceClass = '';
               if (canonical) {
                 const goodId = node.buildingId as GoodId;
+                const ownedProducers: { buildingId: BuildingId; count: number | null }[] = [];
                 for (const producer of GOODS.get(goodId)?.producers ?? []) {
                   const count = owned.get(producer.buildingId);
                   if (count === undefined) continue;
+                  if (count === null || Math.abs(count) > BALANCE_EPSILON) {
+                    ownedProducers.push({ buildingId: producer.buildingId, count });
+                  }
                   if (count === null || ownedTotal === null) {
                     ownedTotal = null;
                     continue;
@@ -175,8 +181,18 @@ function ProductionFaction({
                   ownedTotal += count;
                 }
                 // undefined means untouched (0); null is invalid and must survive.
-                const empireEntry = empireBalances[goodId];
-                capacity = empireEntry === undefined ? 0 : empireEntry.capacity;
+                const hasAlternativeProducer = ownedProducers.some(
+                  (producer) => producer.buildingId !== goodId,
+                );
+                ownedStatus = hasAlternativeProducer
+                  ? `own ${ownedProducers.map((producer) => (
+                    `${BUILDINGS[producer.buildingId].label} ×${producer.count ?? '—'}`
+                  )).join(' + ')} = ${capacity === null ? '—' : formatRequirement(capacity)} capacity`
+                  : `own ${ownedTotal === null ? '—' : ownedTotal}${
+                    capacity !== null && ownedTotal !== null && Math.abs(capacity - ownedTotal) > BALANCE_EPSILON
+                      ? `→${formatRequirement(capacity)}`
+                      : capacity === null ? '→—' : ''
+                  }`;
                 const required = demandByGood.has(goodId) ? demandByGood.get(goodId)! : 0;
                 const targetRequired = targetDemandByGood.has(goodId)
                   ? targetDemandByGood.get(goodId)!
@@ -263,12 +279,9 @@ function ProductionFaction({
                         <span
                           className="production-node__mini"
                           aria-label={`${building.label} owned across all islands and their capacity`}
-                          title="owned buildings → capacity in canonical units"
+                          title="Owned producer inventory and capacity in canonical units"
                         >
-                          own {ownedTotal === null ? '—' : ownedTotal}
-                          {capacity !== null && ownedTotal !== null && Math.abs(capacity - ownedTotal) > BALANCE_EPSILON
-                            ? `→${formatRequirement(capacity)}`
-                            : capacity === null ? '→—' : ''}
+                          {ownedStatus}
                         </span>
                         {buildGap === null
                           ? <span className="production-node__mini production-node__mini--actual">actual —</span>

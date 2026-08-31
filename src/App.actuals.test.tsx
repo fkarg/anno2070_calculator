@@ -60,7 +60,28 @@ describe('actuals in the production view', () => {
     await replaceInput(input('island-0-owned-electronicsRecycler'), '2');
 
     // 2 recyclers = 3 chip-factory units; costs are the recyclers' flat costs.
-    expect(byTestId('extras-ecoMicrochipsCommunicators')).toHaveTextContent('own 2→3');
+    expect(byTestId('extras-ecoMicrochipsCommunicators'))
+      .toHaveTextContent('own Electronics recycler ×2 = 3 capacity');
+  });
+
+  test('breaks mixed producer inventory out before showing canonical capacity', async () => {
+    renderApp();
+    addIsland();
+    addBuilding(0, 'chipFactory');
+    await replaceInput(input('island-0-owned-chipFactory'), '2');
+
+    addIsland();
+    fireEvent.click(
+      [...document.querySelectorAll<HTMLButtonElement>('button')]
+        .find((button) => button.getAttribute('aria-label') === 'Configure island Island 2')!,
+    );
+    const underwater = byTestId('island-1')
+      .querySelectorAll<HTMLInputElement>('.island-card__flags input[type="checkbox"]')[1];
+    fireEvent.click(underwater);
+    addBuilding(1, 'electronicsRecycler');
+
+    expect(byTestId('extras-ecoMicrochipsCommunicators'))
+      .toHaveTextContent('own Chip factory ×2 + Electronics recycler ×1 = 3.5 capacity');
   });
 
   test('the build gap reports current full demand, not a Growth target', async () => {
