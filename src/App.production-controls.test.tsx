@@ -54,15 +54,16 @@ describe('production controls', () => {
     renderApp();
     addIsland();
     await setIslandHouses(0, 'eco', '100');
+    await replaceInput(input('island-0-eco-population-3'), '1200');
 
     const serviceBots = requiredBuildings('ecoServiceBots');
-    expect(serviceBots).toHaveTextContent('1.15');
+    expect(serviceBots).toHaveTextContent('1.8');
 
     fireEvent.click(productionCheckbox(1));
-    expect(serviceBots).toHaveTextContent('0.97');
+    expect(serviceBots).toHaveTextContent('1.53');
 
     fireEvent.click(productionCheckbox(0));
-    expect(serviceBots).toHaveTextContent('1');
+    expect(serviceBots).toHaveTextContent('2');
     expect(requiredBuildings('ecoMicrochipsServiceBots')).toHaveTextContent('1');
   });
 });

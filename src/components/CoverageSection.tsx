@@ -1,7 +1,12 @@
 import { useEffect, useState, type KeyboardEvent } from 'react';
 
 import { BUILDINGS, type BuildingId } from '../calculations/building-data';
-import { isDemandIgnored, sameDemandSource, type IgnoredDemandSource } from '../calculations/demand-policy';
+import {
+  isDemandIgnored,
+  isDemandUnlocked,
+  sameDemandSource,
+  type IgnoredDemandSource,
+} from '../calculations/demand-policy';
 import { tierHeadroom } from '../calculations/coverage';
 import { GOODS, type GoodId } from '../calculations/goods';
 import { tierCapacities, type Faction } from '../calculations/population';
@@ -17,6 +22,10 @@ import type { IslandState } from '../island';
 import { CoverageBottleneckCard } from './CoverageBottleneckCard';
 import { DemandSourceActions } from './DemandSourceActions';
 import { currentCoverageView, milestoneCoverageCards } from './coverage-card-model';
+import {
+  growthMilestonePopulationSummary,
+  growthMilestoneTitle,
+} from './growth-milestone-labels';
 
 type CoverageSectionProps = {
   islands: readonly IslandState[];
@@ -39,6 +48,12 @@ function activeSources(
     demand.satisfaction.flatMap((satisfied, tier) => (
       satisfied > 0
         && (populations[demand.faction]?.[tier] ?? 0) > 0
+        && populations[demand.faction] !== null
+        && isDemandUnlocked(
+          demand.satisfaction,
+          demand.unlockAt,
+          populations[demand.faction]!,
+        )
         && !isDemandIgnored(ignored, demand.faction, tier, goodId)
         ? [{ faction: demand.faction, tier, goodId }]
         : []
@@ -52,6 +67,7 @@ type HeadroomRow = Readonly<{
   additional: number;
   houses: number;
   limitingGood: GoodId;
+  reason: 'capacity' | 'unlock';
 }>;
 
 // How many more inhabitants of each faction's top occupied tier the current
@@ -78,6 +94,7 @@ function headroomRows(
       additional: Math.floor(headroom.additional + 1e-9),
       houses: Math.floor(headroom.additional / perHouse + 1e-9),
       limitingGood: headroom.limitingGood,
+      reason: headroom.reason,
     }];
   });
 }
@@ -86,21 +103,10 @@ function milestoneTierLabel(milestone: GrowthMilestone): string {
   return FACTION_CONFIGS[milestone.faction].tierLabels[milestone.tier - 1];
 }
 
-function milestoneTitle(milestone: GrowthMilestone): string {
-  const config = FACTION_CONFIGS[milestone.faction];
-  const tier = milestoneTierLabel(milestone);
-  return milestone.kind === 'expand'
-    ? `Expand ${config.label} at ${tier}`
-    : `${config.tierLabels[milestone.tier - 2]} → ${tier}`;
-}
-
 function milestoneSummary(milestone: GrowthMilestone): string {
-  const tier = milestoneTierLabel(milestone);
-  const delta = milestone.populationAfter[milestone.faction][milestone.tier - 1]
-    - milestone.populationBefore[milestone.faction][milestone.tier - 1];
   const introducedGapCount = milestone.gaps.filter(growthGapIntroducedHere).length;
   const gapLabel = introducedGapCount === 1 ? 'gap' : 'gaps';
-  return `Full-demand supply toward ${delta >= 0 ? '+' : ''}${delta} planned ${tier} · ${introducedGapCount} ${gapLabel}`;
+  return `${growthMilestonePopulationSummary(milestone)} · ${introducedGapCount} ${gapLabel}`;
 }
 
 export function CoverageSection({ islands, planning, ignoredDemands, onIgnoreDemand, onApplyBuilding }: CoverageSectionProps) {
@@ -210,7 +216,7 @@ export function CoverageSection({ islands, planning, ignoredDemands, onIgnoreDem
         className="coverage-section__scenario"
         data-testid="coverage-scenario-summary"
       >
-        <strong>{milestoneTitle(selectedMilestone)}</strong>
+        <strong>{growthMilestoneTitle(selectedMilestone)}</strong>
         <span>{milestoneSummary(selectedMilestone)}</span>
       </div>}
 
@@ -226,7 +232,9 @@ export function CoverageSection({ islands, planning, ignoredDemands, onIgnoreDem
                   <span>
                     room for +{row.additional} {row.tierLabel} (≈ {row.houses} houses), then{' '}
                     <img src={`/assets/${BUILDINGS[row.limitingGood].image}`} alt="" width="16" height="16" />{' '}
-                    {canonicalProducerLabel(row.limitingGood)} runs out
+                    {row.reason === 'unlock'
+                      ? `${canonicalProducerLabel(row.limitingGood)} unlocks`
+                      : `${canonicalProducerLabel(row.limitingGood)} runs out`}
                   </span>
                 )
                 : (
@@ -259,6 +267,11 @@ export function CoverageSection({ islands, planning, ignoredDemands, onIgnoreDem
             onApplyBuilding={onApplyBuilding}
           />)}
         </ol>
+      )}
+      {effectiveSelection !== 'current' && selectedMilestone?.gate?.met === false && (
+        <p className="coverage-section__empty">
+          Increase the actual {FACTION_CONFIGS[selectedMilestone.faction].tierLabels[selectedMilestone.tier - 2]} population before planning this ascension. No next-tier supply is included yet.
+        </p>
       )}
       {effectiveSelection === 'current' && unbuilt.length > 0 && (
         <div className="coverage-section__unbuilt" data-testid="coverage-unbuilt">

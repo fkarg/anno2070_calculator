@@ -61,6 +61,24 @@ describe('tierHeadroom', () => {
     const headroom = tierHeadroom([island({ fishery: 4, teaPlantation: 4 }, 100, 1)], 'eco', 0, []);
     expect(headroom?.additional).toBeCloseTo(200, 6);
     expect(headroom?.limitingGood).toBe('fishery');
+    expect(headroom?.reason).toBe('capacity');
+  });
+
+  test('stops at the next actual-population demand unlock', () => {
+    const subject = island({
+      fishery: 100,
+      teaPlantation: 100,
+      healthFoodFactory: 100,
+      farmhouse: 200,
+      riceFarm: 100,
+    }, 100, 2);
+    subject.factions.eco.overrides[1] = editable(300);
+
+    expect(tierHeadroom([subject], 'eco', 1, [])).toMatchObject({
+      additional: 60,
+      limitingGood: 'healthFoodFactory',
+      reason: 'unlock',
+    });
   });
 
   test('unbuilt chains do not zero the headroom; built goods limit it', () => {
@@ -75,7 +93,7 @@ describe('tierHeadroom', () => {
 });
 
 describe('supportedAscensions', () => {
-  test('reports how many houses can ascend before a good runs out', () => {
+  test('does not let demand unavailable to actual population limit ascensions', () => {
     // No population: full effective capacities are surplus. Ascending
     // Workers→Employees adds per house: fish 15/364−8/250, tea 7/375, health
     // food 15/667, communicators 15/571. Chains must be complete or the
@@ -92,8 +110,8 @@ describe('supportedAscensions', () => {
       0,
       [],
     );
-    expect(result?.ascensions).toBe(38);
-    expect(result?.limitingGood).toBe('electronicsFactory');
+    expect(result?.ascensions).toBe(Infinity);
+    expect(result?.limitingGood).toBeNull();
   });
 
   test('zero surplus supports zero ascensions', () => {
@@ -101,18 +119,15 @@ describe('supportedAscensions', () => {
     expect(result?.ascensions).toBe(0);
   });
 
-  test('invalid inputs make the result unavailable', () => {
+  test('ignores invalid capacity for a demand root not unlocked by actual population', () => {
     const subject = island({ fishery: 2 }, 100, 1);
     subject.owned.electronicsFactory = { raw: 'x', value: null };
-    expect(supportedAscensions([subject], 'eco', 0, [])).toBeNull();
+    expect(supportedAscensions([subject], 'eco', 0, [])).toMatchObject({ ascensions: 0 });
   });
 });
 
 describe('living space and ascension support', () => {
-  test('the global living-space bonus raises per-house ascension demand', () => {
-    // Regression: ascension math used a bonus-blind capacity table. With
-    // living space, an Employee house holds 16, so one electronics factory
-    // (571 per building) covers floor(571/16) = 35 ascensions, not 38.
+  test('does not activate future demand from a population bonus alone', () => {
     const base = island({
       fishery: 10, teaPlantation: 10,
       healthFoodFactory: 1, farmhouse: 2, riceFarm: 1,
@@ -125,7 +140,7 @@ describe('living space and ascension support', () => {
         eco: { ...base.factions.eco, livingSpace: true },
       },
     };
-    expect(supportedAscensions([base], 'eco', 0, [])?.ascensions).toBe(38);
-    expect(supportedAscensions([boosted], 'eco', 0, [])?.ascensions).toBe(35);
+    expect(supportedAscensions([base], 'eco', 0, [])?.ascensions).toBe(Infinity);
+    expect(supportedAscensions([boosted], 'eco', 0, [])?.ascensions).toBe(Infinity);
   });
 });

@@ -8,9 +8,13 @@ import {
   type GrowthPlanningResult,
 } from '../calculations/planning';
 import { formatRequirement } from '../calculations/production';
-import type { IslandState } from '../island';
+import { sumIslandPopulations, type IslandState } from '../island';
 import { FACTIONS, FACTION_CONFIGS } from '../model';
 import { GrowthGapCard } from './GrowthGapCard';
+import {
+  growthMilestonePopulationSummary,
+  growthMilestoneTitle,
+} from './growth-milestone-labels';
 import './growth-milestones.css';
 
 const EPSILON = 1e-9;
@@ -80,25 +84,13 @@ function MilestoneDetails(props: MilestoneDetailsProps) {
   </details>;
 }
 
-function milestoneTitle(milestone: GrowthMilestone): string {
-  const config = FACTION_CONFIGS[milestone.faction];
-  const targetTier = config.tierLabels[milestone.tier - 1];
-  return milestone.kind === 'expand'
-    ? `Expand ${config.label} at ${targetTier}`
-    : `${config.tierLabels[milestone.tier - 2]} to ${targetTier}`;
-}
-
 function milestoneSummary(milestone: GrowthMilestone): string {
-  const config = FACTION_CONFIGS[milestone.faction];
-  const targetTier = config.tierLabels[milestone.tier - 1];
-  const delta = milestone.populationAfter[milestone.faction][milestone.tier - 1]
-    - milestone.populationBefore[milestone.faction][milestone.tier - 1];
   const changed = milestone.gaps.filter(growthGapIntroducedHere).length;
   const carried = milestone.gaps.length - changed;
   const coverage = milestone.complete
     ? 'covered'
     : `${milestone.gaps.length} gaps · ${changed} changed here · ${carried} carried`;
-  return `${delta >= 0 ? '+' : ''}${delta} ${targetTier} · ${coverage}`;
+  return `${growthMilestonePopulationSummary(milestone)} · ${coverage}`;
 }
 
 function milestoneState(milestone: GrowthMilestone): 'current' | 'future' | 'complete' {
@@ -111,6 +103,20 @@ export function GrowthMilestones({ planning, islands, onApplyBuilding, onIgnoreD
     return <section className="growth-milestones"><h3>Full-supply milestones</h3><p>Planning unavailable while a target or actual value is invalid.</p></section>;
   }
   const hasMilestones = FACTIONS.some((faction) => planning.sequences[faction].length > 0);
+  const actualPopulations = sumIslandPopulations(islands);
+  const baselineFactions = FACTIONS.flatMap((faction) => {
+    const population = actualPopulations[faction];
+    if (population === null) return [];
+    const tier = population.reduce((highest, value, index) => value > 0 ? index + 1 : highest, 0);
+    if (tier === 0) return [];
+    return [{
+      faction,
+      tier,
+      gaps: planning.baseline.gaps.filter((gap) => gap.chains.some(
+        (chain) => chain.faction === faction,
+      )),
+    }];
+  });
   if (planning.baseline.complete && !hasMilestones) {
     return <section className="growth-milestones"><h3>Full-supply milestones</h3><p>No population growth steps remain for these targets.</p></section>;
   }
@@ -120,19 +126,20 @@ export function GrowthMilestones({ planning, islands, onApplyBuilding, onIgnoreD
       <h3>Full-supply milestones</h3>
       <p>Current supply comes first; faction plans progress independently.</p>
     </header>
-    {(!planning.baseline.complete || hasMilestones) && <MilestoneDetails
-      testId="growth-baseline"
-      title="Supply current population"
-      summary={planning.baseline.complete ? 'covered' : `${planning.baseline.gaps.length} capacity gaps`}
-      gaps={planning.baseline.gaps}
-      carriedSubtitle="Required by current population"
+    {baselineFactions.map(({ faction, tier, gaps }) => <MilestoneDetails
+      key={faction}
+      testId={`growth-baseline-${faction}`}
+      title={`Complete current ${FACTION_CONFIGS[faction].label} ${FACTION_CONFIGS[faction].tierLabels[tier - 1]}`}
+      summary={gaps.length === 0 ? 'covered' : `${gaps.length} capacity gaps`}
+      gaps={gaps}
+      carriedSubtitle={`Required by current ${FACTION_CONFIGS[faction].label} population`}
       baseline
-      open={!planning.baseline.complete}
-      state={planning.baseline.complete ? 'complete' : 'current'}
+      open={gaps.length > 0}
+      state={gaps.length === 0 ? 'complete' : 'current'}
       islands={islands}
       onApplyBuilding={onApplyBuilding}
       onIgnoreDemand={onIgnoreDemand}
-    />}
+    />)}
     {hasMilestones && <div className="growth-milestones__branches">
       {FACTIONS.map((faction) => <section
         key={faction}
@@ -143,7 +150,7 @@ export function GrowthMilestones({ planning, islands, onApplyBuilding, onIgnoreD
         {planning.sequences[faction].map((milestone, index) => <MilestoneDetails
           key={milestone.id}
           testId={`growth-milestone-${milestone.id}`}
-          title={milestoneTitle(milestone)}
+          title={growthMilestoneTitle(milestone)}
           summary={milestoneSummary(milestone)}
           gaps={milestone.gaps}
           carriedSubtitle={index === 0

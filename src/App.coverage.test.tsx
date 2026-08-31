@@ -99,7 +99,7 @@ describe('coverage and bottlenecks', () => {
 
     expect(buttonWithLabel('Show Tech Lab Assistants coverage'))
       .toHaveClass('coverage-context-tab--active');
-    expect(byTestId('coverage-scenario-summary')).toHaveTextContent('Full-demand supply toward');
+    expect(byTestId('coverage-scenario-summary')).toHaveTextContent('Lab Assistant unlocks Fishery');
     expect(document.querySelector('.bottleneck-card__breadcrumb')).toHaveTextContent('→');
     expect(document.querySelector('.bottleneck-card__outcome')).toBeInTheDocument();
     expect(document.querySelector('.producer-actions--compact')).toBeInTheDocument();
@@ -120,7 +120,7 @@ describe('coverage and bottlenecks', () => {
     fireEvent.click(buttonWithLabel('Show Tech Geniuses coverage'));
 
     expect(buttonWithLabel(
-      'Ignore Tech · Geniuses · Bionics factory everywhere',
+      'Ignore Tech · Geniuses · Laboratory outfitter everywhere',
       document.getElementById('coverage-context-panel')!,
     ))
       .toBeInTheDocument();

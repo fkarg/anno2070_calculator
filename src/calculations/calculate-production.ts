@@ -30,12 +30,14 @@ export function calculateProduction(input: ProductionInput): Record<string, numb
   for (const node of PRODUCTION_NODES) {
     const productivity = input.productivity[node.id];
     if (node.calculation.kind === 'primary') {
-      const satisfaction = maskSatisfaction(
-        producedGood(node.buildingId)!,
-        node.faction,
-        node.calculation.satisfaction,
-        input.ignoredDemands,
-      );
+      const satisfaction = maskSatisfaction({
+        goodId: producedGood(node.buildingId)!,
+        faction: node.faction,
+        satisfaction: node.calculation.satisfaction,
+        unlockAt: node.unlockAt!,
+        population: input.population[node.faction],
+        ignored: input.ignoredDemands,
+      });
       result[node.id] = calculatePrimary(
         satisfaction,
         input.population[node.faction],
@@ -67,13 +69,19 @@ export function calculateAvailableProduction(
       result[node.id] = null;
     } else if (node.calculation.kind === 'primary') {
       const population = input.population[node.faction];
-      const satisfaction = maskSatisfaction(
-        producedGood(node.buildingId)!,
-        node.faction,
-        node.calculation.satisfaction,
-        input.ignoredDemands,
-      );
-      result[node.id] = population === null ? null : calculatePrimary(
+      if (population === null) {
+        result[node.id] = null;
+        continue;
+      }
+      const satisfaction = maskSatisfaction({
+        goodId: producedGood(node.buildingId)!,
+        faction: node.faction,
+        satisfaction: node.calculation.satisfaction,
+        unlockAt: node.unlockAt!,
+        population,
+        ignored: input.ignoredDemands,
+      });
+      result[node.id] = calculatePrimary(
         satisfaction,
         population,
         productivity,

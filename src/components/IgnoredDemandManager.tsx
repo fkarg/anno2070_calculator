@@ -1,4 +1,5 @@
-import type { IgnoredDemandSource } from '../calculations/demand-policy';
+import { isDemandUnlocked, type IgnoredDemandSource } from '../calculations/demand-policy';
+import { GOODS } from '../calculations/goods';
 import type { Faction } from '../calculations/population';
 import { demandSourceLabel } from './demand-source-label';
 
@@ -18,7 +19,13 @@ export function IgnoredDemandManager({ ignored, actualPopulations, onRestore, on
     <ul>
       {ignored.map((source) => {
         const label = demandSourceLabel(source);
-        const active = (actualPopulations[source.faction]?.[source.tier] ?? 0) > 0;
+        const population = actualPopulations[source.faction];
+        const demand = GOODS.get(source.goodId)?.finalDemands
+          .find((candidate) => candidate.faction === source.faction);
+        const active = population !== null
+          && demand !== undefined
+          && (population[source.tier] ?? 0) > 0
+          && isDemandUnlocked(demand.satisfaction, demand.unlockAt, population);
         return <li key={`${source.faction}-${source.tier}-${source.goodId}`}>
           <span>{label}</span>
           <small>{active ? 'Currently applicable' : 'Not currently applicable'}</small>

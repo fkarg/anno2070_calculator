@@ -8,6 +8,7 @@ export type Producer = Readonly<{ buildingId: BuildingId; rate: number }>;
 export type FinalDemand = Readonly<{
   faction: Faction;
   satisfaction: readonly number[];
+  unlockAt: number;
   recyclable: boolean;
 }>;
 export type InputRate = Readonly<{ goodId: GoodId; rate: number }>;
@@ -124,6 +125,7 @@ for (const node of PRODUCTION_NODES) {
     demands.push({
       faction: node.faction,
       satisfaction: node.calculation.satisfaction,
+      unlockAt: node.unlockAt!,
       recyclable: Boolean(node.calculation.recyclable),
     });
     finalDemandsByGood.set(goodId, demands);

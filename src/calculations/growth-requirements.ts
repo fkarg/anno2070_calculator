@@ -1,4 +1,4 @@
-import { isDemandIgnored, type IgnoredDemandSource } from './demand-policy';
+import { maskSatisfaction, type IgnoredDemandSource } from './demand-policy';
 import { producedGood, type GoodId } from './goods';
 import type { Faction } from './population';
 import { calculateMaterial, calculatePrimary } from './production';
@@ -67,9 +67,16 @@ export function calculateGrowthRequirements(
     const root = nodeById.get(pathNodeIds[0])!;
     if (root.calculation.kind !== 'primary') throw new Error('Demand path lacks a primary root');
     const sourceGoodId = producedGood(root.buildingId)!;
-    root.calculation.satisfaction.forEach((satisfied, tier) => {
-      if (satisfied === 0
-        || isDemandIgnored(ignoredDemands, root.faction, tier, sourceGoodId)) return;
+    const satisfaction = maskSatisfaction({
+      goodId: sourceGoodId,
+      faction: root.faction,
+      satisfaction: root.calculation.satisfaction,
+      unlockAt: root.unlockAt!,
+      population: population[root.faction],
+      ignored: ignoredDemands,
+    });
+    satisfaction.forEach((satisfied, tier) => {
+      if (satisfied === 0) return;
       const required = tierContribution(pathNodeIds, population, tier, recycling);
       if (required === 0) return;
       const entries = chains.get(goodId) ?? [];

@@ -5,7 +5,7 @@ import { calculatePopulation } from './population';
 import { calculateProduction, createDefaultProductivity } from './calculate-production';
 import { PRODUCTION_NODES } from './production-data';
 import { producedGood } from './goods';
-import { createIsland } from '../island';
+import { createIsland, sumIslandPopulations } from '../island';
 import { BALANCE_EPSILON, calculateIslandBalance, transferNeeds } from './island-balance';
 
 describe('island balance properties', () => {
@@ -34,7 +34,9 @@ describe('island balance properties', () => {
       island.owned = Object.fromEntries(
         Object.entries(owned).map(([id, value]) => [id, { raw: String(value), value }]),
       );
-      for (const [goodId, balance] of Object.entries(calculateIslandBalance(island, []))) {
+      for (const [goodId, balance] of Object.entries(
+        calculateIslandBalance(island, sumIslandPopulations([island]), []),
+      )) {
         expect(Math.abs(balance.balance ?? 0), goodId).toBeLessThan(1e-6);
       }
     }), { numRuns: 25 });
@@ -47,7 +49,11 @@ describe('island balance properties', () => {
         const island = createIsland('A');
         island.owned = { fishery: { raw: String(count), value: count } };
         island.productivity = { fishery: { raw: String(productivity), value: productivity } };
-        const capacity = calculateIslandBalance(island, []).fishery?.capacity ?? 0;
+        const capacity = calculateIslandBalance(
+          island,
+          sumIslandPopulations([island]),
+          [],
+        ).fishery?.capacity ?? 0;
         expect(capacity).toBeCloseTo(count * productivity / 100, 9);
       },
     ));

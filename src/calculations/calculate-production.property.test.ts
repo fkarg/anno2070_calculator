@@ -64,13 +64,18 @@ test.prop({ productivity, recycling: fc.boolean(), wholeBuildings: fc.boolean() 
 );
 
 test.prop({ population, productivity, recycling: fc.boolean() })(
-  'fractional production is linear in effective population',
+  'fractional production is linear while the same demand roots stay unlocked',
   ({ population, productivity, recycling }) => {
-    const baseline = calculateProduction({ population, productivity, recycling, wholeBuildings: false, ignoredDemands: [] });
+    const unlockedPopulation = {
+      eco: population.eco.map((value) => value === 0 ? 0 : value + 1200),
+      tycoon: population.tycoon.map((value) => value === 0 ? 0 : value + 1200),
+      tech: population.tech.map((value) => value === 0 ? 0 : value + 1200),
+    };
+    const baseline = calculateProduction({ population: unlockedPopulation, productivity, recycling, wholeBuildings: false, ignoredDemands: [] });
     const doubledPopulation = {
-      eco: population.eco.map((value) => value * 2),
-      tycoon: population.tycoon.map((value) => value * 2),
-      tech: population.tech.map((value) => value * 2),
+      eco: unlockedPopulation.eco.map((value) => value * 2),
+      tycoon: unlockedPopulation.tycoon.map((value) => value * 2),
+      tech: unlockedPopulation.tech.map((value) => value * 2),
     };
     const doubled = calculateProduction({
       population: doubledPopulation,

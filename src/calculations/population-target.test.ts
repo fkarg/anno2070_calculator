@@ -38,6 +38,20 @@ describe('resolvePopulationTarget', () => {
     });
   });
 
+  test('raises a higher-tier population target to the preceding ascension gates', () => {
+    const state = {
+      ...createPlanFactionState('tech'),
+      intent: { kind: 'population' as const, tier: 3, count: editable(1) },
+    };
+
+    expect(resolvePopulationTarget('tech', state, 0, [0, 0, 0])).toMatchObject({
+      houses: 67,
+      requested: 1,
+      achieved: 600,
+      overshoot: 599,
+    });
+  });
+
   test('recomputes minimum houses through living-space bonuses', () => {
     const state = {
       ...createPlanFactionState('tech'),

@@ -43,6 +43,10 @@ function milestone(tier: number, complete: boolean): GrowthMilestone {
     tier,
     populationBefore: emptyPopulations,
     populationAfter,
+    gate: null,
+    unlockedGoodIds: [],
+    unlocksAscensionTo: null,
+    checkpointPopulation: null,
     gaps: complete ? [] : [gap],
     complete,
     current: !complete,
@@ -127,4 +131,30 @@ test('moves context selection and focus with the existing tab keyboard pattern',
   fireEvent.keyDown(eco, { key: 'Home' });
   expect(current).toHaveFocus();
   expect(current).toHaveAttribute('aria-selected', 'true');
+});
+
+test('explains a blocked ascension without showing next-tier cards', () => {
+  const blocked = {
+    ...milestone(2, false),
+    gate: { required: 144, available: 80, met: false },
+    gaps: [],
+  };
+  const blockedPlanning: GrowthPlanningResult = {
+    baseline: { gaps: [], complete: true, current: false },
+    sequences: { eco: [blocked], tycoon: [], tech: [] },
+  };
+
+  render(<CoverageSection
+    islands={[]}
+    planning={blockedPlanning}
+    ignoredDemands={[]}
+    onIgnoreDemand={vi.fn()}
+    onApplyBuilding={vi.fn()}
+  />);
+  fireEvent.click(screen.getByRole('tab', { name: 'Show Eco Employees coverage' }));
+
+  expect(screen.getByTestId('coverage-scenario-summary'))
+    .toHaveTextContent('Reach 144 Workers to unlock Employees');
+  expect(screen.getByText(/Increase the actual Workers population/)).toBeInTheDocument();
+  expect(document.querySelector('.bottleneck-card')).toBeNull();
 });

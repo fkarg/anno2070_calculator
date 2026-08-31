@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest';
 
-import { createIsland } from '../island';
+import { createIsland, sumIslandPopulations, type IslandState } from '../island';
 import type { EditableNumber } from '../model';
+import type { IgnoredDemandSource } from './demand-policy';
 import { aggregateBalances, aggregateGoodLoads, calculateIslandBalance, islandGoodLoads, transferNeeds } from './island-balance';
 
 const editable = (value: number): EditableNumber => ({ raw: String(value), value });
@@ -16,16 +17,19 @@ const withOwned = (owned: Record<string, number>, productivity: Record<string, n
     Object.entries(productivity).map(([id, value]) => [id, editable(value)]),
   ),
 });
+const balance = (island: IslandState, ignored: readonly IgnoredDemandSource[] = []) => (
+  calculateIslandBalance(island, sumIslandPopulations([island]), ignored)
+);
 
 describe('calculateIslandBalance', () => {
   test('capacity scales with owned count, producer rate, and productivity', () => {
-    const balances = calculateIslandBalance(withOwned({ electronicsRecycler: 2 }, { electronicsRecycler: 50 }), []);
+    const balances = balance(withOwned({ electronicsRecycler: 2 }, { electronicsRecycler: 50 }));
     // 2 recyclers at 50% at rate 1.5 = 1.5 chip-factory units.
     expect(balances.chipFactory?.capacity).toBeCloseTo(1.5, 9);
   });
 
   test('owned consumers place intermediate demand on their own island', () => {
-    const balances = calculateIslandBalance(withOwned({ chipFactory: 2 }), []);
+    const balances = balance(withOwned({ chipFactory: 2 }));
     expect(balances.copperMine?.demand).toBeCloseTo(1, 9); // 2 × 0.5
     expect(balances.sandExtractor?.demand).toBeCloseTo(2 / 3, 9);
     expect(balances.chipFactory?.capacity).toBeCloseTo(2, 9);
@@ -35,22 +39,22 @@ describe('calculateIslandBalance', () => {
     // 2 stations = 2 rotary-excavator-equivalents = 1 coal mine unit; the
     // Energy-output and mine productivity entries must not leak onto the
     // station's fixed fuel demand.
-    const balances = calculateIslandBalance(withOwned(
+    const balances = balance(withOwned(
       { coalPowerStation: 2, coalMine: 1 },
       { coalPowerStation: 135, coalMine: 50 },
-    ), []);
+    ));
     expect(balances.coalMine?.demand).toBeCloseTo(1, 9);
     expect(balances.coalMine?.capacity).toBeCloseTo(0.5, 9);
     expect(balances.coalMine?.balance).toBeCloseTo(-0.5, 9);
-    expect(calculateIslandBalance(withOwned({ coalPowerStation: 2 }), [
+    expect(balance(withOwned({ coalPowerStation: 2 }), [
       { faction: 'eco', tier: 0, goodId: 'fishery' },
     ]).coalMine?.demand).toBeCloseTo(1, 9);
   });
 
   test('nuclear plants demand fuel rods; material chains demand their inputs', () => {
-    const balances = calculateIslandBalance(withOwned({
+    const balances = balance(withOwned({
       nuclearPowerPlant: 1, fuelElementFactory: 1, uraniumMine: 1, carbonFactory: 2,
-    }), []);
+    }));
     expect(balances.fuelElementFactory).toEqual({ capacity: 1, demand: 1, balance: 0 });
     expect(balances.uraniumMine).toEqual({ capacity: 1, demand: 1, balance: 0 });
     // 2 carbon factories: 2 oil refinery units and 1 coal mine unit demanded.
@@ -61,7 +65,7 @@ describe('calculateIslandBalance', () => {
   test('final demand follows island population and satisfaction', () => {
     const island = createIsland('A');
     island.factions.eco.houses = { raw: '100', value: 100 };
-    const balances = calculateIslandBalance(island, []);
+    const balances = balance(island);
     expect(balances.fishery?.demand).toBeGreaterThan(0);
   });
 
@@ -71,8 +75,8 @@ describe('calculateIslandBalance', () => {
     island.factions.tech.maxTier = 3;
     island.owned.bionicsFactory = editable(1);
 
-    const active = calculateIslandBalance(island, []);
-    const ignored = calculateIslandBalance(island, ignoredBionics);
+    const active = balance(island);
+    const ignored = balance(island, ignoredBionics);
 
     expect(active.bionicsFactory!.demand).toBeGreaterThan(0);
     expect(ignored.bionicsFactory!.demand).toBe(0);
@@ -98,7 +102,7 @@ describe('calculateIslandBalance', () => {
     island.factions.tycoon.houses = editable(100);
     island.factions.tycoon.maxTier = 1;
 
-    const loads = islandGoodLoads(island, [
+    const loads = islandGoodLoads(island, sumIslandPopulations([island]), [
       { faction: 'eco', tier: 0, goodId: 'fishery' },
     ]);
 
@@ -109,11 +113,11 @@ describe('calculateIslandBalance', () => {
     const island = createIsland('Growing Geniuses');
     island.factions.tech.houses = editable(100);
     island.factions.tech.maxTier = 3;
-    const before = calculateIslandBalance(island, []).bionicsFactory!.demand!;
-    expect(calculateIslandBalance(island, ignoredBionics).bionicsFactory?.demand ?? 0).toBe(0);
+    const before = balance(island).bionicsFactory!.demand!;
+    expect(balance(island, ignoredBionics).bionicsFactory?.demand ?? 0).toBe(0);
 
     island.factions.tech.houses = editable(200);
-    const restored = calculateIslandBalance(island, []).bionicsFactory!.demand!;
+    const restored = balance(island).bionicsFactory!.demand!;
 
     expect(restored).toBeCloseTo(before * 2, 9);
   });
@@ -125,24 +129,39 @@ describe('calculateIslandBalance', () => {
       ...island,
       factions: { ...island.factions, eco: { ...island.factions.eco, recyclingCoverage: true } },
     };
-    const base = calculateIslandBalance(island, []).electronicsFactory!.demand!;
-    const reduced = calculateIslandBalance(covered, []).electronicsFactory!.demand!;
+    const base = balance(island).electronicsFactory!.demand!;
+    const reduced = balance(covered).electronicsFactory!.demand!;
     expect(reduced).toBeCloseTo(base * 0.85, 9);
     // Fish is not recyclable: unchanged.
-    expect(calculateIslandBalance(covered, []).fishery!.demand!)
-      .toBeCloseTo(calculateIslandBalance(island, []).fishery!.demand!, 9);
+    expect(balance(covered).fishery!.demand!)
+      .toBeCloseTo(balance(island).fishery!.demand!, 9);
   });
 
   test('invalid entries null only the affected good', () => {
     const island = withOwned({ chipFactory: 2 });
     island.owned.fishery = { raw: 'x', value: null };
-    const balances = calculateIslandBalance(island, []);
+    const balances = balance(island);
     expect(balances.fishery?.capacity).toBeNull();
     expect(balances.chipFactory?.capacity).toBeCloseTo(2, 9);
   });
 });
 
 describe('aggregateBalances and transferNeeds', () => {
+  test('uses empire population to unlock demand while keeping consumption island-local', () => {
+    const first = createIsland('One');
+    const second = createIsland('Two');
+    for (const island of [first, second]) {
+      island.factions.tech.houses = editable(20);
+      island.factions.tech.maxTier = 2;
+      island.factions.tech.overrides[0] = editable(0);
+      island.factions.tech.overrides[1] = editable(300);
+    }
+
+    const loads = aggregateGoodLoads([first, second], []);
+
+    expect(loads.cyberneticFactory?.finalDemand).toBeCloseTo(600 / 667, 9);
+  });
+
   test('unsettled islands contribute nothing', () => {
     const settled = withOwned({ fishery: 2 });
     const unsettled = { ...withOwned({ fishery: 5 }), settled: false };

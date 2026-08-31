@@ -115,16 +115,16 @@ describe('production structure and impacts', () => {
     expect(requiredBuildings('ecoFish')).toHaveTextContent('2');
 
     fireEvent.click(buttonWithLabel('Eco Employees', byTestId('island-0')));
-    await replaceInput(input('island-0-eco-population-1'), '571');
+    await replaceInput(input('island-0-eco-population-1'), '600');
     const conventional = byTestId('variant-ecoCommunicators-ecoMicrochipsCommunicators');
     expect(conventional)
-      .toHaveTextContent('maintenance credits per minute:-65power:-10ecobalance:-12');
-    expect(conventional).toHaveTextContent('Electronics factory ×1');
-    expect(conventional).toHaveTextContent('Chip factory ×1');
+      .toHaveTextContent('maintenance credits per minute:-95power:-16ecobalance:-20');
+    expect(conventional).toHaveTextContent('Electronics factory ×2');
+    expect(conventional).toHaveTextContent('Chip factory ×2');
     expect(conventional).toHaveTextContent('Copper mine ×1');
     expect(conventional).toHaveTextContent('Sand extractor ×1');
     expect(byTestId('variant-ecoCommunicators-ecoElectronicsRecyclerCommunicators'))
-      .toHaveTextContent('maintenance credits per minute:-180power:-39ecobalance:-4');
+      .toHaveTextContent('maintenance credits per minute:-200power:-43ecobalance:-8');
   });
 
   test('invalid alternate productivity suppresses only variants using that route', async () => {

@@ -27,6 +27,7 @@ import {
   createIsland,
   islandPopulation,
   stepOwnedBuilding,
+  sumIslandPopulations,
   type IslandFactionState,
   type IslandState,
 } from '../island';
@@ -662,6 +663,7 @@ function IslandConfiguration({ island, index, idPrefix, onChange, onRemove }: {
 export function IslandsSection({ islands, ignoredDemands, onIslandsChange }: IslandsSectionProps) {
   const [configuring, setConfiguring] = useState<ReadonlySet<string>>(new Set());
   const empire = aggregateBalances(islands, ignoredDemands);
+  const unlockPopulations = sumIslandPopulations(islands);
   const transferredGoods = new Set(transferNeeds(islands, ignoredDemands).map((need) => need.goodId));
 
   const toggleConfigure = (islandId: string) => setConfiguring((current) => {
@@ -689,7 +691,7 @@ export function IslandsSection({ islands, ignoredDemands, onIslandsChange }: Isl
       <div className="islands-section__cards">
         {islands.map((island, index) => {
           const idPrefix = `island-${index}-`;
-          const balances = calculateIslandBalance(island, ignoredDemands);
+          const balances = calculateIslandBalance(island, unlockPopulations, ignoredDemands);
           // The island's own operating load, settled or not.
           const operatingLoad = islandOperatingImpact(island);
           const onChange: IslandChange = (updater) => onIslandsChange((current) =>

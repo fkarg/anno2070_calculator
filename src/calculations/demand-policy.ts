@@ -20,13 +20,29 @@ export function isDemandIgnored(
   return ignored.some((source) => sameDemandSource(source, { faction, tier, goodId }));
 }
 
-export function maskSatisfaction(
-  goodId: GoodId,
-  faction: Faction,
+export function isDemandUnlocked(
   satisfaction: readonly number[],
-  ignored: readonly IgnoredDemandSource[],
-): readonly number[] {
-  return satisfaction.map((value, tier) => (
-    isDemandIgnored(ignored, faction, tier, goodId) ? 0 : value
+  unlockAt: number,
+  population: readonly number[],
+): boolean {
+  const introducingTier = satisfaction.findIndex((value) => value > 0);
+  if (introducingTier < 0) return false;
+  return (population[introducingTier] ?? 0) >= unlockAt
+    || population.slice(introducingTier + 1).some((value) => value > 0);
+}
+
+export function maskSatisfaction(input: Readonly<{
+  goodId: GoodId;
+  faction: Faction;
+  satisfaction: readonly number[];
+  unlockAt: number;
+  population: readonly number[];
+  ignored: readonly IgnoredDemandSource[];
+}>): readonly number[] {
+  if (!isDemandUnlocked(input.satisfaction, input.unlockAt, input.population)) {
+    return input.satisfaction.map(() => 0);
+  }
+  return input.satisfaction.map((value, tier) => (
+    isDemandIgnored(input.ignored, input.faction, tier, input.goodId) ? 0 : value
   ));
 }

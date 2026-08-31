@@ -5,6 +5,7 @@ import {
   tierCapacities,
   type Faction,
 } from './population';
+import { populationMeetsAscensionGates } from './progression';
 
 export type ResolvedPopulationTarget = Readonly<{
   intent: TargetIntent;
@@ -43,15 +44,21 @@ function minimumHouses(
   const maximumCapacity = Math.max(...tierCapacities(faction, state.livingSpace));
   const safeLimit = Math.floor(Number.MAX_SAFE_INTEGER / maximumCapacity);
   const at = (houses: number) => population(faction, state, houses, tier)[tier - 1];
+  const meets = (houses: number) => at(houses) >= requested
+    && populationMeetsAscensionGates(
+      faction,
+      tier,
+      (checkpointTier) => population(faction, state, houses, checkpointTier),
+    );
 
   let high = 1;
-  while (high < safeLimit && at(high) < requested) high = Math.min(safeLimit, high * 2);
-  if (!Number.isSafeInteger(at(high)) || at(high) < requested) return null;
+  while (high < safeLimit && !meets(high)) high = Math.min(safeLimit, high * 2);
+  if (!Number.isSafeInteger(at(high)) || !meets(high)) return null;
 
   let low = 0;
   while (low < high) {
     const middle = low + Math.floor((high - low) / 2);
-    if (at(middle) >= requested) high = middle;
+    if (meets(middle)) high = middle;
     else low = middle + 1;
   }
   return low;

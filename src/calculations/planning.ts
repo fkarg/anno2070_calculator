@@ -3,8 +3,14 @@ import { FACTIONS, type CalculatorState } from '../model';
 import { CONSUMPTION, producedGood, type GoodId } from './goods';
 import { calculateGrowthRequirements, type GrowthDemandChain } from './growth-requirements';
 import { resolvePopulationTarget, type ResolvedPopulationTarget } from './population-target';
-import { applyPopulationOverrides, calculatePopulation, type Faction } from './population';
+import {
+  applyPopulationOverrides,
+  calculatePopulation,
+  tierCapacities,
+  type Faction,
+} from './population';
 import { PRODUCTION_NODES } from './production-data';
+import { ascensionGate, demandUnlocks } from './progression';
 import { effectiveCapacities } from './supported-population';
 
 const EPSILON = 1e-9;
@@ -40,6 +46,10 @@ export type GrowthMilestone = Readonly<{
   tier: number;
   populationBefore: Record<Faction, readonly number[]>;
   populationAfter: Record<Faction, readonly number[]>;
+  gate: Readonly<{ required: number; available: number; met: boolean }> | null;
+  unlockedGoodIds: readonly GoodId[];
+  unlocksAscensionTo: number | null;
+  checkpointPopulation: number | null;
   gaps: readonly GrowthGap[];
   complete: boolean;
   current: boolean;
@@ -63,6 +73,9 @@ type Descriptor = Readonly<{
   faction: Faction;
   tier: number;
   population: readonly number[];
+  unlockedGoodIds: readonly GoodId[];
+  unlocksAscensionTo: number | null;
+  checkpoint: number | null;
 }>;
 
 const clonePopulations = (
@@ -88,11 +101,12 @@ function targetAtTier(
   state: CalculatorState['factions'][Faction],
   target: ResolvedPopulationTarget,
   tier: number,
+  houses = target.houses,
 ): readonly number[] {
   if (state.intent.kind === 'follow' && state.intent.tierMode === 'unrestricted') {
     return calculatePopulation({
       faction,
-      houses: target.houses,
+      houses,
       maxTier: tier,
       livingSpace: state.livingSpace,
       senate: state.senate,
@@ -100,17 +114,54 @@ function targetAtTier(
   }
   return applyPopulationOverrides({
     faction,
-    houses: target.houses,
+    houses,
     maxTier: tier,
     livingSpace: state.livingSpace,
     senate: state.senate,
   }, state.overrides.map((override, index) => index < tier ? override?.value ?? null : null));
 }
 
+function minimumHousesForTierPopulation(
+  faction: Faction,
+  state: CalculatorState['factions'][Faction],
+  target: ResolvedPopulationTarget,
+  tier: number,
+  population: number,
+  minimumHouses: number,
+): number {
+  let low = Math.min(minimumHouses, target.houses);
+  let high = target.houses;
+  while (low < high) {
+    const middle = low + Math.floor((high - low) / 2);
+    if (targetAtTier(faction, state, target, tier, middle)[tier - 1] >= population) high = middle;
+    else low = middle + 1;
+  }
+  return low;
+}
+
+function ascensionPopulationAtCheckpoint(
+  faction: Faction,
+  state: CalculatorState['factions'][Faction],
+  previous: readonly number[],
+  target: readonly number[],
+  tier: number,
+  checkpoint: number,
+): readonly number[] {
+  const capacities = tierCapacities(faction, state.livingSpace);
+  const fromTier = tier - 2;
+  const toTier = tier - 1;
+  const houses = Math.ceil((checkpoint - previous[toTier]) / capacities[toTier]);
+  const population = [...previous];
+  population[toTier] = Math.min(target[toTier], previous[toTier] + houses * capacities[toTier]);
+  population[fromTier] = Math.max(target[fromTier], previous[fromTier] - houses * capacities[fromTier]);
+  return population;
+}
+
 function buildFactionDescriptors(
   state: CalculatorState,
   targets: Record<Faction, ResolvedPopulationTarget>,
   actual: Record<Faction, readonly number[]>,
+  actualHouses: Record<Faction, number>,
   faction: Faction,
 ): Descriptor[] {
   const result: Descriptor[] = [];
@@ -127,16 +178,69 @@ function buildFactionDescriptors(
     ? Math.max(1, actualTop + 1)
     : firstTier;
   for (let tier = startTier; tier <= targets[faction].maxTier; tier += 1) {
-    const population = targetAtTier(faction, state.factions[faction], targets[faction], tier);
-    if (!samePopulation(population, previous)) {
+    const targetPopulation = targetAtTier(faction, state.factions[faction], targets[faction], tier);
+    const unlocks = demandUnlocks(faction, tier);
+    const nextGate = tier < targets[faction].maxTier ? ascensionGate(faction, tier + 1) : null;
+    const checkpoints = [...new Set([
+      ...(tier > firstTier ? [1] : []),
+      ...unlocks.map((unlock) => unlock.population),
+      ...(nextGate === null ? [] : [nextGate.required]),
+    ])].filter((checkpoint) => (
+      checkpoint > (previous[tier - 1] ?? 0)
+      && checkpoint < targetPopulation[tier - 1]
+    )).sort((left, right) => left - right);
+    const populations: { checkpoint: number | null; population: readonly number[] }[] = checkpoints.flatMap((checkpoint) => {
+      if (tier > firstTier) return [{
+        checkpoint,
+        population: ascensionPopulationAtCheckpoint(
+          faction,
+          state.factions[faction],
+          previous,
+          targetPopulation,
+          tier,
+          checkpoint,
+        ),
+      }];
+      const houses = minimumHousesForTierPopulation(
+        faction,
+        state.factions[faction],
+        targets[faction],
+        tier,
+        checkpoint,
+        actualHouses[faction],
+      );
+      return [{ checkpoint, population: targetAtTier(
+        faction,
+        state.factions[faction],
+        targets[faction],
+        tier,
+        houses,
+      ) }];
+    });
+    populations.push({ checkpoint: null, population: targetPopulation });
+    let firstAtTier = true;
+    for (const item of populations) {
+      if (samePopulation(item.population, previous)) continue;
+      const reached = item.population[tier - 1];
       result.push({
-        kind: tier === firstTier ? 'expand' : 'ascend',
+        kind: tier === firstTier || !firstAtTier ? 'expand' : 'ascend',
         faction,
         tier,
-        population,
+        population: item.population,
+        unlockedGoodIds: unlocks
+          .filter((unlock) => unlock.population > (previous[tier - 1] ?? 0)
+            && unlock.population <= reached)
+          .map((unlock) => unlock.goodId),
+        unlocksAscensionTo: nextGate !== null
+          && nextGate.required > (previous[tier - 1] ?? 0)
+          && nextGate.required <= reached
+          ? tier + 1
+          : null,
+        checkpoint: item.checkpoint,
       });
+      previous = item.population;
+      firstAtTier = false;
     }
-    previous = population;
   }
   return result;
 }
@@ -240,6 +344,7 @@ export function calculateGrowthPlanning(
   if (resolved.some(([, target]) => target === null)) return null;
   const targets = Object.fromEntries(resolved) as Record<Faction, ResolvedPopulationTarget>;
   const actual = islandPopulations as Record<Faction, readonly number[]>;
+  const actualHouses = islandHouses as Record<Faction, number>;
   const capacities = effectiveCapacities(islands, state.ignoredDemands);
   if (Object.values(capacities).some((capacity) => capacity === null)) return null;
 
@@ -258,32 +363,55 @@ export function calculateGrowthPlanning(
   for (const faction of FACTIONS) {
     let previousPopulation = clonePopulations(actual);
     let previousRequirements = baselineRequirements;
-    const milestones: Omit<GrowthMilestone, 'current'>[] = buildFactionDescriptors(
+    const milestones: Omit<GrowthMilestone, 'current'>[] = [];
+    const descriptors = buildFactionDescriptors(
       state,
       targets,
       actual,
+      actualHouses,
       faction,
-    ).map((descriptor) => {
+    );
+    for (const descriptor of descriptors) {
       const populationBefore = clonePopulations(previousPopulation);
-      const populationAfter = {
+      const intendedPopulationAfter = {
         ...clonePopulations(actual),
         [faction]: [...descriptor.population],
       };
+      const requiredGate = descriptor.kind === 'ascend'
+        ? ascensionGate(faction, descriptor.tier)
+        : null;
+      const available = requiredGate === null
+        ? 0
+        : populationBefore[faction][requiredGate.fromTier - 1];
+      const gate = requiredGate === null ? null : {
+        required: requiredGate.required,
+        available,
+        met: available >= requiredGate.required,
+      };
+      const populationAfter = gate?.met === false
+        ? clonePopulations(populationBefore)
+        : intendedPopulationAfter;
       const requirements = calculateGrowthRequirements(populationAfter, state.recycling, state.ignoredDemands);
       const gaps = buildGaps(requirements, previousRequirements, baselineRequirements, capacities);
       previousPopulation = populationAfter;
       previousRequirements = requirements;
-      return {
-        id: `${faction}-${descriptor.tier}-${descriptor.kind}`,
+      milestones.push({
+        id: `${faction}-${descriptor.tier}-${descriptor.kind}${descriptor.checkpoint === null ? '' : `-at-${descriptor.checkpoint}`}`,
         kind: descriptor.kind,
         faction,
         tier: descriptor.tier,
         populationBefore,
         populationAfter,
+        gate,
+        unlockedGoodIds: descriptor.unlockedGoodIds,
+        unlocksAscensionTo: descriptor.unlocksAscensionTo,
+        checkpointPopulation: descriptor.checkpoint,
         gaps,
-        complete: gaps.every((gap) => !growthGapIntroducedHere(gap)),
-      };
-    });
+        complete: gate?.met !== false
+          && gaps.every((gap) => !growthGapIntroducedHere(gap)),
+      });
+      if (gate?.met === false) break;
+    }
     const currentIndex = milestones.findIndex((milestone) => !milestone.complete);
     sequences[faction] = milestones.map((milestone, index) => ({
       ...milestone,

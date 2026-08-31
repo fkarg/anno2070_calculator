@@ -74,6 +74,10 @@ describe('Coverage card models', () => {
       tier: 2,
       populationBefore: { eco: [80, 0, 0, 0], tycoon: [0, 0, 0, 0], tech: [0, 0, 0] },
       populationAfter: { eco: [40, 80, 0, 0], tycoon: [0, 0, 0, 0], tech: [0, 0, 0] },
+      gate: null,
+      unlockedGoodIds: [],
+      unlocksAscensionTo: null,
+      checkpointPopulation: null,
       gaps: [{
         goodId: 'fishery' as const,
         required: 1,
@@ -122,6 +126,10 @@ describe('Coverage card models', () => {
       tier: 4,
       populationBefore: { eco: [0, 0, 0, 0], tycoon: [0, 0, 0, 0], tech: [0, 0, 0] },
       populationAfter: { eco: [0, 0, 0, 800], tycoon: [0, 0, 0, 0], tech: [0, 0, 0] },
+      gate: null,
+      unlockedGoodIds: [],
+      unlocksAscensionTo: null,
+      checkpointPopulation: null,
       gaps: [{
         goodId: 'aquafarm' as const,
         required: 3,

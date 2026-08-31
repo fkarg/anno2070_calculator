@@ -10,7 +10,25 @@ Research for the Growth planner vocabulary and scope boundary. The key finding i
 
 Functional Food demonstrates why a per-good boolean is incorrect. With Deep Ocean, Lab Assistant Food is split 50% Fish and 50% Functional Food. Fish alone can cover the maintenance minimum, but a large Lab Assistant population needs part of the Functional Food contribution to reach the ascension quote. Researcher Food shifts to 25% Fish and 75% Functional Food; its maintenance quote is high enough that Functional Food becomes partly retention-critical. The [Goods reference](https://anno2070.fandom.com/wiki/Goods) and [Fishery reference](https://anno2070.fandom.com/wiki/Fishery) provide the corresponding player-facing chain descriptions.
 
-Goods also unlock at population thresholds. Examples include Functional Food at 50 Lab Assistants and Health Food / Convenience Food at 360 tier-two residents. The current calculator stores per-tier full-consumption rates but not unlock thresholds, category contributions, satisfaction quotes, enabled desires, or island-local satisfaction state.
+Goods also unlock at population thresholds. The calculator now models recurring-goods availability at the following introducing-tier populations:
+
+| Faction | Tier | Recurring demand unlocks |
+| --- | --- | --- |
+| Eco | Workers | Fish 1; Tea 60 |
+| Eco | Employees | Health Food 360; Communicators 600 |
+| Eco | Engineers | Pasta Dishes 250; Bio Drinks 950 |
+| Eco | Executives | 3D Projectors 1; Service Bots 1,200 |
+| Tycoon | Workers | Fish 1; Liquor 60 |
+| Tycoon | Employees | Convenience Food 360; Plastics 600 |
+| Tycoon | Engineers | Luxury Meals 250; Champagne 950 |
+| Tycoon | Executives | Jewelry 1; Pharmaceuticals 1,200 |
+| Tech | Lab Assistants | Fish 1; Functional Food 50; Functional Drinks 100 |
+| Tech | Researchers | Immunity Drugs 1; Neuroimplants 600 |
+| Tech | Geniuses | Laboratory Instruments 1; Bionic Suits 600 |
+
+Current availability is derived from actual empire population, while Growth evaluates each planned checkpoint. A higher occupied tier proves earlier-tier unlocks. Because game unlocks persist, a snapshot whose final-tier population later fell below a previously reached threshold cannot prove that historical unlock; the calculator conservatively uses the population visible now.
+
+Ascension population gates are also modeled as planning feasibility constraints: Eco and Tycoon require 144 Workers, 750 Employees, and 1,200 Engineers for the next tier; Tech requires 150 Lab Assistants and 1,200 Researchers. These counts do not claim complete ascension readiness: category satisfaction, taxes, public buildings, materials, and ascension rights remain outside the current model.
 
 ## Vocabulary for the current implementation
 
@@ -25,8 +43,8 @@ Goods also unlock at population thresholds. Examples include Functional Food at 
 
 ## Current scope decision
 
-The Growth implementation remains a full-supply goods planner. It does not calculate minimum retention supply, minimum ascension supply, taxation, public-building coverage, desire toggles, or satisfaction percentages.
+The Growth implementation remains a full-supply goods planner. It gates recurring demands and population progression at verified thresholds, but it does not calculate minimum retention supply, minimum ascension supply, taxation, public-building coverage, desire toggles, or satisfaction percentages.
 
 Island `Build next` suggestions must depend only on current actual full-demand deficits. Future target gaps belong to Growth and should not appear as generic `plan +N` island suggestions.
 
-An exact later layer should derive category weights, unlock thresholds, population-interpolated maintenance/upgrade quotes, and partial satisfaction from the extracted game data before using `necessary`, `essential`, or exact ascension-readiness claims.
+An exact later layer should derive category weights, population-interpolated maintenance/upgrade quotes, and partial satisfaction from the extracted game data before using `necessary`, `essential`, or exact ascension-readiness claims.

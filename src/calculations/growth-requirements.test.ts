@@ -65,4 +65,14 @@ describe('Growth requirement provenance', () => {
     expect(chips.chains.reduce((sum, chain) => sum + chain.required, 0))
       .toBeCloseTo(chips.required);
   });
+
+  test('introduces a future demand chain only at its population threshold', () => {
+    const below = emptyPopulation();
+    below.tech[2] = 599;
+    const reached = emptyPopulation();
+    reached.tech[2] = 600;
+
+    expect(calculateGrowthRequirements(below, false, []).has('bionicsFactory')).toBe(false);
+    expect(calculateGrowthRequirements(reached, false, []).has('bionicsFactory')).toBe(true);
+  });
 });

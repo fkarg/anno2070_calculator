@@ -193,7 +193,7 @@ describe('calculateProduction', () => {
 
   test('rounds every parent before calculating a child in whole-building mode', () => {
     const result = calculateProduction({
-      population: { eco: [0, 0, 0, 667], tycoon: [0, 0, 0, 0], tech: [0, 0, 0] },
+      population: { eco: [0, 0, 0, 1200], tycoon: [0, 0, 0, 0], tech: [0, 0, 0] },
       productivity: createDefaultProductivity(),
       recycling: false,
       wholeBuildings: true,
@@ -226,6 +226,22 @@ describe('calculateProduction', () => {
     expect(ignored.techBionicSuits).toBe(0);
     expect(ignored.techBiopolymers).toBe(0);
     expect(ignored.techExoskeletons).toBe(0);
+  });
+
+  test('activates demand roots only at their actual population unlock', () => {
+    const calculate = (tech: readonly number[]) => calculateProduction({
+      population: { eco: [0, 0, 0, 0], tycoon: [0, 0, 0, 0], tech },
+      productivity: createDefaultProductivity(),
+      recycling: false,
+      wholeBuildings: false,
+      ignoredDemands: [],
+    });
+
+    expect(calculate([0, 599, 0]).techNeuroimplants).toBe(0);
+    expect(calculate([0, 600, 0]).techNeuroimplants).toBeGreaterThan(0);
+    expect(calculate([0, 0, 1]).techNeuroimplants).toBeGreaterThan(0);
+    expect(calculate([0, 0, 599]).techBionicSuits).toBe(0);
+    expect(calculate([0, 0, 600]).techBionicSuits).toBeGreaterThan(0);
   });
 });
 

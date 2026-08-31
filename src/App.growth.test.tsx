@@ -10,6 +10,7 @@ import {
   selectWorkspace,
   setGrowthResidenceTarget,
   setIslandHouses,
+  replaceInput,
 } from './test/app-test-utils';
 
 beforeEach(() => localStorage.clear());
@@ -40,8 +41,9 @@ test('shows faction-local current and future milestones without pretending a tar
   await setGrowthResidenceTarget('eco', '100');
   fireEvent.click(buttonWithLabel('Eco Employees'));
 
-  expect(byTestId('growth-milestone-eco-1-expand')).toHaveClass('growth-milestone--current');
-  expect(byTestId('growth-milestone-eco-2-ascend')).toHaveClass('growth-milestone--future');
+  expect(byTestId('growth-milestone-eco-1-expand-at-1')).toHaveClass('growth-milestone--current');
+  expect(byTestId('growth-milestone-eco-1-expand')).toHaveClass('growth-milestone--future');
+  expect(byTestId('growth-milestone-eco-2-ascend-at-1')).toHaveClass('growth-milestone--future');
   expect(document.querySelector('.growth-milestones button[aria-label^="Build one"]')).toBeNull();
 
   selectWorkspace('Islands');
@@ -52,15 +54,15 @@ test('separates actual shortages from parallel faction growth steps', async () =
   renderApp();
   addIsland();
   await setIslandHouses(0, 'tech', '10');
-  await setGrowthResidenceTarget('eco', '100');
+  await setGrowthResidenceTarget('eco', '200');
   fireEvent.click(buttonWithLabel('Eco Engineers'));
 
-  const baseline = byTestId('growth-baseline');
+  const baseline = byTestId('growth-baseline-tech');
   const eco = byTestId('growth-sequence-eco');
-  const engineers = byTestId('growth-milestone-eco-3-ascend');
+  const engineers = byTestId('growth-milestone-eco-3-ascend-at-1');
   const carried = engineers.querySelector('.growth-milestone__carried');
 
-  expect(baseline).toHaveTextContent('Supply current population');
+  expect(baseline).toHaveTextContent('Complete current Tech Geniuses');
   expect(baseline).toHaveTextContent('Aquafarm');
   expect(eco).toHaveTextContent('Changed in this step');
   expect(engineers.querySelector(':scope > summary')).toHaveTextContent(
@@ -69,7 +71,7 @@ test('separates actual shortages from parallel faction growth steps', async () =
   expect(carried).not.toBeNull();
   expect(carried).toHaveTextContent('Carried gaps');
   expect(carried).toHaveTextContent('Already required by current population');
-  expect(carried?.querySelector('[data-testid="growth-gap-eco-3-ascend-aquafarm"]'))
+  expect(carried?.querySelector('[data-testid="growth-gap-eco-3-ascend-at-1-aquafarm"]'))
     .not.toBeNull();
   expect(carried).toHaveTextContent('Why required?');
   expect(carried).toHaveTextContent('Tech');
@@ -86,4 +88,19 @@ test('keeps an ignored future demand visible while it is inactive', async () => 
   fireEvent.click(manager.querySelector('summary')!);
   expect(manager).toHaveTextContent('Tech · Geniuses · Bionics factory');
   expect(manager).toHaveTextContent('Not currently applicable');
+});
+
+test('shows current-tier completion while Growth follows actual island tiers', async () => {
+  renderApp();
+  addIsland();
+  fireEvent.click(buttonWithLabel('Configure island Island 1'));
+  fireEvent.click(buttonWithLabel('Tech Researchers', byTestId('island-0')));
+  await replaceInput(input('island-0-config-tech-houses'), '100');
+  fireEvent.click(buttonWithLabel('Finish configuring island Island 1'));
+  selectWorkspace('Growth');
+
+  const currentTech = byTestId('growth-baseline-tech');
+  expect(currentTech).toHaveTextContent('Complete current Tech Researchers');
+  expect(currentTech).toHaveTextContent('Immunity drug manufacturer');
+  expect(currentTech).not.toHaveTextContent('Bionics factory');
 });

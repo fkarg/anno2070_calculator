@@ -15,11 +15,13 @@ describe('Growth planning', () => {
 
     const result = calculateGrowthPlanning(state.plan, state.islands);
 
-    expect(result?.sequences.eco).toHaveLength(1);
-    expect(result?.sequences.eco[0]).toMatchObject({
-      kind: 'expand', faction: 'eco', tier: 1, current: true,
+    expect(result?.sequences.eco.map((milestone) => milestone.populationAfter.eco[0]))
+      .toEqual([8, 64, 80]);
+    expect(result?.sequences.eco.at(-1)).toMatchObject({
+      kind: 'expand', faction: 'eco', tier: 1, current: false,
     });
-    expect(result?.sequences.eco[0].gaps.find((gap) => gap.goodId === 'fishery')?.required)
+    expect(result?.sequences.eco[0].current).toBe(true);
+    expect(result?.sequences.eco.at(-1)?.gaps.find((gap) => gap.goodId === 'fishery')?.required)
       .toBeCloseTo(80 / 250);
   });
 
@@ -63,8 +65,12 @@ describe('Growth planning', () => {
 
     expect(milestones.map(({ kind, tier }) => ({ kind, tier }))).toEqual([
       { kind: 'ascend', tier: 3 },
+      { kind: 'expand', tier: 3 },
+      { kind: 'expand', tier: 3 },
     ]);
-    expect(milestones[0].populationAfter.tech).toEqual([200, 1260, 900]);
+    expect(milestones.map((milestone) => milestone.populationAfter.tech[2]))
+      .toEqual([50, 600, 900]);
+    expect(milestones.at(-1)?.populationAfter.tech).toEqual([200, 1260, 900]);
   });
 
   test('does not add a normalization step for pooled unrestricted follow houses', () => {
@@ -81,6 +87,8 @@ describe('Growth planning', () => {
 
     expect(milestones.map(({ kind, tier }) => ({ kind, tier }))).toEqual([
       { kind: 'ascend', tier: 3 },
+      { kind: 'expand', tier: 3 },
+      { kind: 'expand', tier: 3 },
     ]);
   });
 
@@ -90,8 +98,8 @@ describe('Growth planning', () => {
     state.plan.factions.tycoon.intent = { kind: 'residences', houses: editable(20), maxTier: 1 };
 
     const planning = calculateGrowthPlanning(state.plan, [])!;
-    const eco = planning.sequences.eco[0];
-    const tycoon = planning.sequences.tycoon[0];
+    const eco = planning.sequences.eco.at(-1)!;
+    const tycoon = planning.sequences.tycoon.at(-1)!;
 
     expect(eco.populationAfter.eco[0]).toBe(80);
     expect(eco.populationAfter.tycoon[0]).toBe(0);
@@ -181,6 +189,108 @@ describe('Growth planning', () => {
     expect(milestone.gaps.some((gap) => gap.goodId === 'aquafarm')).toBe(true);
     expect(milestone.complete).toBe(true);
     expect(milestone.current).toBe(false);
+  });
+
+  test('stops an infeasible ascension before introducing the next tier demand', () => {
+    const state = createInitialAppState();
+    const actual = createIsland('Researchers');
+    actual.factions.tech.houses = editable(40);
+    actual.factions.tech.maxTier = 2;
+    state.plan.factions.tech.intent = {
+      kind: 'residences', houses: editable(50), maxTier: 3,
+    };
+
+    const milestones = calculateGrowthPlanning(state.plan, [actual])!.sequences.tech;
+    const blocked = milestones.at(-1)!;
+
+    expect(blocked).toMatchObject({
+      kind: 'ascend',
+      tier: 3,
+      gate: { required: 1200, available: 900, met: false },
+      complete: false,
+      current: false,
+    });
+    expect(blocked.populationAfter.tech[2]).toBe(0);
+    expect(blocked.gaps.some((gap) => gap.goodId === 'laboratoryOutfitter')).toBe(false);
+    expect(blocked.gaps.some((gap) => gap.goodId === 'bionicsFactory')).toBe(false);
+  });
+
+  test('ends a branch at its first blocked gate', () => {
+    const state = createInitialAppState();
+    state.plan.factions.eco.intent = {
+      kind: 'residences', houses: editable(10), maxTier: 4,
+    };
+
+    const milestones = calculateGrowthPlanning(state.plan, [])!.sequences.eco;
+
+    expect(milestones.at(-1)).toMatchObject({
+      tier: 2,
+      kind: 'ascend',
+      gate: { required: 144, available: 80, met: false },
+    });
+    expect(milestones.some((milestone) => milestone.tier > 2)).toBe(false);
+  });
+
+  test('splits same-tier growth where recurring demands unlock', () => {
+    const state = createInitialAppState();
+    state.plan.factions.tech.intent = {
+      kind: 'residences', houses: editable(40), maxTier: 1,
+    };
+
+    const milestones = calculateGrowthPlanning(state.plan, [])!.sequences.tech;
+
+    expect(milestones.map((milestone) => ({
+      population: milestone.populationAfter.tech[0],
+      unlocked: milestone.unlockedGoodIds,
+    }))).toEqual([
+      { population: 5, unlocked: ['fishery'] },
+      { population: 50, unlocked: ['functionalFoodFactory'] },
+      { population: 100, unlocked: ['energyDrinkFactory'] },
+      { population: 200, unlocked: [] },
+    ]);
+    expect(milestones.map((milestone) => milestone.id)).toEqual([
+      'tech-1-expand-at-1',
+      'tech-1-expand-at-50',
+      'tech-1-expand-at-100',
+      'tech-1-expand',
+    ]);
+  });
+
+  test('establishes a newly ascended tier before its later demand unlocks', () => {
+    const state = createInitialAppState();
+    state.plan.factions.eco.intent = {
+      kind: 'residences', houses: editable(100), maxTier: 2,
+    };
+
+    const employees = calculateGrowthPlanning(state.plan, [])!.sequences.eco
+      .filter((milestone) => milestone.tier === 2);
+
+    expect(employees.map((milestone) => ({
+      kind: milestone.kind,
+      population: milestone.populationAfter.eco[1],
+      unlocked: milestone.unlockedGoodIds,
+    }))).toEqual([
+      { kind: 'ascend', population: 15, unlocked: [] },
+      { kind: 'expand', population: 360, unlocked: ['healthFoodFactory'] },
+      { kind: 'expand', population: 600, unlocked: ['electronicsFactory'] },
+      { kind: 'expand', population: 1200, unlocked: [] },
+    ]);
+  });
+
+  test('marks the population checkpoint that unlocks the next ascension', () => {
+    const state = createInitialAppState();
+    state.plan.factions.eco.intent = {
+      kind: 'residences', houses: editable(100), maxTier: 2,
+    };
+
+    const gateCheckpoint = calculateGrowthPlanning(state.plan, [])!.sequences.eco
+      .find((milestone) => milestone.unlocksAscensionTo === 2)!;
+
+    expect(gateCheckpoint).toMatchObject({
+      tier: 1,
+      checkpointPopulation: 144,
+      unlocksAscensionTo: 2,
+    });
   });
 
   test('keeps a milestone incomplete when a new chain is hidden by a net demand decrease', () => {
@@ -296,7 +406,8 @@ describe('Growth planning', () => {
     state.plan.factions.eco.intent = { kind: 'residences', houses: editable(100), maxTier: 2 };
 
     const employeeStep = calculateGrowthPlanning(state.plan, [])!.sequences.eco
-      .find((step) => step.tier === 2)!;
+      .find((step) => step.tier === 2
+        && step.gaps.some((gap) => gap.goodId === 'healthFoodFactory'))!;
 
     expect(employeeStep.gaps.findIndex((gap) => gap.goodId === 'riceFarm'))
       .toBeLessThan(employeeStep.gaps.findIndex((gap) => gap.goodId === 'healthFoodFactory'));
@@ -313,7 +424,8 @@ describe('Growth planning', () => {
     };
 
     const employeeStep = calculateGrowthPlanning(state.plan, [underwater])!.sequences.eco
-      .find((step) => step.tier === 2)!;
+      .find((step) => step.tier === 2
+        && step.gaps.some((gap) => gap.goodId === 'chipFactory'))!;
     const chips = employeeStep.gaps.find((gap) => gap.goodId === 'chipFactory')!;
 
     expect(chips.capacity).toBeCloseTo(0.75);
@@ -336,7 +448,8 @@ describe('Growth planning', () => {
     const planning = calculateGrowthPlanning(state.plan, [island])!;
 
     expect(planning.sequences.eco[0]).toMatchObject({ complete: true, current: false });
-    expect(planning.sequences.tycoon[0]).toMatchObject({ complete: false, current: true });
+    expect(planning.sequences.tycoon.find((milestone) => milestone.current))
+      .toMatchObject({ complete: false, current: true });
   });
 
   test('returns null for invalid targets or actual capacity', () => {
